@@ -11,8 +11,11 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
 ## Regras do projeto
 
 - **`cookieOptions.domain` é o SSO.** Os três clients Supabase (browser, server,
-  middleware) importam de `src/lib/supabase/cookie-options.ts`. Nunca criar um client
-  Supabase sem passar `cookieOptions` — quebra o login compartilhado com `fila.` e `cmv.`.
+  middleware) chamam `cookieOptionsPara(host)` de `src/lib/supabase/cookie-options.ts`.
+  Nunca criar um client Supabase sem passar `cookieOptions` — quebra o login compartilhado
+  com `fila.` e `cmv.`. A função só aplica o domínio quando o host atual pertence a ele:
+  em `localhost` e `*.vercel.app` o cookie vira host-only, porque o navegador descarta
+  `Set-Cookie` com `Domain` que não casa — e cookie descartado = login em loop.
 - **No middleware, não rodar código nenhum entre `createServerClient` e `getUser()`.**
   Armadilha real do `@supabase/ssr`; o Fila de Espera já apanhou dela.
 - **Anon key só no frontend.** Service/secret key nunca no bundle nem em `.env.local`
@@ -30,7 +33,20 @@ Supabase, `current_restaurant_id()` → vira `current_org_id()`, scripts
 ## Comandos
 
 ```bash
-npm run dev     # local :3000
-npm run build   # valida tipos — rodar antes de fechar qualquer fase
+npm run dev      # local :3000
+npm run build    # valida tipos — rodar antes de fechar qualquer fase
 npm run lint
+npm run verify   # verificação da Fase 1 (RLS, convites, papel agency)
 ```
+
+## Migrations
+
+Aplicadas pela API de gestão (`POST /v1/projects/{ref}/database/query`) com o token de
+`.supabase-token.txt`. **Mandar o arquivo inteiro numa requisição devolve 400 sem corpo** —
+enviar por seções, separadas pelas linhas `-- ------`. É o que o histórico da Fase 1 fez.
+
+## Bootstrap da agência
+
+O primeiro usuário `agency` não pode se criar sozinho (só agência escreve em `memberships`).
+Ele nasce de um `invite` inserido via SQL; o trigger `accept_invites_for_new_user` converte
+em membership no cadastro. Já feito para `luis_fossalussa@hotmail.com` na org `momentum-digital`.

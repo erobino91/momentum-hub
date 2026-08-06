@@ -41,10 +41,29 @@ A service/secret key não entra aqui. Ela só aparece na Fase 3 (CAPI do bio), s
 
 ## Banco
 
-Migrations versionadas em `supabase/migrations/`. Vazio na Fase 0 — o schema
-(`orgs`, `memberships`, `entitlements`) entra na Fase 1.
+Migrations versionadas em `supabase/migrations/`.
+
+| Tabela | Papel |
+|---|---|
+| `orgs` | o cliente da agência |
+| `memberships` | quem pertence a qual org, com papel `owner`/`staff`/`agency` |
+| `entitlements` | qual módulo está liberado para qual org |
+| `invites` | email convidado → vira membership no cadastro, por trigger |
+
+RLS em todas: leitura filtrada por `current_org_ids()`, escrita só para `is_agency()`.
+
+## Como um cliente entra
+
+1. Na área `/agencia`, a MMT cria a empresa e convida o email.
+2. O cliente se cadastra em `/cadastro` com esse mesmo email.
+3. O trigger `accept_invites_for_new_user` cria o membership sozinho.
+4. Na home ele vê um card por módulo com `enabled = true`. Módulo desligado não aparece.
 
 ## Status
 
-**Fase 0 — Infra e domínio.** Entregável: `portal.mmtdigital.com.br` servindo um
-"em breve" + Supabase de pé. Sem produto ainda.
+**Fase 1 concluída** — identidade, entitlements e RLS. `npm run verify` roda 12 checagens
+de isolamento contra o banco real e limpa os dados de teste no fim.
+
+Pendente da Fase 0: apontar o DNS. Enquanto isso o portal vive em
+`momentum-hub-psi.vercel.app` e o SSO entre subdomínios fica inativo (por desenho —
+ver `cookie-options.ts`).

@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { cookieOptions } from "./cookie-options";
+import { cookies, headers } from "next/headers";
+import { cookieOptionsPara } from "./cookie-options";
 
 /**
  * Supabase client para Server Components, Route Handlers e Server Actions.
@@ -8,12 +8,14 @@ import { cookieOptions } from "./cookie-options";
  */
 export function createClient() {
   const cookieStore = cookies();
+  const h = headers();
+  const host = (h.get("x-forwarded-host") ?? h.get("host") ?? "").split(":")[0];
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions,
+      cookieOptions: cookieOptionsPara(host),
       cookies: {
         getAll() {
           return cookieStore.getAll();
