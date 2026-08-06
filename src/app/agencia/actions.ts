@@ -75,6 +75,45 @@ export async function alternarModulo(formData: FormData) {
   voltar();
 }
 
+/**
+ * Grava o slug do cliente no dashboard antigo. Fica em `entitlements.config`
+ * porque é configuração de um módulo, não da empresa — e a RLS de
+ * `entitlements` já impede uma org de ler a config da outra.
+ */
+export async function salvarSlugDashboard(formData: FormData) {
+  const supabase = await exigirAgencia();
+  const orgId = String(formData.get("org_id") ?? "");
+  const slug = String(formData.get("dashboard_slug") ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (!orgId) voltar("Empresa inválida.");
+  if (slug && !/^[a-z0-9-]+$/.test(slug))
+    voltar("O slug aceita só letras minúsculas, números e hífen.");
+
+  // Lê para preservar o resto do `config` — o upsert reescreve a coluna inteira.
+  const { data: atual } = await supabase
+    .from("entitlements")
+    .select("config")
+    .eq("org_id", orgId)
+    .eq("module", "dashboard")
+    .maybeSingle<{ config: Record<string, unknown> | null }>();
+
+  const config = { ...(atual?.config ?? {}) };
+  if (slug) config.dashboard_slug = slug;
+  else delete config.dashboard_slug;
+
+  const { error } = await supabase
+    .from("entitlements")
+    .upsert(
+      { org_id: orgId, module: "dashboard", config },
+      { onConflict: "org_id,module" },
+    );
+
+  if (error) voltar("Não foi possível salvar o slug do dashboard.");
+  voltar();
+}
+
 export async function convidarUsuario(formData: FormData) {
   const supabase = await exigirAgencia();
   const orgId = String(formData.get("org_id") ?? "");

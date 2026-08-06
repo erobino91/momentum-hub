@@ -20,6 +20,10 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   Armadilha real do `@supabase/ssr`; o Fila de Espera já apanhou dela.
 - **Anon key só no frontend.** Service/secret key nunca no bundle nem em `.env.local`
   versionado — só variável server-side (entra na Fase 3, para o CAPI do bio).
+- **O slug do dashboard antigo é segredo.** Com ele qualquer um abre o `dash.html?c=<slug>`
+  público. Fica em `entitlements.config.dashboard_slug`, a chamada à RPC sai do servidor
+  (`src/lib/dashboard.ts`) e o payload que vira prop de Client Component é montado campo a
+  campo — nunca espalhar a linha crua da RPC, que traz `slug` e ids junto.
 - **RLS em toda tabela nova**, filtrando por `current_org_id()`.
 - Migrations versionadas em `supabase/migrations/`, nunca DDL solto no painel.
 - Nunca imprimir chaves ou segredos na saída, nem dentro de comandos.
@@ -36,8 +40,14 @@ Supabase, `current_restaurant_id()` → vira `current_org_id()`, scripts
 npm run dev      # local :3000
 npm run build    # valida tipos — rodar antes de fechar qualquer fase
 npm run lint
-npm run verify   # verificação da Fase 1 (RLS, convites, papel agency)
+npm run verify   # Fases 1 e 2
+npm run verify:fase1   # identidade, convites, isolamento por RLS
+npm run verify:fase2   # dashboard: RPC antiga, vazamento de slug, números
 ```
+
+O `verify:fase2` precisa do app respondendo para as checagens de ponta a ponta —
+`npm run start` em outro terminal, ou `HUB_URL=<url>` apontando para o Vercel. Sem isso
+ele pula essas linhas e diz que pulou.
 
 ## Migrations
 

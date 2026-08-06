@@ -7,14 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "verify": "node scripts/verify-phase1.mjs"
+    "verify": "npm run verify:fase1 && npm run verify:fase2",
+    "verify:fase1": "node scripts/verify-phase1.mjs",
+    "verify:fase2": "node scripts/verify-phase2.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
     "next": "14.2.35",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@types/node": "^20",

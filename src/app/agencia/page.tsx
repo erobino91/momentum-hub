@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MODULES, MODULE_KEYS, type ModuleKey } from "@/lib/modules";
 import { campoClasse, botaoClasse } from "@/components/auth-shell";
-import { criarOrg, alternarModulo, convidarUsuario } from "./actions";
+import {
+  criarOrg,
+  alternarModulo,
+  convidarUsuario,
+  salvarSlugDashboard,
+} from "./actions";
 import type { Entitlement, Invite, Org } from "@/types/db";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +42,14 @@ export default async function AgenciaPage({
   const ligado = (orgId: string, module: ModuleKey) =>
     ents?.some((e) => e.org_id === orgId && e.module === module && e.enabled) ??
     false;
+
+  const slugDashboard = (orgId: string) => {
+    const ent = ents?.find(
+      (e) => e.org_id === orgId && e.module === "dashboard",
+    );
+    const valor = ent?.config?.dashboard_slug;
+    return typeof valor === "string" ? valor : "";
+  };
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-6 py-12">
@@ -114,6 +127,40 @@ export default async function AgenciaPage({
                     </form>
                   );
                 })}
+              </div>
+
+              <div className="mt-5 border-t border-white/10 pt-5">
+                <p className="text-xs uppercase tracking-wider text-muted">
+                  Dashboard — slug no sistema antigo
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <form
+                    action={salvarSlugDashboard}
+                    className="flex flex-wrap gap-3"
+                  >
+                    <input type="hidden" name="org_id" value={org.id} />
+                    <input
+                      name="dashboard_slug"
+                      defaultValue={slugDashboard(org.id)}
+                      placeholder="ex.: villa-burguer"
+                      className={`${campoClasse} sm:w-64`}
+                    />
+                    <button
+                      type="submit"
+                      className={`${botaoClasse} sm:w-auto sm:px-5`}
+                    >
+                      Salvar
+                    </button>
+                  </form>
+                  {ligado(org.id, "dashboard") && slugDashboard(org.id) ? (
+                    <Link
+                      href={`/dashboard?org=${org.id}`}
+                      className="text-sm text-muted hover:text-foreground"
+                    >
+                      Abrir dashboard →
+                    </Link>
+                  ) : null}
+                </div>
               </div>
 
               <form

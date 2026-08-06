@@ -18,7 +18,7 @@ export const MODULES: Record<ModuleKey, ModuleInfo> = {
     description: "Resultados de vendas, pedidos e ticket médio.",
     href: "/dashboard",
     external: false,
-    ready: false,
+    ready: true,
     fase: 2,
   },
   bio: {
