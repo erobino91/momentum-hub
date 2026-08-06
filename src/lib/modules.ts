@@ -26,7 +26,7 @@ export const MODULES: Record<ModuleKey, ModuleInfo> = {
     description: "Sua página de links, com rastreamento de cliques.",
     href: "/bio",
     external: false,
-    ready: false,
+    ready: true,
     fase: 3,
   },
   fila: {

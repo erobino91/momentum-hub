@@ -1,0 +1,414 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { BioRender } from "@/components/bio-render";
+import { campoClasse, botaoClasse } from "@/components/auth-shell";
+import { URL_BIO } from "@/lib/bio/url";
+import {
+  apagarBotao,
+  criarBotao,
+  reordenarBotoes,
+  salvarBotao,
+  salvarPagina,
+  salvarToken,
+} from "../actions";
+import {
+  botaoNoAr,
+  temaCompleto,
+  type LinkButton,
+  type LinkPage,
+} from "@/types/bio";
+
+const rotulo = "block text-xs font-medium uppercase tracking-wider text-muted";
+const caixa = "rounded-lg border border-white/15 bg-white/5 p-5";
+
+/** `datetime-local` não aceita ISO com fuso; corta no minuto. */
+function paraInput(iso: string | null) {
+  return iso ? new Date(iso).toISOString().slice(0, 16) : "";
+}
+
+export function EditorBio({
+  pagina,
+  botoes,
+  temToken,
+  erro,
+}: {
+  pagina: LinkPage;
+  botoes: LinkButton[];
+  temToken: boolean;
+  erro?: string;
+}) {
+  const tema = temaCompleto(pagina.theme);
+
+  // Estado só do que o preview mostra — o resto vai direto no form.
+  const [titulo, setTitulo] = useState(pagina.title);
+  const [bio, setBio] = useState(pagina.bio ?? "");
+  const [avatar, setAvatar] = useState(pagina.avatar_url ?? "");
+  const [cores, setCores] = useState(tema);
+
+  const [ordem, setOrdem] = useState(botoes);
+  const [arrastando, setArrastando] = useState<string | null>(null);
+
+  // Depois de salvar, o servidor manda a lista nova; o estado local acompanha.
+  useEffect(() => setOrdem(botoes), [botoes]);
+
+  function soltar(alvoId: string) {
+    if (!arrastando || arrastando === alvoId) return;
+    const nova = [...ordem];
+    const de = nova.findIndex((b) => b.id === arrastando);
+    const para = nova.findIndex((b) => b.id === alvoId);
+    if (de < 0 || para < 0) return;
+    nova.splice(para, 0, nova.splice(de, 1)[0]);
+    setOrdem(nova);
+    setArrastando(null);
+    void reordenarBotoes(pagina.id, nova.map((b) => b.id));
+  }
+
+  return (
+    <main className="mx-auto min-h-screen w-full max-w-5xl px-6 py-12">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted">Bio</p>
+          <h1 className="mt-2 truncate text-3xl font-semibold">{pagina.title}</h1>
+          <p className="mt-1 text-sm text-muted">
+            {URL_BIO}/{pagina.slug}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 text-sm text-muted">
+          <Link href={`/bio/${pagina.id}/relatorio`} className="hover:text-foreground">
+            Relatório de cliques
+          </Link>
+          <a
+            href={`/b/${pagina.slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-foreground"
+          >
+            Abrir página
+          </a>
+          <Link href="/bio" className="hover:text-foreground">
+            Voltar
+          </Link>
+        </div>
+      </header>
+
+      {erro ? (
+        <p className="mt-6 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+          {erro}
+        </p>
+      ) : null}
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-6">
+          {/* ---------------------------------------------------- página */}
+          <section className={caixa}>
+            <h2 className="text-lg font-medium">Página</h2>
+            <form action={salvarPagina} className="mt-4 space-y-4">
+              <input type="hidden" name="page_id" value={pagina.id} />
+
+              <div>
+                <label className={rotulo} htmlFor="title">
+                  Título
+                </label>
+                <input
+                  id="title"
+                  name="title"
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  className={`${campoClasse} mt-1`}
+                />
+              </div>
+
+              <div>
+                <label className={rotulo} htmlFor="bio">
+                  Descrição
+                </label>
+                <textarea
+                  id="bio"
+                  name="bio"
+                  rows={3}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className={`${campoClasse} mt-1`}
+                />
+              </div>
+
+              <div>
+                <label className={rotulo} htmlFor="avatar_url">
+                  Foto (URL)
+                </label>
+                <input
+                  id="avatar_url"
+                  name="avatar_url"
+                  value={avatar}
+                  onChange={(e) => setAvatar(e.target.value)}
+                  placeholder="https://..."
+                  className={`${campoClasse} mt-1`}
+                />
+              </div>
+
+              <div>
+                <label className={rotulo} htmlFor="pixel_id">
+                  ID do Pixel da Meta
+                </label>
+                <input
+                  id="pixel_id"
+                  name="pixel_id"
+                  defaultValue={pagina.pixel_id ?? ""}
+                  placeholder="só números"
+                  className={`${campoClasse} mt-1`}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {(
+                  [
+                    ["tema_fundo", "Fundo", "fundo"],
+                    ["tema_texto", "Texto", "texto"],
+                    ["tema_botao", "Botão", "botao"],
+                    ["tema_botao_texto", "Texto do botão", "botaoTexto"],
+                  ] as const
+                ).map(([campo, nome, chave]) => (
+                  <div key={campo}>
+                    <label className={rotulo} htmlFor={campo}>
+                      {nome}
+                    </label>
+                    <input
+                      id={campo}
+                      name={campo}
+                      type="color"
+                      value={cores[chave]}
+                      onChange={(e) =>
+                        setCores({ ...cores, [chave]: e.target.value })
+                      }
+                      className="mt-1 h-10 w-full cursor-pointer rounded-md border border-white/15 bg-white/5"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="active"
+                  defaultChecked={pagina.active}
+                  className="h-4 w-4 accent-[color:var(--accent)]"
+                />
+                Página no ar
+              </label>
+
+              <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-6`}>
+                Salvar página
+              </button>
+            </form>
+          </section>
+
+          {/* ---------------------------------------------------- botões */}
+          <section className={caixa}>
+            <h2 className="text-lg font-medium">Botões</h2>
+            <p className="mt-1 text-sm text-muted">
+              Arraste pela alça <span aria-hidden>⠿</span> para mudar a ordem.
+            </p>
+
+            <div className="mt-4 space-y-3">
+              {ordem.map((b) => (
+                <div
+                  key={b.id}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => soltar(b.id)}
+                  className={`rounded-lg border p-4 transition ${
+                    arrastando === b.id
+                      ? "border-accent bg-accent/5"
+                      : "border-white/10 bg-white/[0.03]"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <span
+                      draggable
+                      onDragStart={() => setArrastando(b.id)}
+                      onDragEnd={() => setArrastando(null)}
+                      className="cursor-grab select-none pt-2 text-lg text-muted active:cursor-grabbing"
+                      aria-label={`Mover ${b.label}`}
+                    >
+                      ⠿
+                    </span>
+
+                    <form action={salvarBotao} className="flex-1 space-y-3">
+                      <input type="hidden" name="page_id" value={pagina.id} />
+                      <input type="hidden" name="botao_id" value={b.id} />
+
+                      <div className="flex flex-wrap gap-3">
+                        <input
+                          name="icon"
+                          defaultValue={b.icon ?? ""}
+                          placeholder="🍔"
+                          aria-label="Ícone"
+                          className={`${campoClasse} w-16 text-center`}
+                        />
+                        <input
+                          name="label"
+                          defaultValue={b.label}
+                          placeholder="Texto do botão"
+                          aria-label="Texto do botão"
+                          className={`${campoClasse} flex-1 sm:min-w-[12rem]`}
+                        />
+                      </div>
+
+                      <input
+                        name="url"
+                        defaultValue={b.url}
+                        placeholder="https://..."
+                        aria-label="Link de destino"
+                        className={campoClasse}
+                      />
+
+                      <details className="text-sm text-muted">
+                        <summary className="cursor-pointer">Agendamento</summary>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className={rotulo}>Começa em</label>
+                            <input
+                              type="datetime-local"
+                              name="starts_at"
+                              defaultValue={paraInput(b.starts_at)}
+                              className={`${campoClasse} mt-1`}
+                            />
+                          </div>
+                          <div>
+                            <label className={rotulo}>Termina em</label>
+                            <input
+                              type="datetime-local"
+                              name="ends_at"
+                              defaultValue={paraInput(b.ends_at)}
+                              className={`${campoClasse} mt-1`}
+                            />
+                          </div>
+                        </div>
+                      </details>
+
+                      <div className="flex flex-wrap items-center gap-4">
+                        <label className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            name="active"
+                            defaultChecked={b.active}
+                            className="h-4 w-4 accent-[color:var(--accent)]"
+                          />
+                          Ativo
+                        </label>
+                        <button
+                          type="submit"
+                          className="text-sm text-muted transition hover:text-foreground"
+                        >
+                          Salvar
+                        </button>
+                        <button
+                          type="submit"
+                          formAction={apagarBotao}
+                          className="text-sm text-red-400 transition hover:text-red-300"
+                        >
+                          Apagar
+                        </button>
+                        {!botaoNoAr(b) ? (
+                          <span className="text-xs text-muted">
+                            fora do ar agora
+                          </span>
+                        ) : null}
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <form
+              action={criarBotao}
+              className="mt-5 flex flex-wrap gap-3 border-t border-white/10 pt-5"
+            >
+              <input type="hidden" name="page_id" value={pagina.id} />
+              <input
+                name="icon"
+                placeholder="🍔"
+                aria-label="Ícone"
+                className={`${campoClasse} w-16 text-center`}
+              />
+              <input
+                name="label"
+                required
+                placeholder="Texto do botão"
+                className={`${campoClasse} sm:w-52`}
+              />
+              <input
+                name="url"
+                required
+                placeholder="https://..."
+                className={`${campoClasse} sm:w-64`}
+              />
+              <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-5`}>
+                Adicionar
+              </button>
+            </form>
+          </section>
+
+          {/* ---------------------------------------------------- CAPI */}
+          <section className={caixa}>
+            <h2 className="text-lg font-medium">Conversions API</h2>
+            <p className="mt-1 text-sm text-muted">
+              O token é gerado no Gerenciador de Eventos da Meta, no mesmo pixel.
+              Com ele, o clique é enviado pelo servidor e conta mesmo com
+              bloqueador de anúncio ligado. Depois de salvo, o token não é
+              exibido de volta.
+            </p>
+            <p className="mt-3 text-sm">
+              Status:{" "}
+              <span className={temToken ? "text-emerald-400" : "text-muted"}>
+                {temToken ? "configurado" : "não configurado"}
+              </span>
+            </p>
+            <form action={salvarToken} className="mt-4 flex flex-wrap gap-3">
+              <input type="hidden" name="page_id" value={pagina.id} />
+              <input
+                name="capi_token"
+                type="password"
+                autoComplete="off"
+                placeholder={temToken ? "substituir token" : "colar token"}
+                className={`${campoClasse} sm:w-80`}
+              />
+              <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-5`}>
+                Salvar
+              </button>
+            </form>
+          </section>
+        </div>
+
+        {/* ------------------------------------------------------ preview */}
+        <aside className="lg:sticky lg:top-8 lg:self-start">
+          <p className={rotulo}>Preview</p>
+          <div className="mt-2 overflow-hidden rounded-[2rem] border-4 border-white/15">
+            <div className="max-h-[70vh] overflow-y-auto">
+              <BioRender
+                modo="preview"
+                pagina={{
+                  slug: pagina.slug,
+                  title: titulo,
+                  bio: bio || null,
+                  avatarUrl: avatar || null,
+                  tema: cores,
+                  pixelId: pagina.pixel_id,
+                  botoes: ordem
+                    .filter((b) => botaoNoAr(b))
+                    .map((b) => ({ id: b.id, label: b.label, icon: b.icon })),
+                }}
+              />
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-muted">
+            Título, descrição, foto e cores atualizam enquanto você digita. Os
+            botões atualizam ao salvar.
+          </p>
+        </aside>
+      </div>
+    </main>
+  );
+}

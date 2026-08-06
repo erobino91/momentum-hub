@@ -1,0 +1,412 @@
+/**
+ * Verificação da Fase 3 — bio/linktree e rastreamento de cliques.
+ *
+ * O que precisa ser verdade:
+ *   - as tabelas do bio são invisíveis para o papel `anon`, e `link_secrets`
+ *     (o token de CAPI) é invisível até para o dono da página;
+ *   - uma org não enxerga página, botão nem clique da outra;
+ *   - a página pública mostra só o que está no ar e **nunca a URL de destino**;
+ *   - o clique redireciona sempre — inclusive quando a CAPI falha — e grava o
+ *     IP **hasheado**, nunca cru;
+ *   - o `event_id` da deduplicação nasce no navegador, não no HTML cacheado.
+ *
+ * Uso:  node scripts/verify-phase3.mjs
+ * As checagens de ponta a ponta precisam do app no ar (HUB_URL, padrão
+ * http://localhost:3000). Sem isso são puladas, e o script diz que pulou.
+ */
+
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { request as pedidoHttp } from "node:http";
+
+const raiz = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+const env = Object.fromEntries(
+  readFileSync(join(raiz, ".env.local"), "utf8")
+    .split("\n")
+    .filter((l) => l.trim() && !l.trim().startsWith("#"))
+    .map((l) => {
+      const i = l.indexOf("=");
+      return [l.slice(0, i).trim(), l.slice(i + 1).trim()];
+    }),
+);
+
+const URL_BASE = env.NEXT_PUBLIC_SUPABASE_URL;
+const ANON = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const TOKEN_GESTAO = readFileSync(join(raiz, ".supabase-token.txt"), "utf8").trim();
+const REF = new globalThis.URL(URL_BASE).hostname.split(".")[0];
+const HUB_URL = (process.env.HUB_URL ?? "http://localhost:3000").replace(/\/$/, "");
+
+const MARCA = `vp3-${Date.now()}`;
+const emailA = `${MARCA}-a@exemplo-teste.com`;
+const emailB = `${MARCA}-b@exemplo-teste.com`;
+const SENHA = "SenhaDeTeste123";
+const IP_TESTE = "198.51.100.77";
+const DESTINO = "https://example.com/promo-do-mes";
+
+let falhas = 0;
+let pulados = 0;
+
+function checar(ok, descricao, detalhe = "") {
+  console.log(`${ok ? "  ok  " : "  FALHA"} ${descricao}${detalhe ? ` — ${detalhe}` : ""}`);
+  if (!ok) falhas++;
+}
+
+function pular(descricao, motivo) {
+  console.log(`  --    ${descricao} — pulado: ${motivo}`);
+  pulados++;
+}
+
+async function sql(query) {
+  const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/database/query`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${TOKEN_GESTAO}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query }),
+  });
+  if (!r.ok) throw new Error(`SQL ${r.status}: ${await r.text()}`);
+  return r.json();
+}
+
+async function cadastrar(email) {
+  await sql(`
+    with novo as (
+      insert into auth.users (
+        instance_id, id, aud, role, email, encrypted_password,
+        email_confirmed_at, created_at, updated_at,
+        raw_app_meta_data, raw_user_meta_data,
+        confirmation_token, recovery_token, email_change,
+        email_change_token_new, email_change_token_current,
+        phone_change, phone_change_token, reauthentication_token
+      ) values (
+        '00000000-0000-0000-0000-000000000000', gen_random_uuid(),
+        'authenticated', 'authenticated', '${email}',
+        extensions.crypt('${SENHA}', extensions.gen_salt('bf')),
+        now(), now(), now(),
+        '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb,
+        '', '', '', '', '', '', '', ''
+      ) returning id, email
+    )
+    insert into auth.identities (
+      provider_id, user_id, identity_data, provider,
+      last_sign_in_at, created_at, updated_at
+    )
+    select id::text, id,
+           jsonb_build_object('sub', id::text, 'email', email, 'email_verified', true),
+           'email', now(), now(), now()
+    from novo;
+  `);
+}
+
+async function entrar(email) {
+  const r = await fetch(`${URL_BASE}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { apikey: ANON, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password: SENHA }),
+  });
+  if (!r.ok) throw new Error(`login ${email}: ${r.status} ${await r.text()}`);
+  return (await r.json()).access_token;
+}
+
+function rest(token) {
+  return async (caminho) => {
+    const r = await fetch(`${URL_BASE}/rest/v1/${caminho}`, {
+      headers: {
+        apikey: ANON,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        "Content-Type": "application/json",
+      },
+    });
+    const texto = await r.text();
+    let corpo = null;
+    try {
+      corpo = texto ? JSON.parse(texto) : null;
+    } catch {
+      corpo = texto;
+    }
+    return { status: r.status, corpo };
+  };
+}
+
+/**
+ * GET com `Host` escolhido na mão. O `fetch` do Node ignora o header `Host`, e
+ * sem ele não dá para exercitar a reescrita de `bio.` → `/b/<slug>`.
+ */
+function pegarComHost(caminho, host) {
+  const alvo = new globalThis.URL(HUB_URL);
+  return new Promise((resolve, reject) => {
+    const req = pedidoHttp(
+      {
+        host: alvo.hostname,
+        port: alvo.port || 80,
+        path: caminho,
+        method: "GET",
+        headers: { Host: host },
+      },
+      (res) => {
+        let corpo = "";
+        res.on("data", (p) => (corpo += p));
+        res.on("end", () =>
+          resolve({ status: res.statusCode, headers: res.headers, corpo }),
+        );
+      },
+    );
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+/** Negado = erro HTTP ou lista vazia. As duas formas servem: não vaza linha. */
+function negado({ status, corpo }) {
+  return status >= 400 || (Array.isArray(corpo) && corpo.length === 0);
+}
+
+async function limpar() {
+  await sql(`
+    delete from auth.users where email like '${MARCA}-%';
+    delete from public.orgs  where slug  like '${MARCA}-%';
+  `);
+}
+
+async function main() {
+  console.log(`Projeto ${REF} — marca ${MARCA}\n`);
+
+  const orgs = await sql(`
+    insert into public.orgs (name, slug) values
+      ('Bio A ${MARCA}', '${MARCA}-a'),
+      ('Bio B ${MARCA}', '${MARCA}-b')
+    returning id, slug;
+  `);
+  const orgA = orgs.find((o) => o.slug.endsWith("-a")).id;
+  const orgB = orgs.find((o) => o.slug.endsWith("-b")).id;
+
+  const paginas = await sql(`
+    insert into public.link_pages (org_id, slug, title, bio, active, pixel_id) values
+      ('${orgA}', '${MARCA}-a', 'Bio da A', 'testando', true,  '123456789012345'),
+      ('${orgA}', '${MARCA}-off', 'Bio fora do ar', null, false, null),
+      ('${orgB}', '${MARCA}-b', 'Bio da B', null, true,  null)
+    returning id, slug;
+  `);
+  const pagA = paginas.find((p) => p.slug === `${MARCA}-a`).id;
+  const pagOff = paginas.find((p) => p.slug === `${MARCA}-off`).id;
+  const pagB = paginas.find((p) => p.slug === `${MARCA}-b`).id;
+
+  const botoes = await sql(`
+    insert into public.link_buttons (page_id, label, url, position, active, ends_at) values
+      ('${pagA}', 'Promo do mês', '${DESTINO}', 0, true,  null),
+      ('${pagA}', 'Promo vencida', 'https://example.com/vencida', 1, true, now() - interval '1 day'),
+      ('${pagA}', 'Desligado', 'https://example.com/off', 2, false, null)
+    returning id, label;
+  `);
+  const idPor = (rotulo) => botoes.find((b) => b.label === rotulo).id;
+
+  // Token de propósito inválido: serve para provar que falha de CAPI não
+  // impede o redirecionamento.
+  await sql(`
+    insert into public.link_secrets (page_id, capi_token)
+    values ('${pagA}', 'TOKEN_FALSO_DE_TESTE');
+  `);
+
+  await sql(`
+    insert into public.invites (email, org_id, role) values
+      ('${emailA}', '${orgA}', 'owner'),
+      ('${emailB}', '${orgB}', 'owner');
+  `);
+  for (const e of [emailA, emailB]) await cadastrar(e);
+
+  const tokenA = await entrar(emailA);
+  const tokenB = await entrar(emailB);
+  const semSessao = rest(null);
+  const comoA = rest(tokenA);
+  const comoB = rest(tokenB);
+
+  // --- 1. fechado para o público ------------------------------------------
+  console.log("Fechado para anon");
+  for (const tabela of ["link_pages", "link_buttons", "link_clicks", "link_secrets"]) {
+    checar(
+      negado(await semSessao(`${tabela}?select=*&limit=1`)),
+      `anon não lê ${tabela}`,
+    );
+  }
+
+  // --- 2. isolamento entre orgs -------------------------------------------
+  console.log("\nIsolamento entre empresas");
+  const proprias = await comoA(`link_pages?select=id,slug`);
+  checar(
+    Array.isArray(proprias.corpo) &&
+      proprias.corpo.length === 2 &&
+      proprias.corpo.every((p) => p.slug.startsWith(MARCA)),
+    "dono lê as próprias páginas",
+    `vieram ${Array.isArray(proprias.corpo) ? proprias.corpo.length : "?"}`,
+  );
+  checar(
+    negado(await comoB(`link_pages?select=id&id=eq.${pagA}`)),
+    "empresa B não lê a página da empresa A",
+  );
+  checar(
+    negado(await comoB(`link_buttons?select=id&page_id=eq.${pagA}`)),
+    "empresa B não lê os botões da empresa A",
+  );
+  checar(
+    negado(await comoB(`link_clicks?select=id&page_id=eq.${pagA}`)),
+    "empresa B não lê os cliques da empresa A",
+  );
+
+  // --- 3. o token de CAPI não volta para ninguém ---------------------------
+  console.log("\nToken de CAPI");
+  checar(
+    negado(await comoA(`link_secrets?select=capi_token&page_id=eq.${pagA}`)),
+    "nem o dono da página lê o próprio capi_token",
+  );
+
+  // --- 4. ponta a ponta ----------------------------------------------------
+  console.log("\nPágina pública e clique");
+  let noAr = false;
+  try {
+    noAr = (await fetch(`${HUB_URL}/api/health`)).ok;
+  } catch {
+    noAr = false;
+  }
+
+  if (!noAr) {
+    for (const d of [
+      "página pública mostra só o que está no ar",
+      "a URL de destino não aparece no HTML",
+      "o event_id da deduplicação nasce no navegador",
+      "página inativa dá 404",
+      "clique redireciona e é gravado",
+      "IP é gravado hasheado, nunca cru",
+      "falha na CAPI não impede o redirecionamento",
+      "botão fora da janela volta para a bio sem gravar clique",
+      "host bio. resolve /<slug> sem precisar de /b/",
+      "raiz de bio. não abre o portal",
+      "beacon de PageView não revela se o slug existe",
+    ])
+      pular(d, `${HUB_URL} não respondeu em /api/health`);
+  } else {
+    const pagina = await fetch(`${HUB_URL}/b/${MARCA}-a`);
+    const html = await pagina.text();
+    checar(
+      pagina.status === 200 &&
+        html.includes("Promo do mês") &&
+        !html.includes("Promo vencida") &&
+        !html.includes("Desligado"),
+      "página pública mostra só o que está no ar",
+      `status ${pagina.status}`,
+    );
+    checar(!html.includes(DESTINO), "a URL de destino não aparece no HTML");
+    checar(
+      html.includes("__bioEventId") && html.includes("fbq('init'"),
+      "o event_id da deduplicação nasce no navegador",
+    );
+
+    const inativa = await fetch(`${HUB_URL}/b/${MARCA}-off`);
+    checar(inativa.status === 404, "página inativa dá 404", `status ${inativa.status}`);
+
+    const antes = Date.now();
+    const clique = await fetch(
+      `${HUB_URL}/r/${idPor("Promo do mês")}?e=evt-${MARCA}`,
+      {
+        redirect: "manual",
+        headers: { "user-agent": "verify-fase3/1.0", "x-forwarded-for": IP_TESTE },
+      },
+    );
+    checar(
+      clique.status === 302 && clique.headers.get("location") === DESTINO,
+      "clique redireciona e é gravado",
+      `status ${clique.status}`,
+    );
+    // O redirect saiu mesmo com `capi_token` falso — a Meta devolveu erro e o
+    // usuário foi para o destino do mesmo jeito.
+    checar(
+      clique.status === 302,
+      "falha na CAPI não impede o redirecionamento",
+      `token inválido de propósito, resposta em ${Date.now() - antes}ms`,
+    );
+
+    const gravado = await sql(`
+      select rotulo, ua, ip_hash,
+             (ip_hash = encode(digest('${env.BIO_IP_SALT}:${IP_TESTE}', 'sha256'), 'hex')) as hash_confere
+      from public.link_clicks
+      where page_id = '${pagA}'
+      order by clicked_at desc limit 5;
+    `);
+    checar(gravado.length === 1, "um clique gravado", `${gravado.length} linha(s)`);
+    const linha = gravado[0] ?? {};
+    checar(
+      !!linha.ip_hash && linha.hash_confere === true,
+      "IP é gravado hasheado, nunca cru",
+      linha.ip_hash ? "hash confere com sha256(sal:ip)" : "sem hash",
+    );
+    checar(
+      !JSON.stringify(gravado).includes(IP_TESTE),
+      "nenhuma coluna do clique guarda o IP em claro",
+    );
+
+    const vencido = await fetch(`${HUB_URL}/r/${idPor("Promo vencida")}?e=x`, {
+      redirect: "manual",
+    });
+    const depois = await sql(
+      `select count(*)::int as n from public.link_clicks where page_id = '${pagA}';`,
+    );
+    checar(
+      vencido.status === 302 &&
+        (vencido.headers.get("location") ?? "").endsWith(`/b/${MARCA}-a`) &&
+        depois[0].n === 1,
+      "botão fora da janela volta para a bio sem gravar clique",
+      `status ${vencido.status}, cliques ${depois[0].n}`,
+    );
+
+    const porHost = await pegarComHost(`/${MARCA}-a`, "bio.localhost");
+    checar(
+      porHost.status === 200 && porHost.corpo.includes("Promo do mês"),
+      "host bio. resolve /<slug> sem precisar de /b/",
+      `status ${porHost.status}`,
+    );
+
+    const raizBio = await pegarComHost("/", "bio.localhost");
+    checar(
+      raizBio.status === 307 &&
+        (raizBio.headers.location ?? "").includes("mmtdigital.com.br"),
+      "raiz de bio. não abre o portal",
+      `status ${raizBio.status} → ${raizBio.headers.location ?? "-"}`,
+    );
+
+    const pvFalso = await fetch(`${HUB_URL}/api/bio/pv`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: "slug-que-nao-existe", eventId: "x" }),
+    });
+    const pvReal = await fetch(`${HUB_URL}/api/bio/pv`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: `${MARCA}-b`, eventId: "x" }),
+    });
+    checar(
+      pvFalso.status === 204 && pvReal.status === 204,
+      "beacon de PageView não revela se o slug existe",
+      `inexistente ${pvFalso.status}, existente ${pvReal.status}`,
+    );
+  }
+
+  void pagB;
+  void pagOff;
+}
+
+try {
+  await main();
+} catch (e) {
+  console.error("\nErro na verificação:", e.message);
+  falhas++;
+} finally {
+  await limpar().catch((e) => console.error("Falha ao limpar:", e.message));
+}
+
+console.log(
+  `\n${falhas === 0 ? "Tudo certo" : `${falhas} falha(s)`}` +
+    (pulados ? ` · ${pulados} checagem(ns) pulada(s)` : ""),
+);
+process.exit(falhas === 0 ? 0 : 1);

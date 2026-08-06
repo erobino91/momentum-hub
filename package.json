@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "verify": "npm run verify:fase1 && npm run verify:fase2",
+    "verify": "npm run verify:fase1 && npm run verify:fase2 && npm run verify:fase3",
     "verify:fase1": "node scripts/verify-phase1.mjs",
-    "verify:fase2": "node scripts/verify-phase2.mjs"
+    "verify:fase2": "node scripts/verify-phase2.mjs",
+    "verify:fase3": "node scripts/verify-phase3.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
