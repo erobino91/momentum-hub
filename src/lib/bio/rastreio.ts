@@ -34,6 +34,19 @@ function primeiro(valor: string | null): string | null {
   return v || null;
 }
 
+/**
+ * A Vercel manda a geo percent-encoded — "Olímpia" chega como "Ol%C3%ADmpia".
+ * Sem isto o relatório mostraria o texto codificado.
+ */
+function decodificar(valor: string | null): string | null {
+  if (!valor) return null;
+  try {
+    return decodeURIComponent(valor);
+  } catch {
+    return valor;
+  }
+}
+
 export function hashIp(ip: string | null): string | null {
   const sal = process.env.BIO_IP_SALT;
   if (!ip || !sal) return null;
@@ -63,8 +76,8 @@ export function lerVisitante(
     fbp: cookies.get("_fbp")?.value ?? null,
     // Sem cookie do Pixel, o `fbc` é montado no formato que a Meta espera.
     fbc: fbcCookie ?? (fbclid ? `fb.1.${Date.now()}.${fbclid}` : null),
-    country: headers.get("x-vercel-ip-country"),
-    city: headers.get("x-vercel-ip-city"),
+    country: decodificar(headers.get("x-vercel-ip-country")),
+    city: decodificar(headers.get("x-vercel-ip-city")),
   };
 }
 
