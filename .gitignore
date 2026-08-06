@@ -26,8 +26,9 @@ yarn-error.log*
 # local env files
 .env*.local
 
-# supabase db password (local only — never commit)
+# segredos locais — nunca commitar
 .supabase-db-password.txt
+.supabase-token.txt
 
 # vercel
 .vercel
