@@ -19,6 +19,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { request as pedidoHttp } from "node:http";
+import { createHash } from "node:crypto";
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -328,16 +329,20 @@ async function main() {
     );
 
     const gravado = await sql(`
-      select rotulo, ua, ip_hash,
-             (ip_hash = encode(digest('${env.BIO_IP_SALT}:${IP_TESTE}', 'sha256'), 'hex')) as hash_confere
+      select rotulo, ua, ip_hash
       from public.link_clicks
       where page_id = '${pagA}'
       order by clicked_at desc limit 5;
     `);
     checar(gravado.length === 1, "um clique gravado", `${gravado.length} linha(s)`);
     const linha = gravado[0] ?? {};
+    // O hash esperado é calculado aqui, não no banco: mandar o sal dentro de uma
+    // query o deixaria no log de queries do projeto.
+    const esperado = createHash("sha256")
+      .update(`${env.BIO_IP_SALT}:${IP_TESTE}`)
+      .digest("hex");
     checar(
-      !!linha.ip_hash && linha.hash_confere === true,
+      linha.ip_hash === esperado,
       "IP é gravado hasheado, nunca cru",
       linha.ip_hash ? "hash confere com sha256(sal:ip)" : "sem hash",
     );
