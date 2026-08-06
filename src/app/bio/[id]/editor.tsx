@@ -8,10 +8,11 @@ import { URL_BIO } from "@/lib/bio/url";
 import {
   apagarBotao,
   criarBotao,
+  removerToken,
   reordenarBotoes,
   salvarBotao,
+  salvarMeta,
   salvarPagina,
-  salvarToken,
 } from "../actions";
 import {
   botaoNoAr,
@@ -144,19 +145,6 @@ export function EditorBio({
                   value={avatar}
                   onChange={(e) => setAvatar(e.target.value)}
                   placeholder="https://..."
-                  className={`${campoClasse} mt-1`}
-                />
-              </div>
-
-              <div>
-                <label className={rotulo} htmlFor="pixel_id">
-                  ID do Pixel da Meta
-                </label>
-                <input
-                  id="pixel_id"
-                  name="pixel_id"
-                  defaultValue={pagina.pixel_id ?? ""}
-                  placeholder="só números"
                   className={`${campoClasse} mt-1`}
                 />
               </div>
@@ -351,33 +339,67 @@ export function EditorBio({
             </form>
           </section>
 
-          {/* ---------------------------------------------------- CAPI */}
+          {/* ---------------------------------------------------- Meta */}
           <section className={caixa}>
-            <h2 className="text-lg font-medium">Conversions API</h2>
+            <h2 className="text-lg font-medium">Meta — Pixel e Conversions API</h2>
             <p className="mt-1 text-sm text-muted">
-              O token é gerado no Gerenciador de Eventos da Meta, no mesmo pixel.
-              Com ele, o clique é enviado pelo servidor e conta mesmo com
-              bloqueador de anúncio ligado. Depois de salvo, o token não é
-              exibido de volta.
+              Os dois vêm do mesmo pixel, no Gerenciador de Eventos. O Pixel mede
+              pelo navegador; o token faz o mesmo evento sair pelo servidor, que é
+              o que continua contando com bloqueador de anúncio ligado. Um sem o
+              outro não deduplica.
             </p>
-            <p className="mt-3 text-sm">
-              Status:{" "}
-              <span className={temToken ? "text-emerald-400" : "text-muted"}>
-                {temToken ? "configurado" : "não configurado"}
-              </span>
-            </p>
-            <form action={salvarToken} className="mt-4 flex flex-wrap gap-3">
+
+            <form action={salvarMeta} className="mt-4 space-y-4">
               <input type="hidden" name="page_id" value={pagina.id} />
-              <input
-                name="capi_token"
-                type="password"
-                autoComplete="off"
-                placeholder={temToken ? "substituir token" : "colar token"}
-                className={`${campoClasse} sm:w-80`}
-              />
-              <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-5`}>
-                Salvar
-              </button>
+
+              <div>
+                <label className={rotulo} htmlFor="pixel_id">
+                  ID do Pixel
+                </label>
+                <input
+                  id="pixel_id"
+                  name="pixel_id"
+                  defaultValue={pagina.pixel_id ?? ""}
+                  placeholder="só números"
+                  className={`${campoClasse} mt-1 sm:w-80`}
+                />
+              </div>
+
+              <div>
+                <label className={rotulo} htmlFor="capi_token">
+                  Token da Conversions API
+                </label>
+                <input
+                  id="capi_token"
+                  name="capi_token"
+                  type="password"
+                  autoComplete="off"
+                  placeholder={temToken ? "deixe vazio para manter" : "colar token"}
+                  className={`${campoClasse} mt-1 sm:w-80`}
+                />
+                <p className="mt-1.5 text-xs text-muted">
+                  Status:{" "}
+                  <span className={temToken ? "text-emerald-400" : "text-muted"}>
+                    {temToken ? "configurado" : "não configurado"}
+                  </span>
+                  {temToken ? " · por segurança, não é exibido de volta" : null}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-6`}>
+                  Salvar
+                </button>
+                {temToken ? (
+                  <button
+                    type="submit"
+                    formAction={removerToken}
+                    className="text-sm text-red-400 transition hover:text-red-300"
+                  >
+                    Remover token
+                  </button>
+                ) : null}
+              </div>
             </form>
           </section>
         </div>

@@ -131,7 +131,7 @@ exige em claro.
 npm run verify         # as três fases
 npm run verify:fase1   # 12 checagens de identidade/RLS
 npm run verify:fase2   # 15 checagens do dashboard
-npm run verify:fase3   # 26 checagens do bio
+npm run verify:fase3   # 30 checagens do bio
 ```
 
 O `verify:fase2` compara 24 valores da tela contra as fórmulas do `dash.html` e confere que

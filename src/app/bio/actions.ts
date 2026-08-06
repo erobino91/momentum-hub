@@ -87,15 +87,15 @@ export async function salvarPagina(formData: FormData) {
     botaoTexto: String(formData.get("tema_botao_texto") ?? "") || undefined,
   };
 
-  const pixel = String(formData.get("pixel_id") ?? "").replace(/[^0-9]/g, "");
-
+  // `pixel_id` não entra aqui: mora no card da Meta, junto do token, e é salvo
+  // por `salvarMeta`. Incluí-lo neste update apagaria o pixel toda vez que a
+  // aparência fosse salva.
   const { error } = await supabase
     .from("link_pages")
     .update({
       title: String(formData.get("title") ?? "").trim(),
       bio: String(formData.get("bio") ?? "").trim() || null,
       avatar_url: String(formData.get("avatar_url") ?? "").trim() || null,
-      pixel_id: pixel || null,
       active: formData.get("active") === "on",
       theme: tema,
     })
@@ -107,26 +107,44 @@ export async function salvarPagina(formData: FormData) {
 }
 
 /**
- * O token de CAPI é gravado com a chave secreta e **nunca é lido de volta** para
- * a tela. O painel mostra só "configurado" ou "não configurado".
+ * Os dois lados da Meta no mesmo lugar: o Pixel (que carrega no navegador) e o
+ * token de CAPI (que faz o evento sair pelo servidor). Um sem o outro não
+ * deduplica, então o formulário é um só.
+ *
+ * O token é gravado com a chave secreta e **nunca é lido de volta** para a tela
+ * — o painel mostra apenas "configurado" ou "não configurado". Campo de token
+ * vazio significa "não mexer", não "apagar": quem apaga é `removerToken`, senão
+ * salvar só o Pixel derrubaria a CAPI sem querer.
  */
-export async function salvarToken(formData: FormData) {
+export async function salvarMeta(formData: FormData) {
+  const pageId = String(formData.get("page_id") ?? "");
+  const { supabase, pagina } = await exigirPagina(pageId);
+
+  const pixel = String(formData.get("pixel_id") ?? "").replace(/[^0-9]/g, "");
+  const { error: erroPixel } = await supabase
+    .from("link_pages")
+    .update({ pixel_id: pixel || null })
+    .eq("id", pageId);
+
+  if (erroPixel) voltar(`/bio/${pageId}`, "Não foi possível salvar o Pixel.");
+
+  const token = String(formData.get("capi_token") ?? "").trim();
+  if (token) {
+    const { error } = await clienteSecreto()
+      .from("link_secrets")
+      .upsert({ page_id: pageId, capi_token: token }, { onConflict: "page_id" });
+    if (error) voltar(`/bio/${pageId}`, "Não foi possível salvar o token.");
+  }
+
+  limparCachePublico(pagina.slug);
+  voltar(`/bio/${pageId}`);
+}
+
+export async function removerToken(formData: FormData) {
   const pageId = String(formData.get("page_id") ?? "");
   await exigirPagina(pageId);
 
-  const token = String(formData.get("capi_token") ?? "").trim();
-  const db = clienteSecreto();
-
-  if (!token) {
-    await db.from("link_secrets").delete().eq("page_id", pageId);
-    voltar(`/bio/${pageId}`);
-  }
-
-  const { error } = await db
-    .from("link_secrets")
-    .upsert({ page_id: pageId, capi_token: token }, { onConflict: "page_id" });
-
-  if (error) voltar(`/bio/${pageId}`, "Não foi possível salvar o token.");
+  await clienteSecreto().from("link_secrets").delete().eq("page_id", pageId);
   voltar(`/bio/${pageId}`);
 }
 
