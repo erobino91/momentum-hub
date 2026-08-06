@@ -21,9 +21,16 @@ function voltar(caminho: string, erro?: string): never {
   redirect(erro ? `${caminho}?erro=${encodeURIComponent(erro)}` : caminho);
 }
 
-/** Confere posse pela sessão do usuário — a RLS filtra, então linha ausente = não é dele. */
+/**
+ * Toda escrita do bio é da agência. A RLS já barra (policies `*_write_agency`);
+ * isto aqui evita o formulário aparecer, ser enviado e falhar com erro cru.
+ */
 async function exigirPagina(pageId: string) {
   const supabase = createClient();
+
+  const { data: ehAgencia } = await supabase.rpc("is_agency");
+  if (!ehAgencia) redirect(`/bio/${pageId}`);
+
   const { data } = await supabase
     .from("link_pages")
     .select("id, slug")
@@ -38,21 +45,17 @@ function limparCachePublico(slug: string) {
   revalidatePath(`/b/${slug}`);
 }
 
+/**
+ * A empresa vem do formulário, não da sessão: quem cria é a agência, e a página
+ * tem que nascer na empresa do cliente — senão o relatório fica na org errada.
+ */
 export async function criarPagina(formData: FormData) {
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { data: ehAgencia } = await supabase.rpc("is_agency");
+  if (!ehAgencia) redirect("/bio");
 
-  const { data: membership } = await supabase
-    .from("memberships")
-    .select("org_id")
-    .eq("user_id", user.id)
-    .order("created_at")
-    .limit(1)
-    .maybeSingle<{ org_id: string }>();
-  if (!membership) voltar("/bio", "Sua conta não está vinculada a uma empresa.");
+  const orgId = String(formData.get("org_id") ?? "");
+  if (!orgId) voltar("/bio", "Escolha a empresa.");
 
   const slug = String(formData.get("slug") ?? "")
     .trim()
@@ -65,7 +68,7 @@ export async function criarPagina(formData: FormData) {
 
   const { data, error } = await supabase
     .from("link_pages")
-    .insert({ org_id: membership.org_id, slug, title })
+    .insert({ org_id: orgId, slug, title })
     .select("id")
     .single();
 

@@ -5,8 +5,11 @@ import { campoClasse, botaoClasse } from "@/components/auth-shell";
 import { criarPagina } from "./actions";
 import { URL_BIO } from "@/lib/bio/url";
 import type { LinkPage } from "@/types/bio";
+import type { Org } from "@/types/db";
 
 export const dynamic = "force-dynamic";
+
+type Resumo = Pick<LinkPage, "id" | "slug" | "title" | "active" | "org_id">;
 
 export default async function BioIndex({
   searchParams,
@@ -19,18 +22,34 @@ export default async function BioIndex({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { data: ehAgencia } = await supabase.rpc("is_agency");
+
+  // A RLS decide o alcance: agência enxerga as páginas de todas as empresas,
+  // cliente só as da dele.
   const { data: paginas } = await supabase
     .from("link_pages")
-    .select("id, slug, title, active")
+    .select("id, slug, title, active, org_id")
     .order("created_at")
-    .returns<Pick<LinkPage, "id" | "slug" | "title" | "active">[]>();
+    .returns<Resumo[]>();
+
+  // Só a agência precisa do nome da empresa — o cliente já sabe de quem é.
+  const { data: orgs } = ehAgencia
+    ? await supabase.from("orgs").select("id, name").order("name").returns<
+        Pick<Org, "id" | "name">[]
+      >()
+    : { data: null };
+
+  const nomeOrg = (id: string) =>
+    orgs?.find((o) => o.id === id)?.name ?? "empresa";
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
       <header className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-muted">Bio</p>
-          <h1 className="mt-2 text-3xl font-semibold">Sua página de links</h1>
+          <h1 className="mt-2 text-3xl font-semibold">
+            {ehAgencia ? "Páginas de links" : "Sua página de links"}
+          </h1>
         </div>
         <Link href="/" className="text-sm text-muted hover:text-foreground">
           Voltar ao portal
@@ -43,55 +62,79 @@ export default async function BioIndex({
         </p>
       ) : null}
 
-      <div className="mt-8 space-y-3">
-        {(paginas ?? []).map((p) => (
-          <Link
-            key={p.id}
-            href={`/bio/${p.id}`}
-            className="flex items-center justify-between gap-4 rounded-lg border border-white/15 bg-white/5 px-5 py-4 transition hover:border-accent"
-          >
-            <div className="min-w-0">
-              <p className="truncate font-medium">{p.title}</p>
-              <p className="truncate text-xs text-muted">
-                {URL_BIO}/{p.slug}
-              </p>
-            </div>
-            <span
-              className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                p.active
-                  ? "bg-emerald-400/15 text-emerald-300"
-                  : "bg-white/10 text-muted"
-              }`}
-            >
-              {p.active ? "no ar" : "rascunho"}
-            </span>
-          </Link>
-        ))}
-      </div>
-
-      <section className="mt-8 rounded-lg border border-white/15 bg-white/5 p-5">
-        <h2 className="text-lg font-medium">Nova página</h2>
-        <p className="mt-1 text-sm text-muted">
-          O endereço é o final do link: {URL_BIO}/<span className="text-foreground">seu-endereco</span>
+      {(paginas ?? []).length === 0 ? (
+        <p className="mt-8 rounded-lg border border-white/15 bg-white/5 px-4 py-6 text-sm text-muted">
+          {ehAgencia
+            ? "Nenhuma página criada ainda."
+            : "Sua página de links ainda está sendo montada pela agência."}
         </p>
-        <form action={criarPagina} className="mt-4 flex flex-wrap gap-3">
-          <input
-            name="title"
-            required
-            placeholder="Nome que aparece na página"
-            className={`${campoClasse} sm:w-64`}
-          />
-          <input
-            name="slug"
-            required
-            placeholder="seu-endereco"
-            className={`${campoClasse} sm:w-52`}
-          />
-          <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-5`}>
-            Criar
-          </button>
-        </form>
-      </section>
+      ) : (
+        <div className="mt-8 space-y-3">
+          {(paginas ?? []).map((p) => (
+            <Link
+              key={p.id}
+              href={`/bio/${p.id}`}
+              className="flex items-center justify-between gap-4 rounded-lg border border-white/15 bg-white/5 px-5 py-4 transition hover:border-accent"
+            >
+              <div className="min-w-0">
+                {ehAgencia ? (
+                  <p className="text-[11px] uppercase tracking-wider text-muted">
+                    {nomeOrg(p.org_id)}
+                  </p>
+                ) : null}
+                <p className="truncate font-medium">{p.title}</p>
+                <p className="truncate text-xs text-muted">
+                  {URL_BIO}/{p.slug}
+                </p>
+              </div>
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                  p.active
+                    ? "bg-emerald-400/15 text-emerald-300"
+                    : "bg-white/10 text-muted"
+                }`}
+              >
+                {p.active ? "no ar" : "rascunho"}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {ehAgencia ? (
+        <section className="mt-8 rounded-lg border border-white/15 bg-white/5 p-5">
+          <h2 className="text-lg font-medium">Nova página</h2>
+          <p className="mt-1 text-sm text-muted">
+            O endereço é o final do link: {URL_BIO}/
+            <span className="text-foreground">endereco-do-cliente</span>
+          </p>
+          <form action={criarPagina} className="mt-4 flex flex-wrap gap-3">
+            <select name="org_id" required className={`${campoClasse} sm:w-52`}>
+              <option value="">Empresa…</option>
+              {(orgs ?? []).map((o) => (
+                <option key={o.id} value={o.id} className="bg-[#12151c]">
+                  {o.name}
+                </option>
+              ))}
+            </select>
+            <input
+              name="title"
+              required
+              placeholder="Nome que aparece na página"
+              className={`${campoClasse} sm:w-56`}
+            />
+            <input
+              name="slug"
+              required
+              placeholder="endereco-do-cliente"
+              className={`${campoClasse} sm:w-48`}
+            />
+            <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-5`}>
+              Criar
+            </button>
+          </form>
+        </section>
+      ) : null}
     </main>
   );
 }

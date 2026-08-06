@@ -114,6 +114,11 @@ Quatro tabelas: `link_pages`, `link_buttons`, `link_clicks` e `link_secrets`. **
 legível pelo papel `anon`** — quem lê é o servidor, com a chave secreta. `link_secrets`
 (o token de CAPI) não tem policy nenhuma: nem o dono da página lê o próprio token de volta.
 
+**Quem monta é a agência.** A escrita em `link_pages`/`link_buttons` exige `is_agency()`.
+O cliente abre `/bio` e vê a página montada, para onde cada botão leva e o relatório de
+cliques — sem nenhum campo editável. É o mesmo desenho do dashboard: a agência configura,
+o cliente acompanha.
+
 LGPD: o IP do visitante **nunca** é gravado cru, só `sha256(BIO_IP_SALT:ip)`. Para a Meta,
 `client_ip_address` e `client_user_agent` vão sem hash — são os dois campos que a CAPI
 exige em claro.
@@ -126,7 +131,7 @@ exige em claro.
 npm run verify         # as três fases
 npm run verify:fase1   # 12 checagens de identidade/RLS
 npm run verify:fase2   # 15 checagens do dashboard
-npm run verify:fase3   # 21 checagens do bio
+npm run verify:fase3   # 26 checagens do bio
 ```
 
 O `verify:fase2` compara 24 valores da tela contra as fórmulas do `dash.html` e confere que

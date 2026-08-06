@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { clienteSecreto } from "@/lib/supabase/secreto";
 import type { LinkButton, LinkPage } from "@/types/bio";
 import { EditorBio } from "./editor";
+import { VisaoCliente } from "./visao-cliente";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,13 @@ export default async function EditorPage({
     .eq("page_id", pagina.id)
     .order("position")
     .returns<LinkButton[]>();
+
+  // Quem monta a bio é a agência; o cliente acompanha. A RLS já barra a
+  // escrita, isto decide qual tela mostrar.
+  const { data: ehAgencia } = await supabase.rpc("is_agency");
+  if (!ehAgencia) {
+    return <VisaoCliente pagina={pagina} botoes={botoes ?? []} />;
+  }
 
   // Só a existência do token — o valor nunca sai do servidor.
   const { data: segredo } = await clienteSecreto()

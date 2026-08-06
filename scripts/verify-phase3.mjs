@@ -42,6 +42,7 @@ const HUB_URL = (process.env.HUB_URL ?? "http://localhost:3000").replace(/\/$/, 
 const MARCA = `vp3-${Date.now()}`;
 const emailA = `${MARCA}-a@exemplo-teste.com`;
 const emailB = `${MARCA}-b@exemplo-teste.com`;
+const emailAg = `${MARCA}-agencia@exemplo-teste.com`;
 const SENHA = "SenhaDeTeste123";
 const IP_TESTE = "198.51.100.77";
 const DESTINO = "https://example.com/promo-do-mes";
@@ -109,16 +110,36 @@ async function entrar(email) {
     body: JSON.stringify({ email, password: SENHA }),
   });
   if (!r.ok) throw new Error(`login ${email}: ${r.status} ${await r.text()}`);
-  return (await r.json()).access_token;
+  return r.json();
+}
+
+/** Cookie que o `@supabase/ssr` espera — mesmo formato do verify da Fase 2. */
+function cookieDaSessao(s) {
+  const chave = `sb-${REF}-auth-token`;
+  const codificado = encodeURIComponent(JSON.stringify(s));
+  if (codificado.length <= 3180) return `${chave}=${codificado}`;
+
+  const partes = [];
+  let resto = codificado;
+  while (resto.length > 0) {
+    let cabeca = resto.slice(0, 3180);
+    const ultimoEscape = cabeca.lastIndexOf("%");
+    if (ultimoEscape > 3177) cabeca = cabeca.slice(0, ultimoEscape);
+    partes.push(cabeca);
+    resto = resto.slice(cabeca.length);
+  }
+  return partes.map((p, i) => `${chave}.${i}=${p}`).join("; ");
 }
 
 function rest(token) {
-  return async (caminho) => {
+  return async (caminho, init = {}) => {
     const r = await fetch(`${URL_BASE}/rest/v1/${caminho}`, {
+      ...init,
       headers: {
         apikey: ANON,
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         "Content-Type": "application/json",
+        ...(init.headers ?? {}),
       },
     });
     const texto = await r.text();
@@ -213,16 +234,20 @@ async function main() {
 
   await sql(`
     insert into public.invites (email, org_id, role) values
-      ('${emailA}', '${orgA}', 'owner'),
-      ('${emailB}', '${orgB}', 'owner');
+      ('${emailA}',  '${orgA}', 'owner'),
+      ('${emailB}',  '${orgB}', 'owner'),
+      ('${emailAg}', '${orgA}', 'agency');
   `);
-  for (const e of [emailA, emailB]) await cadastrar(e);
+  for (const e of [emailA, emailB, emailAg]) await cadastrar(e);
 
-  const tokenA = await entrar(emailA);
-  const tokenB = await entrar(emailB);
+  const sessaoA = await entrar(emailA);
+  const sessaoB = await entrar(emailB);
+  const sessaoAg = await entrar(emailAg);
   const semSessao = rest(null);
-  const comoA = rest(tokenA);
-  const comoB = rest(tokenB);
+  const comoA = rest(sessaoA.access_token);
+  const comoB = rest(sessaoB.access_token);
+  const comoAgencia = rest(sessaoAg.access_token);
+  void sessaoB;
 
   // --- 1. fechado para o público ------------------------------------------
   console.log("Fechado para anon");
@@ -256,6 +281,46 @@ async function main() {
     "empresa B não lê os cliques da empresa A",
   );
 
+  // --- 2b. quem monta a bio é a agência ------------------------------------
+  console.log("\nQuem escreve");
+  const tituloOriginal = "Bio da A";
+
+  await comoA(`link_pages?id=eq.${pagA}`, {
+    method: "PATCH",
+    body: JSON.stringify({ title: "cliente tentou mudar" }),
+  });
+  const depoisDoCliente = await comoA(`link_pages?select=title&id=eq.${pagA}`);
+  checar(
+    depoisDoCliente.corpo?.[0]?.title === tituloOriginal,
+    "cliente não edita a própria página",
+    `título ficou "${depoisDoCliente.corpo?.[0]?.title}"`,
+  );
+
+  const criouBotao = await comoA(`link_buttons`, {
+    method: "POST",
+    body: JSON.stringify({
+      page_id: pagA,
+      label: "botão do cliente",
+      url: "https://example.com/x",
+    }),
+  });
+  checar(
+    criouBotao.status === 403 || criouBotao.status >= 400,
+    "cliente não cria botão",
+    `HTTP ${criouBotao.status}`,
+  );
+
+  await comoAgencia(`link_pages?id=eq.${pagA}`, {
+    method: "PATCH",
+    body: JSON.stringify({ title: "agência mudou" }),
+  });
+  const depoisDaAgencia = await comoAgencia(`link_pages?select=title&id=eq.${pagA}`);
+  checar(
+    depoisDaAgencia.corpo?.[0]?.title === "agência mudou",
+    "agência edita a página do cliente",
+    `título ficou "${depoisDaAgencia.corpo?.[0]?.title}"`,
+  );
+
   // --- 3. o token de CAPI não volta para ninguém ---------------------------
   console.log("\nToken de CAPI");
   checar(
@@ -285,6 +350,8 @@ async function main() {
       "host bio. resolve /<slug> sem precisar de /b/",
       "raiz de bio. não abre o portal",
       "beacon de PageView não revela se o slug existe",
+      "cliente vê a bio em leitura, sem editor",
+      "agência vê o editor completo",
     ])
       pular(d, `${HUB_URL} não respondeu em /api/health`);
   } else {
@@ -394,6 +461,28 @@ async function main() {
       pvFalso.status === 204 && pvReal.status === 204,
       "beacon de PageView não revela se o slug existe",
       `inexistente ${pvFalso.status}, existente ${pvReal.status}`,
+    );
+
+    const painelCliente = await fetch(`${HUB_URL}/bio/${pagA}`, {
+      headers: { cookie: cookieDaSessao(sessaoA) },
+    });
+    const htmlCliente = await painelCliente.text();
+    checar(
+      painelCliente.status === 200 &&
+        htmlCliente.includes("Links publicados") &&
+        !htmlCliente.includes("Salvar página"),
+      "cliente vê a bio em leitura, sem editor",
+      `status ${painelCliente.status}`,
+    );
+
+    const painelAgencia = await fetch(`${HUB_URL}/bio/${pagA}`, {
+      headers: { cookie: cookieDaSessao(sessaoAg) },
+    });
+    const htmlAgencia = await painelAgencia.text();
+    checar(
+      painelAgencia.status === 200 && htmlAgencia.includes("Salvar página"),
+      "agência vê o editor completo",
+      `status ${painelAgencia.status}`,
     );
   }
 
