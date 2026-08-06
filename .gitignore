@@ -29,6 +29,7 @@ yarn-error.log*
 # segredos locais — nunca commitar
 .supabase-db-password.txt
 .supabase-token.txt
+.vercel-token.txt
 
 # vercel
 .vercel
