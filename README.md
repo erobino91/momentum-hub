@@ -62,9 +62,9 @@ Migrations versionadas em `supabase/migrations/`.
 | `link_clicks` | um registro por clique (IP hasheado) |
 | `link_secrets` | token de CAPI — RLS nega para todo mundo, só a chave secreta lê |
 
-RLS em todas: leitura filtrada por `current_org_ids()`, escrita só para `is_agency()` nas
-quatro da Fase 1. Nas tabelas do bio **o cliente escreve** (bio e botões são conteúdo
-dele), e nenhuma delas é visível para `anon`.
+RLS em todas: leitura filtrada por `current_org_ids()`, **escrita só para `is_agency()`** —
+nas quatro da Fase 1 e também nas do bio. As quatro tabelas `link_*` não são visíveis para
+`anon`: quem lê a página pública é o servidor, com a chave secreta.
 
 ## Como um cliente entra
 
