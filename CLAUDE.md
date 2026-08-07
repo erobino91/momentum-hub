@@ -40,6 +40,17 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
 - **As policies do Fila não têm ramo `is_agency()`, e é de propósito.** A agência não tem o
   que fazer com nome, telefone e data de nascimento dos clientes do salão. `verify:fase4`
   afirma isso explicitamente para ninguém adicionar o bypass por reflexo.
+- **Não existe módulo "liberado" para um cliente e não para outro.** O serviço não é
+  fragmentado: todo cliente tem os quatro módulos. O que varia é o módulo estar
+  **configurado** — e isso é derivado do recurso existir (slug do dashboard preenchido,
+  página de bio criada, restaurante preparado), nunca um estado marcado na mão. Quem
+  responde é `modulos_configurados(org)`; `module_config` só guarda configuração. Se
+  aparecer a vontade de "desligar só para este cliente", é a ideia errada voltando: o
+  caminho é não configurar ainda, e o cliente vê **"em configuração"**.
+- **`fila` é por usuário, não por empresa.** Quem clica no card é uma pessoa, e o acesso
+  ao Fila vem de `profiles`. Restaurante existir com o dono ainda sem `profiles` acende o
+  card para levar a "esta conta não atende nenhum restaurante" — por isso `prepararFila`
+  cria os dois.
 - **RLS em toda tabela nova**, filtrando por `current_org_id()`.
 - Migrations versionadas em `supabase/migrations/`, nunca DDL solto no painel.
 - Nunca imprimir chaves ou segredos na saída, nem dentro de comandos.
