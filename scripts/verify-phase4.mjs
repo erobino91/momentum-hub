@@ -199,6 +199,13 @@ async function escutarInserts(token, milissegundos) {
     });
   });
 
+  // `SUBSCRIBED` diz que o canal entrou, não que o servidor já registrou a
+  // assinatura no listener do WAL. Inserir nesse intervalo perde o evento para
+  // sempre — `postgres_changes` não reenvia o passado — e o teste acusa realtime
+  // morto sem haver nada morto. No app isso não acontece: a tela do balcão
+  // assina quando abre, muito antes de alguém cadastrar alguém.
+  if (inscrito) await new Promise((r) => setTimeout(r, 3000));
+
   return {
     inscrito,
     async colher() {
