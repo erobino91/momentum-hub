@@ -34,7 +34,7 @@ export const MODULES: Record<ModuleKey, ModuleInfo> = {
     description: "Lista de espera do salão, em tempo real.",
     href: "https://fila.mmtdigital.com.br",
     external: true,
-    ready: false,
+    ready: true,
     fase: 4,
   },
   cmv: {
