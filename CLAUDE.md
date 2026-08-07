@@ -70,12 +70,20 @@ eles pulam essas linhas e dizem que pularam.
 O `verify:fase4` cobre o **banco**; o app do Fila é outro repo e tem a suíte dele, que roda
 contra este projeto com `node scripts/run-suite.mjs --alvo hub` lá.
 
-**Armadilha do `supabase-js` ao testar realtime fora do app:** o canal conecta como `anon` —
-e a RLS barra tudo, parecendo realtime morto — se (a) o client não receber a opção
-`accessToken`, porque aí um listener de auth vê sessão nula e chama `realtime.setAuth()` sem
-token; ou (b) receber a opção mas ninguém aguardar, porque o token é setado dentro de um
-`.then()` solto e o `subscribe()` sai antes. Use os dois: opção `accessToken` **e**
-`await cli.realtime.setAuth(token)`. Dentro do app não se aplica — lá a sessão é real.
+**Armadilha do `supabase-js` com realtime — vale para script E para app.** O canal conecta
+como `anon`, a RLS barra tudo e parece realtime morto, mas o servidor responde o join com
+`{"status":"ok"}` e o binding ecoado: nada indica erro, a tela só nunca se mexe. E é
+intermitente, então passa por revisão e teste e aparece na mão do usuário — foi assim que
+chegou ao balcão do Fila.
+
+- **Em script:** passe a opção `accessToken` **e** `await cli.realtime.setAuth(token)`. Só a
+  primeira e um listener de auth com sessão nula apaga o token; só a segunda e o token é
+  setado num `.then()` que ninguém espera.
+- **No app:** nunca `.subscribe()` na montagem. `await supabase.auth.getSession()` →
+  `await supabase.realtime.setAuth(token)` → aí sim entrar no canal. O client lê a sessão do
+  cookie de forma assíncrona e o `subscribe()` ganha a corrida com facilidade.
+- Sempre refazer a busca ao (re)`SUBSCRIBED` e em `visibilitychange`: reconexão não reenvia o
+  que passou enquanto o socket esteve fora.
 
 ## Migrations
 
