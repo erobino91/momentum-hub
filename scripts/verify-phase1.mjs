@@ -1,10 +1,10 @@
 /**
- * Verificação da Fase 1 — identidade, entitlements e isolamento por RLS.
+ * Verificação da Fase 1 — identidade, configuração de módulos e isolamento por RLS.
  *
  * Cria duas empresas de teste com usuários distintos e confere, do lado de fora
  * do app (REST direto, como um cliente curioso faria), que:
  *   - cada usuário só enxerga a própria org;
- *   - cliente não escreve em orgs/entitlements;
+ *   - cliente não escreve em orgs/module_config;
  *   - o convite vira membership sozinho no cadastro;
  *   - papel `agency` enxerga tudo.
  * No fim apaga tudo que criou.
@@ -153,10 +153,10 @@ async function main() {
   const orgB = orgs.find((o) => o.slug.endsWith("-b")).id;
 
   await sql(`
-    insert into public.entitlements (org_id, module, enabled) values
-      ('${orgA}', 'dashboard', true),
-      ('${orgA}', 'bio', false),
-      ('${orgB}', 'dashboard', true);
+    insert into public.module_config (org_id, module, config) values
+      ('${orgA}', 'dashboard', '{"dashboard_slug":"${MARCA}-dash"}'::jsonb),
+      ('${orgA}', 'bio', '{}'::jsonb),
+      ('${orgB}', 'dashboard', '{}'::jsonb);
     insert into public.invites (email, org_id, role) values
       ('${emailA}', '${orgA}', 'owner'),
       ('${emailB}', '${orgB}', 'owner'),
@@ -200,10 +200,10 @@ async function main() {
     `HTTP ${alvoB.status} ${JSON.stringify(alvoB.corpo)}`,
   );
 
-  const entsA = await A("entitlements?select=module,org_id");
+  const entsA = await A("module_config?select=module,org_id");
   checar(
     Array.isArray(entsA.corpo) && entsA.corpo.every((e) => e.org_id === orgA),
-    "A só vê entitlements da própria empresa",
+    "A só vê a configuração da própria empresa",
     `veio ${JSON.stringify(entsA.corpo)}`,
   );
 
@@ -221,17 +221,20 @@ async function main() {
   });
   checar(tentaCriar.status === 401 || tentaCriar.status === 403, "A não cria org", `HTTP ${tentaCriar.status}`);
 
-  const tentaLigar = await A(`entitlements?org_id=eq.${orgA}&module=eq.bio`, {
+  // O cliente não configura módulo para si mesmo. Não existe mais "ligar" —
+  // o que a agência controla agora é a configuração, e o slug do dashboard é o
+  // caso que importa: com ele qualquer um abre o dashboard antigo sem login.
+  const tentaConfigurar = await A(`module_config?org_id=eq.${orgA}&module=eq.bio`, {
     method: "PATCH",
-    body: JSON.stringify({ enabled: true }),
+    body: JSON.stringify({ config: { dashboard_slug: "invadido" } }),
   });
   const bioDepois = await sql(
-    `select enabled from public.entitlements where org_id = '${orgA}' and module = 'bio';`,
+    `select config from public.module_config where org_id = '${orgA}' and module = 'bio';`,
   );
   checar(
-    bioDepois[0].enabled === false,
-    "A não liga módulo para si mesmo",
-    `HTTP ${tentaLigar.status}, enabled=${bioDepois[0].enabled}`,
+    JSON.stringify(bioDepois[0].config) === "{}",
+    "A não configura módulo para si mesmo",
+    `HTTP ${tentaConfigurar.status}, config=${JSON.stringify(bioDepois[0].config)}`,
   );
 
   const tentaConvite = await A("invites?select=email");
@@ -251,15 +254,44 @@ async function main() {
     `veio ${JSON.stringify(orgsAg.corpo)}`,
   );
 
-  const ligaBio = await Ag(`entitlements?org_id=eq.${orgA}&module=eq.bio`, {
+  const configuraBio = await Ag(`module_config?org_id=eq.${orgA}&module=eq.bio`, {
     method: "PATCH",
     headers: { Prefer: "return=representation" },
-    body: JSON.stringify({ enabled: true }),
+    body: JSON.stringify({ config: { anotacao: "ok" } }),
   });
   checar(
-    ligaBio.status === 200 && ligaBio.corpo?.[0]?.enabled === true,
-    "agência liga módulo",
-    `HTTP ${ligaBio.status}`,
+    configuraBio.status === 200 &&
+      configuraBio.corpo?.[0]?.config?.anotacao === "ok",
+    "agência configura módulo",
+    `HTTP ${configuraBio.status}`,
+  );
+
+  // --- módulos disponíveis, sem liberação por empresa ----------------------
+  // A pergunta que o portal faz. Ela atravessa a RLS de propósito (o dono não
+  // tem `profiles` e não enxergaria o próprio restaurante), então o que a
+  // impede de virar um oráculo sobre a base de clientes é o guard de empresa —
+  // e é isso que estas duas linhas afirmam.
+  console.log("\nMódulos configurados");
+  const proprios = await A(`rpc/modulos_configurados`, {
+    method: "POST",
+    body: JSON.stringify({ p_org: orgA }),
+  });
+  checar(
+    proprios.corpo?.dashboard === true,
+    "A vê o próprio dashboard como configurado (tem slug)",
+    JSON.stringify(proprios.corpo),
+  );
+
+  const alheios = await A(`rpc/modulos_configurados`, {
+    method: "POST",
+    body: JSON.stringify({ p_org: orgB }),
+  });
+  checar(
+    alheios.corpo?.dashboard === false &&
+      alheios.corpo?.bio === false &&
+      alheios.corpo?.fila === false,
+    "A não descobre nada sobre a empresa B",
+    JSON.stringify(alheios.corpo),
   );
 
   console.log(falhas === 0 ? "\nTudo certo." : `\n${falhas} verificação(ões) falharam.`);

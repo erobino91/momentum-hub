@@ -19,12 +19,24 @@ export type Membership = {
   created_at: string;
 };
 
-export type Entitlement = {
+/**
+ * Configuração de um módulo para uma empresa. **Não é liberação de acesso** —
+ * todo cliente tem todos os módulos. Um módulo aparece pronto quando o recurso
+ * dele existe, o que quem responde é `modulos_configurados()`, não uma coluna
+ * aqui.
+ */
+export type ModuleConfig = {
   id: string;
   org_id: string;
   module: ModuleKey;
-  enabled: boolean;
   config: Record<string, unknown>;
+};
+
+/** O que `modulos_configurados(org)` devolve. */
+export type ModulosConfigurados = {
+  dashboard: boolean;
+  bio: boolean;
+  fila: boolean;
 };
 
 export type Invite = {

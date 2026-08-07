@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic";
 const AVISO: Record<FalhaDashboard, string> = {
   "sem-org":
     "Sua conta ainda não está vinculada a nenhuma empresa. Fale com a agência.",
-  "sem-modulo": "O módulo Dashboard não está liberado para a sua empresa.",
   "sem-slug":
     "O dashboard ainda não foi configurado pela agência. Fale com a gente que ligamos em minutos.",
   "sem-dados": "Ainda não há resultados publicados para a sua empresa.",

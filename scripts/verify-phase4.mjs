@@ -13,7 +13,7 @@
  *     fazer com nome, telefone e data de nascimento dos clientes do salão. Esta
  *     asserção existe para ninguém adicionar o bypass por reflexo;
  *   - no sentido inverso, usuário do Fila lê 0 linhas de `orgs`, `memberships`,
- *     `entitlements` e `link_pages`.
+ *     `module_config` e `link_pages`.
  *
  * Mais: isolamento entre restaurantes, `partner` continua só-leitura (inclusive
  * sem conseguir se promover a `host`), a FK de tenancy segura os dois lados, e o
@@ -236,8 +236,8 @@ async function main() {
     insert into public.restaurants (id, name, slug) values
       ('${orgA}', 'Restaurante A ${MARCA}', '${MARCA}-ra'),
       ('${orgB}', 'Restaurante B ${MARCA}', '${MARCA}-rb');
-    insert into public.entitlements (org_id, module, enabled) values
-      ('${orgA}', 'fila', true), ('${orgB}', 'fila', true);
+    insert into public.module_config (org_id, module) values
+      ('${orgA}', 'fila'), ('${orgB}', 'fila');
     -- Só o usuário do portal e a agência têm convite: os usuários do Fila
     -- entram sem membership nenhum, que é como ficam em produção.
     insert into public.invites (email, org_id, role) values
@@ -322,7 +322,7 @@ async function main() {
   );
 
   console.log("\nFila não enxerga o portal");
-  for (const tabela of ["orgs", "memberships", "entitlements", "link_pages", "link_buttons", "link_clicks"]) {
+  for (const tabela of ["orgs", "memberships", "module_config", "link_pages", "link_buttons", "link_clicks"]) {
     checar(vazio(await A(`${tabela}?select=id`)), `host A lê 0 linhas de ${tabela}`);
   }
   checar(vazio(await A("invites?select=id")), "host A lê 0 linhas de invites");

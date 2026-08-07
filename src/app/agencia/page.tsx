@@ -1,15 +1,21 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MODULES, MODULE_KEYS, type ModuleKey } from "@/lib/modules";
+import { MODULES } from "@/lib/modules";
 import { campoClasse, botaoClasse } from "@/components/auth-shell";
+import { criarPagina } from "@/app/bio/actions";
 import {
   criarOrg,
-  alternarModulo,
   convidarUsuario,
+  prepararFila,
   salvarSlugDashboard,
 } from "./actions";
-import type { Entitlement, Invite, Org } from "@/types/db";
+import type {
+  Invite,
+  ModuleConfig,
+  ModulosConfigurados,
+  Org,
+} from "@/types/db";
 
 export const dynamic = "force-dynamic";
 
@@ -29,9 +35,9 @@ export default async function AgenciaPage({
     .returns<Org[]>();
 
   const { data: ents } = await supabase
-    .from("entitlements")
+    .from("module_config")
     .select("*")
-    .returns<Entitlement[]>();
+    .returns<ModuleConfig[]>();
 
   const { data: convites } = await supabase
     .from("invites")
@@ -39,9 +45,25 @@ export default async function AgenciaPage({
     .is("accepted_at", null)
     .returns<Invite[]>();
 
-  const ligado = (orgId: string, module: ModuleKey) =>
-    ents?.some((e) => e.org_id === orgId && e.module === module && e.enabled) ??
-    false;
+  // Estado real de cada empresa, do mesmo lugar que o portal do cliente lê —
+  // assim a área da agência não pode discordar do que o cliente está vendo.
+  const prontos = new Map<string, ModulosConfigurados>();
+  for (const org of orgs ?? []) {
+    const { data } = await supabase.rpc("modulos_configurados", {
+      p_org: org.id,
+    });
+    prontos.set(
+      org.id,
+      (data as ModulosConfigurados) ?? {
+        dashboard: false,
+        bio: false,
+        fila: false,
+      },
+    );
+  }
+
+  const pronto = (orgId: string) =>
+    prontos.get(orgId) ?? { dashboard: false, bio: false, fila: false };
 
   const slugDashboard = (orgId: string) => {
     const ent = ents?.find(
@@ -105,28 +127,16 @@ export default async function AgenciaPage({
                 <span className="text-xs text-muted">{org.slug}</span>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {MODULE_KEYS.map((key) => {
-                  const on = ligado(org.id, key);
-                  return (
-                    <form key={key} action={alternarModulo}>
-                      <input type="hidden" name="org_id" value={org.id} />
-                      <input type="hidden" name="module" value={key} />
-                      <input type="hidden" name="ligar" value={on ? "0" : "1"} />
-                      <button
-                        type="submit"
-                        className={`rounded-full border px-3 py-1 text-sm transition ${
-                          on
-                            ? "border-accent bg-accent/15 text-foreground"
-                            : "border-white/15 text-muted hover:text-foreground"
-                        }`}
-                      >
-                        {MODULES[key].label}
-                        <span className="ml-2 text-xs">{on ? "on" : "off"}</span>
-                      </button>
-                    </form>
-                  );
-                })}
+              {/* Não há o que ligar: o cliente tem os quatro módulos. O que a
+                  agência faz aqui é preparar cada um — e enquanto não preparar,
+                  o cliente vê o card apagado, escrito "em configuração". */}
+              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                <Selo pronto={pronto(org.id).dashboard} nome={MODULES.dashboard.label} />
+                <Selo pronto={pronto(org.id).bio} nome={MODULES.bio.label} />
+                <Selo pronto={pronto(org.id).fila} nome={MODULES.fila.label} />
+                <span className="rounded-full border border-white/15 px-3 py-1 text-muted">
+                  {MODULES.cmv.label} · em breve
+                </span>
               </div>
 
               <div className="mt-5 border-t border-white/10 pt-5">
@@ -152,7 +162,7 @@ export default async function AgenciaPage({
                       Salvar
                     </button>
                   </form>
-                  {ligado(org.id, "dashboard") && slugDashboard(org.id) ? (
+                  {pronto(org.id).dashboard ? (
                     <Link
                       href={`/dashboard?org=${org.id}`}
                       className="text-sm text-muted hover:text-foreground"
@@ -161,6 +171,50 @@ export default async function AgenciaPage({
                     </Link>
                   ) : null}
                 </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-white/10 pt-5">
+                {pronto(org.id).bio ? (
+                  <Link
+                    href="/bio"
+                    className="text-sm text-muted hover:text-foreground"
+                  >
+                    Página de bio criada — editar →
+                  </Link>
+                ) : (
+                  // Nasce com o endereço e o nome da própria empresa; a agência
+                  // ajusta no editor, para onde esta ação já leva.
+                  <form action={criarPagina}>
+                    <input type="hidden" name="org_id" value={org.id} />
+                    <input type="hidden" name="slug" value={org.slug} />
+                    <input type="hidden" name="title" value={org.name} />
+                    <button
+                      type="submit"
+                      className={`${botaoClasse} sm:w-auto sm:px-5`}
+                    >
+                      Criar página de bio
+                    </button>
+                  </form>
+                )}
+
+                {pronto(org.id).fila ? (
+                  <a
+                    href={MODULES.fila.href}
+                    className="text-sm text-muted hover:text-foreground"
+                  >
+                    Fila preparada — abrir →
+                  </a>
+                ) : (
+                  <form action={prepararFila}>
+                    <input type="hidden" name="org_id" value={org.id} />
+                    <button
+                      type="submit"
+                      className={`${botaoClasse} sm:w-auto sm:px-5`}
+                    >
+                      Preparar fila
+                    </button>
+                  </form>
+                )}
               </div>
 
               <form
@@ -196,5 +250,20 @@ export default async function AgenciaPage({
         })}
       </div>
     </main>
+  );
+}
+
+/** Estado de um módulo para uma empresa. Informativo — não é um botão. */
+function Selo({ pronto, nome }: { pronto: boolean; nome: string }) {
+  return (
+    <span
+      className={`rounded-full border px-3 py-1 ${
+        pronto
+          ? "border-accent bg-accent/15 text-foreground"
+          : "border-white/15 text-muted"
+      }`}
+    >
+      {nome} · {pronto ? "pronto" : "em configuração"}
+    </span>
   );
 }

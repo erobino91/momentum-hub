@@ -11,14 +11,13 @@ import {
  *
  * O slug do cliente no projeto antigo (`mynolirdauvkubxvlddt`) é a senha do
  * dashboard público: quem tem o slug abre `dash.html?c=<slug>` sem login. Por
- * isso ele fica guardado em `entitlements.config.dashboard_slug`, a chamada à
+ * isso ele fica guardado em `module_config.config.dashboard_slug`, a chamada à
  * RPC sai daqui e o que volta para o navegador não contém slug nem ids.
  */
 
 export type FalhaDashboard =
   | "sem-sessao"
   | "sem-org"
-  | "sem-modulo"
   | "sem-slug"
   | "sem-dados"
   | "sem-config"
@@ -119,18 +118,18 @@ export async function carregarDashboard(
   }
   if (!orgId) return { ok: false, motivo: "sem-org" };
 
-  // A RLS de `entitlements` já barra org alheia; a query só devolve linha se o
+  // A RLS de `module_config` já barra org alheia; a query só devolve linha se o
   // usuário pertence à org (ou é agency).
   const { data: ent } = await supabase
-    .from("entitlements")
-    .select("enabled, config")
+    .from("module_config")
+    .select("config")
     .eq("org_id", orgId)
     .eq("module", "dashboard")
-    .maybeSingle<{ enabled: boolean; config: Record<string, unknown> | null }>();
+    .maybeSingle<{ config: Record<string, unknown> | null }>();
 
-  if (!ent?.enabled) return { ok: false, motivo: "sem-modulo" };
-
-  const slug = texto(ent.config?.dashboard_slug);
+  // Sem interruptor: quem decide se o dashboard abre é o slug estar preenchido.
+  // Não existe "empresa sem o módulo" — existe empresa ainda sem configuração.
+  const slug = texto(ent?.config?.dashboard_slug);
   if (!slug) return { ok: false, motivo: "sem-slug" };
 
   let corpo: RespostaRpc;

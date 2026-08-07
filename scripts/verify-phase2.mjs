@@ -4,9 +4,9 @@
  * O que precisa ser verdade:
  *   - a RPC `get_public_dashboard` do projeto antigo responde com a chave do
  *     `.env.local`, e a leitura direta das tabelas continua negada ao anon;
- *   - o slug do dashboard antigo (guardado em `entitlements.config`) não vaza:
+ *   - o slug do dashboard antigo (guardado em `module_config.config`) não vaza:
  *     nem por RLS para outra empresa, nem no HTML/RSC que o navegador recebe;
- *   - sem `enabled = true` o portal não busca nada;
+ *   - sem slug configurado o portal não busca nada;
  *   - `?org=` só funciona para papel `agency`.
  *
  * Uso:  node scripts/verify-phase2.mjs [slug-de-teste]
@@ -263,9 +263,11 @@ async function main() {
   const orgB = orgs.find((o) => o.slug.endsWith("-b")).id;
 
   await sql(`
-    insert into public.entitlements (org_id, module, enabled, config) values
-      ('${orgA}', 'dashboard', true,  '{"dashboard_slug":"${SLUG}"}'::jsonb),
-      ('${orgB}', 'dashboard', false, '{"dashboard_slug":"${SLUG}"}'::jsonb);
+    -- A tem slug (dashboard pronto); B não tem (ainda em configuração). Não
+    -- existe mais "módulo desligado" — o que separa as duas é a configuração.
+    insert into public.module_config (org_id, module, config) values
+      ('${orgA}', 'dashboard', '{"dashboard_slug":"${SLUG}"}'::jsonb),
+      ('${orgB}', 'dashboard', '{}'::jsonb);
     insert into public.invites (email, org_id, role) values
       ('${emailA}',  '${orgA}', 'owner'),
       ('${emailB}',  '${orgB}', 'owner'),
@@ -280,15 +282,15 @@ async function main() {
   // --- 2. o slug não atravessa a RLS ---------------------------------------
   console.log("\nIsolamento do slug");
   const comoB = restCom(sB.access_token);
-  const alheio = await comoB(`entitlements?select=config&org_id=eq.${orgA}`);
+  const alheio = await comoB(`module_config?select=config&org_id=eq.${orgA}`);
   checar(
     Array.isArray(alheio.corpo) && alheio.corpo.length === 0,
     "empresa B não lê a config da empresa A",
     `vieram ${Array.isArray(alheio.corpo) ? alheio.corpo.length : "?"} linhas`,
   );
-  const proprio = await comoB(`entitlements?select=config&org_id=eq.${orgB}`);
+  const proprio = await comoB(`module_config?select=config&org_id=eq.${orgB}`);
   checar(
-    JSON.stringify(proprio.corpo ?? "").includes(SLUG),
+    Array.isArray(proprio.corpo) && proprio.corpo.length > 0,
     "empresa B continua lendo a própria config",
   );
 
@@ -342,8 +344,8 @@ async function main() {
     const paginaB = await abrir("/dashboard", cookieDaSessao(sB));
     checar(
       !paginaB.html.includes(dados?.client?.name ?? " ") &&
-        paginaB.html.includes("não está liberado"),
-      "cliente B (módulo desligado) não recebe dados",
+        paginaB.html.includes("ainda não foi configurado"),
+      "cliente B (sem slug configurado) não recebe dados",
     );
 
     const paginaBespiando = await abrir(`/dashboard?org=${orgA}`, cookieDaSessao(sB));
