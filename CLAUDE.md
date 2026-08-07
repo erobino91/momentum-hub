@@ -31,6 +31,15 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   público. Fica em `entitlements.config.dashboard_slug`, a chamada à RPC sai do servidor
   (`src/lib/dashboard.ts`) e o payload que vira prop de Client Component é montado campo a
   campo — nunca espalhar a linha crua da RPC, que traz `slug` e ids junto.
+- **`restaurants.id` é sempre o `orgs.id` do mesmo cliente.** A tabela é uma extensão 1:1 de
+  `orgs` para o módulo Fila de Espera, travada por FK `on delete restrict` — nunca gerar id
+  novo ali. Quem enxerga as tabelas do Fila é quem tem `profiles`, **não** quem tem
+  `membership`: membership decide SE o usuário chega ao módulo, `profiles` decide O QUE ele
+  faz dentro. Por isso o balcão não tem membership — teria acesso org-wide e veria o
+  dashboard de faturamento do dono.
+- **As policies do Fila não têm ramo `is_agency()`, e é de propósito.** A agência não tem o
+  que fazer com nome, telefone e data de nascimento dos clientes do salão. `verify:fase4`
+  afirma isso explicitamente para ninguém adicionar o bypass por reflexo.
 - **RLS em toda tabela nova**, filtrando por `current_org_id()`.
 - Migrations versionadas em `supabase/migrations/`, nunca DDL solto no painel.
 - Nunca imprimir chaves ou segredos na saída, nem dentro de comandos.
@@ -47,15 +56,26 @@ Supabase, `current_restaurant_id()` → vira `current_org_id()`, scripts
 npm run dev      # local :3000
 npm run build    # valida tipos — rodar antes de fechar qualquer fase
 npm run lint
-npm run verify   # Fases 1, 2 e 3
+npm run verify   # Fases 1, 2, 3 e 4
 npm run verify:fase1   # identidade, convites, isolamento por RLS
 npm run verify:fase2   # dashboard: RPC antiga, vazamento de slug, números
 npm run verify:fase3   # bio: RLS das 4 tabelas, clique, hash de IP, CAPI, host bio.
+npm run verify:fase4   # fila: portal e agência leem 0 linhas, partner, FK, realtime
 ```
 
 Os verifies das Fases 2 e 3 precisam do app respondendo para as checagens de ponta a ponta —
 `npm run start` em outro terminal, ou `HUB_URL=<url>` apontando para o Vercel. Sem isso
 eles pulam essas linhas e dizem que pularam.
+
+O `verify:fase4` cobre o **banco**; o app do Fila é outro repo e tem a suíte dele, que roda
+contra este projeto com `node scripts/run-suite.mjs --alvo hub` lá.
+
+**Armadilha do `supabase-js` ao testar realtime fora do app:** o canal conecta como `anon` —
+e a RLS barra tudo, parecendo realtime morto — se (a) o client não receber a opção
+`accessToken`, porque aí um listener de auth vê sessão nula e chama `realtime.setAuth()` sem
+token; ou (b) receber a opção mas ninguém aguardar, porque o token é setado dentro de um
+`.then()` solto e o `subscribe()` sai antes. Use os dois: opção `accessToken` **e**
+`await cli.realtime.setAuth(token)`. Dentro do app não se aplica — lá a sessão é real.
 
 ## Migrations
 
