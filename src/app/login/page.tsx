@@ -17,10 +17,6 @@ export default function LoginPage({
           <Link href="/esqueci-senha" className="hover:text-foreground">
             Esqueci minha senha
           </Link>
-          <span className="mx-2">·</span>
-          <Link href="/cadastro" className="hover:text-foreground">
-            Criar conta
-          </Link>
         </>
       }
     >

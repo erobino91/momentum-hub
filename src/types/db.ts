@@ -118,11 +118,3 @@ export type LiveSession = {
   created_at: string;
 };
 
-export type Invite = {
-  id: string;
-  email: string;
-  org_id: string;
-  role: MembershipRole;
-  created_at: string;
-  accepted_at: string | null;
-};

@@ -238,15 +238,18 @@ async function main() {
       ('${orgB}', 'Restaurante B ${MARCA}', '${MARCA}-rb');
     insert into public.module_config (org_id, module) values
       ('${orgA}', 'fila'), ('${orgB}', 'fila');
-    -- Só o usuário do portal e a agência têm convite: os usuários do Fila
-    -- entram sem membership nenhum, que é como ficam em produção.
-    insert into public.invites (email, org_id, role) values
-      ('${emails.portalA}', '${orgA}', 'owner'),
-      ('${emails.agencia}', '${orgA}', 'agency');
   `);
 
   const ids = {};
   for (const [chave, email] of Object.entries(emails)) ids[chave] = await cadastrar(email);
+
+  // Só o usuário do portal e a agência têm membership: os usuários do Fila
+  // entram sem nenhuma, que é como ficam em produção.
+  await sql(`
+    insert into public.memberships (user_id, org_id, role) values
+      ('${ids.portalA}'::uuid, '${orgA}'::uuid, 'owner'::public.membership_role),
+      ('${ids.agencia}'::uuid, '${orgA}'::uuid, 'agency'::public.membership_role);
+  `);
 
   await sql(`
     insert into public.profiles (id, restaurant_id, name, role) values
@@ -325,7 +328,6 @@ async function main() {
   for (const tabela of ["orgs", "memberships", "module_config", "link_pages", "link_buttons", "link_clicks"]) {
     checar(vazio(await A(`${tabela}?select=id`)), `host A lê 0 linhas de ${tabela}`);
   }
-  checar(vazio(await A("invites?select=id")), "host A lê 0 linhas de invites");
 
   // --- partner só-leitura ---------------------------------------------------
   console.log("\nPartner continua só-leitura");

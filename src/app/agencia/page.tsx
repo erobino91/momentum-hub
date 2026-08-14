@@ -4,8 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { MODULES } from "@/lib/modules";
 import { campoClasse, botaoClasse } from "@/components/auth-shell";
 import { criarPagina } from "@/app/bio/actions";
-import { criarOrg, convidarUsuario, prepararFila } from "./actions";
-import type { Invite, ModulosConfigurados, Org } from "@/types/db";
+import { criarOrg, prepararFila } from "./actions";
+import { clienteSecreto } from "@/lib/supabase/secreto";
+import { NovoAcesso } from "./novo-acesso";
+import type { Membership, ModulosConfigurados, Org } from "@/types/db";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +26,24 @@ export default async function AgenciaPage({
     .order("name")
     .returns<Org[]>();
 
-  const { data: convites } = await supabase
-    .from("invites")
-    .select("*")
-    .is("accepted_at", null)
-    .returns<Invite[]>();
+  // Quem já entra no portal, por empresa. O email mora em `auth.users`, que a
+  // sessão da agência não lê — daí a chave secreta, server-side.
+  const { data: vinculos } = await supabase
+    .from("memberships")
+    .select("user_id,org_id,role")
+    .returns<Pick<Membership, "user_id" | "org_id" | "role">[]>();
+
+  const { data: usuarios } = await clienteSecreto().auth.admin.listUsers({
+    perPage: 1000,
+  });
+  const emailDe = new Map(
+    (usuarios?.users ?? []).map((u) => [u.id, u.email ?? u.id]),
+  );
+
+  const acessos = (orgId: string) =>
+    (vinculos ?? [])
+      .filter((v) => v.org_id === orgId)
+      .map((v) => `${emailDe.get(v.user_id) ?? "—"} (${v.role})`);
 
   // Estado real de cada empresa, do mesmo lugar que o portal do cliente lê —
   // assim a área da agência não pode discordar do que o cliente está vendo.
@@ -98,7 +113,6 @@ export default async function AgenciaPage({
 
       <div className="mt-8 space-y-6">
         {(orgs ?? []).map((org) => {
-          const pendentes = (convites ?? []).filter((c) => c.org_id === org.id);
           return (
             <section
               key={org.id}
@@ -190,34 +204,17 @@ export default async function AgenciaPage({
                 )}
               </div>
 
-              <form
-                action={convidarUsuario}
-                className="mt-5 flex flex-wrap gap-3 border-t border-white/10 pt-5"
-              >
-                <input type="hidden" name="org_id" value={org.id} />
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="email do cliente"
-                  className={`${campoClasse} sm:w-64`}
-                />
-                <select name="role" className={`${campoClasse} sm:w-32`}>
-                  <option value="owner">owner</option>
-                  <option value="staff">staff</option>
-                  <option value="agency">agency</option>
-                </select>
-                <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-5`}>
-                  Convidar
-                </button>
-              </form>
+              <NovoAcesso orgId={org.id} />
 
-              {pendentes.length > 0 ? (
+              {acessos(org.id).length > 0 ? (
                 <p className="mt-3 text-xs text-muted">
-                  Convites pendentes:{" "}
-                  {pendentes.map((c) => `${c.email} (${c.role})`).join(", ")}
+                  Com acesso: {acessos(org.id).join(", ")}
                 </p>
-              ) : null}
+              ) : (
+                <p className="mt-3 text-xs text-muted">
+                  Ninguém desta empresa entra no portal ainda.
+                </p>
+              )}
             </section>
           );
         })}

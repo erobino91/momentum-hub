@@ -78,7 +78,7 @@ npm run dev      # local :3000
 npm run build    # valida tipos — rodar antes de fechar qualquer fase
 npm run lint
 npm run verify   # Fases 1, 3, 4 e 6
-npm run verify:fase1   # identidade, convites, isolamento por RLS
+npm run verify:fase1   # identidade, acesso dado pela agência, isolamento por RLS
 npm run verify:fase3   # bio: RLS das 4 tabelas, clique, hash de IP, CAPI, host bio.
 npm run verify:fase4   # fila: portal e agência leem 0 linhas, partner, FK, realtime
 npm run verify:fase6   # dashboard/pricing/lives: cópia linha a linha, RLS, bucket privado
@@ -118,8 +118,18 @@ Aplicadas pela API de gestão (`POST /v1/projects/{ref}/database/query`) com o t
 `.supabase-token.txt`. **Mandar o arquivo inteiro numa requisição devolve 400 sem corpo** —
 por isso o script corta nas linhas `-- ------` e manda seção por seção.
 
-## Bootstrap da agência
+## Quem cria a conta do cliente
 
-O primeiro usuário `agency` não pode se criar sozinho (só agência escreve em `memberships`).
-Ele nasce de um `invite` inserido via SQL; o trigger `accept_invites_for_new_user` converte
-em membership no cadastro. Já feito para `luis_fossalussa@hotmail.com` na org `momentum-digital`.
+**A agência.** Em `/agencia`, `criarAcessoCliente` cria o usuário pela Admin API (chave
+secreta) e já grava o membership; a senha sorteada aparece **uma vez** na tela de quem criou
+e não é guardada em lugar nenhum — por isso essa action devolve resultado em vez de
+redirecionar (senha em querystring entra no histórico e no log de acesso).
+
+O autocadastro **não existe**: a página `/cadastro` foi removida e o projeto está com
+`disable_signup: true`. Até a Fase 6 era o contrário — a agência registrava um convite e o
+acesso só nascia quando o cliente ia se cadastrar. O passo final ficava com quem menos tinha
+motivo para dá-lo: a Villa passou oito dias com convite pendente e zero membro. Se aparecer a
+vontade de reabrir cadastro público, é essa ideia voltando.
+
+O primeiro usuário `agency` continua nascendo de SQL direto (`memberships` com papel
+`agency`) — já feito para `luis_fossalussa@hotmail.com` na org `momentum-digital`.

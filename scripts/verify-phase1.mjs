@@ -5,7 +5,7 @@
  * do app (REST direto, como um cliente curioso faria), que:
  *   - cada usuário só enxerga a própria org;
  *   - cliente não escreve em orgs/module_config;
- *   - o convite vira membership sozinho no cadastro;
+ *   - o acesso do cliente nasce da agência (não existe mais autocadastro);
  *   - papel `agency` enxerga tudo.
  * No fim apaga tudo que criou.
  *
@@ -157,29 +157,43 @@ async function main() {
       ('${orgA}', 'dashboard', '{"dashboard_slug":"${MARCA}-dash"}'::jsonb),
       ('${orgA}', 'bio', '{}'::jsonb),
       ('${orgB}', 'dashboard', '{}'::jsonb);
-    insert into public.invites (email, org_id, role) values
-      ('${emailA}', '${orgA}', 'owner'),
-      ('${emailB}', '${orgB}', 'owner'),
-      ('${emailAg}', '${orgA}', 'agency');
   `);
 
+  // O acesso é dado pela agência: cria a conta e o vínculo junto. Era um convite
+  // que o cliente tinha de aceitar se cadastrando — o passo final ficava com
+  // quem menos tinha motivo para dá-lo, e ficava pendente.
   for (const e of [emailA, emailB, emailAg]) await cadastrar(e);
+  await sql(`
+    insert into public.memberships (user_id, org_id, role)
+    select u.id, '${orgA}'::uuid, 'owner'::public.membership_role
+      from auth.users u where u.email = '${emailA}'
+    union all
+    select u.id, '${orgB}'::uuid, 'owner'::public.membership_role
+      from auth.users u where u.email = '${emailB}'
+    union all
+    select u.id, '${orgA}'::uuid, 'agency'::public.membership_role
+      from auth.users u where u.email = '${emailAg}';
+  `);
 
-  console.log("Convite vira acesso");
+  console.log("Acesso dado pela agência");
   const vinculos = await sql(`
     select u.email, m.org_id, m.role
     from auth.users u join public.memberships m on m.user_id = u.id
     where u.email like '${MARCA}-%' order by u.email;
   `);
-  checar(vinculos.length === 3, "cadastro criou os 3 memberships", `vieram ${vinculos.length}`);
+  checar(vinculos.length === 3, "os 3 vínculos existem", `vieram ${vinculos.length}`);
   checar(
     vinculos.find((v) => v.email === emailA)?.org_id === orgA,
     "usuário A ficou na empresa A",
   );
-  const pendentes = await sql(
-    `select count(*)::int as n from public.invites where email like '${MARCA}-%' and accepted_at is null;`,
-  );
-  checar(pendentes[0].n === 0, "convites marcados como aceitos");
+
+  // Autocadastro fechado: sem isso, qualquer um cria login no portal.
+  const tentativaSignup = await fetch(`${URL_BASE}/auth/v1/signup`, {
+    method: "POST",
+    headers: { apikey: ANON, "Content-Type": "application/json" },
+    body: JSON.stringify({ email: `${MARCA}-intruso@exemplo-teste.com`, password: SENHA }),
+  });
+  checar(!tentativaSignup.ok, "portal recusa cadastro público", `HTTP ${tentativaSignup.status}`);
 
   // --- isolamento ----------------------------------------------------------
   console.log("\nIsolamento entre empresas");
@@ -237,11 +251,12 @@ async function main() {
     `HTTP ${tentaConfigurar.status}, config=${JSON.stringify(bioDepois[0].config)}`,
   );
 
-  const tentaConvite = await A("invites?select=email");
+  const tentaMembershipAlheia = await A(`memberships?select=user_id&org_id=eq.${orgB}`);
   checar(
-    Array.isArray(tentaConvite.corpo) && tentaConvite.corpo.length === 0,
-    "A não lê a tabela de convites",
-    `HTTP ${tentaConvite.status}`,
+    Array.isArray(tentaMembershipAlheia.corpo) &&
+      tentaMembershipAlheia.corpo.length === 0,
+    "A não lê quem pertence à empresa B",
+    `HTTP ${tentaMembershipAlheia.status}`,
   );
 
   // --- agência vê tudo -----------------------------------------------------
@@ -272,13 +287,19 @@ async function main() {
   // impede de virar um oráculo sobre a base de clientes é o guard de empresa —
   // e é isso que estas duas linhas afirmam.
   console.log("\nMódulos configurados");
+  // Desde a Fase 6, "dashboard configurado" é ter mês publicado. Antes era ter
+  // o slug do projeto antigo preenchido, e o slug não aponta mais para nada.
+  await sql(`
+    insert into public.dashboard_periods (org_id, period_date, fat_total)
+    values ('${orgA}'::uuid, date '2026-01-01', 1000);
+  `);
   const proprios = await A(`rpc/modulos_configurados`, {
     method: "POST",
     body: JSON.stringify({ p_org: orgA }),
   });
   checar(
     proprios.corpo?.dashboard === true,
-    "A vê o próprio dashboard como configurado (tem slug)",
+    "A vê o próprio dashboard como configurado (tem mês publicado)",
     JSON.stringify(proprios.corpo),
   );
 

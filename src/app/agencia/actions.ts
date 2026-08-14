@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -181,20 +182,85 @@ export async function prepararFila(formData: FormData) {
   voltar();
 }
 
-export async function convidarUsuario(formData: FormData) {
-  const supabase = await exigirAgencia();
+export type ResultadoAcesso =
+  | { estado: "vazio" }
+  | { estado: "erro"; mensagem: string }
+  | { estado: "criado"; email: string; senha: string }
+  | { estado: "vinculado"; email: string };
+
+/**
+ * Cria a conta do cliente e já a vincula à empresa.
+ *
+ * A agência entrega o acesso pronto — não pede para o cliente se cadastrar. A
+ * senha é sorteada, aparece **uma vez** na tela de quem criou e não é guardada
+ * em lugar nenhum: quem quiser trocar usa "esqueci minha senha" no portal.
+ *
+ * Devolve o resultado em vez de redirecionar porque a senha não pode viajar na
+ * query string — ela ficaria no histórico do navegador e no log de acesso.
+ */
+export async function criarAcessoCliente(
+  _anterior: ResultadoAcesso,
+  formData: FormData,
+): Promise<ResultadoAcesso> {
+  const supabase = createClient();
+  const { data: ehAgencia } = await supabase.rpc("is_agency");
+  if (!ehAgencia) redirect("/");
+
   const orgId = String(formData.get("org_id") ?? "");
-  const email = String(formData.get("email") ?? "")
-    .trim()
-    .toLowerCase();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const role = String(formData.get("role") ?? "owner");
 
-  if (!orgId || !email) voltar("Informe o email.");
+  if (!orgId) return { estado: "erro", mensagem: "Empresa inválida." };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
+    return { estado: "erro", mensagem: "Email inválido." };
 
-  const { error } = await supabase
-    .from("invites")
-    .insert({ org_id: orgId, email, role });
+  const admin = clienteSecreto();
 
-  if (error) voltar("Já existe convite pendente para esse email nesta empresa.");
-  voltar();
+  // Já existe conta com esse email? Então é só dar acesso a esta empresa —
+  // acontece com quem já é cliente de outra, e com quem já usava o CMV.
+  const { data: lista } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const existente = lista?.users.find(
+    (u) => u.email?.toLowerCase() === email,
+  );
+
+  let userId = existente?.id ?? null;
+  let senha: string | null = null;
+
+  if (!userId) {
+    senha = senhaSorteada();
+    const { data, error } = await admin.auth.admin.createUser({
+      email,
+      password: senha,
+      email_confirm: true, // a agência entregou a senha; não há o que confirmar
+    });
+    if (error || !data.user)
+      return {
+        estado: "erro",
+        mensagem: `Não foi possível criar a conta: ${error?.message ?? "erro desconhecido"}`,
+      };
+    userId = data.user.id;
+  }
+
+  const { error: erroMembership } = await supabase
+    .from("memberships")
+    .upsert(
+      { user_id: userId, org_id: orgId, role },
+      { onConflict: "user_id,org_id" },
+    );
+  if (erroMembership)
+    return { estado: "erro", mensagem: "Conta criada, mas o vínculo falhou." };
+
+  revalidatePath("/agencia");
+  return senha
+    ? { estado: "criado", email, senha }
+    : { estado: "vinculado", email };
+}
+
+/** Senha legível ao telefone: sem caractere que se confunda ao ditar. */
+function senhaSorteada() {
+  const alfabeto = "abcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = randomBytes(14);
+  let saida = "";
+  for (let i = 0; i < bytes.length; i++) saida += alfabeto[bytes[i] % alfabeto.length];
+  return `${saida.slice(0, 5)}-${saida.slice(5, 10)}-${saida.slice(10)}`;
 }

@@ -278,13 +278,19 @@ async function main() {
     values ('${pagA}', 'TOKEN_FALSO_DE_TESTE');
   `);
 
-  await sql(`
-    insert into public.invites (email, org_id, role) values
-      ('${emailA}',  '${orgA}', 'owner'),
-      ('${emailB}',  '${orgB}', 'owner'),
-      ('${emailAg}', '${orgA}', 'agency');
-  `);
+  // O acesso nasce da agência (Fase 6): cria a conta e o vínculo juntos.
   for (const e of [emailA, emailB, emailAg]) await cadastrar(e);
+  await sql(`
+    insert into public.memberships (user_id, org_id, role)
+    select u.id, '${orgA}'::uuid, 'owner'::public.membership_role
+      from auth.users u where u.email = '${emailA}'
+    union all
+    select u.id, '${orgB}'::uuid, 'owner'::public.membership_role
+      from auth.users u where u.email = '${emailB}'
+    union all
+    select u.id, '${orgA}'::uuid, 'agency'::public.membership_role
+      from auth.users u where u.email = '${emailAg}';
+  `);
 
   const sessaoA = await entrar(emailA);
   const sessaoB = await entrar(emailB);

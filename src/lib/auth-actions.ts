@@ -36,24 +36,6 @@ export async function entrar(formData: FormData) {
   redirect("/");
 }
 
-export async function cadastrar(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
-  const senha = String(formData.get("senha") ?? "");
-
-  if (senha.length < 8) back("/cadastro", "A senha precisa de 8 caracteres ou mais.");
-
-  const supabase = createClient();
-  const { error } = await supabase.auth.signUp({
-    email,
-    password: senha,
-    options: { emailRedirectTo: `${baseUrl()}/auth/callback` },
-  });
-
-  if (error) back("/cadastro", "Não foi possível criar a conta. Confira o email.");
-
-  redirect("/cadastro?ok=1");
-}
-
 export async function sair() {
   const supabase = createClient();
   await supabase.auth.signOut();

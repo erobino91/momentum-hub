@@ -4,7 +4,6 @@ import { cookieOptionsPara } from "./cookie-options";
 
 const PUBLIC_PATHS = [
   "/login",
-  "/cadastro",
   "/esqueci-senha",
   "/nova-senha",
   "/auth",
