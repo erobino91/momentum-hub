@@ -27,10 +27,20 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
 - **IP de visitante nunca é gravado cru** — só `sha256(BIO_IP_SALT:ip)`. Para a Meta,
   porém, `client_ip_address` e `client_user_agent` vão **sem hash**: são os dois campos
   que a CAPI exige em claro, e hasheá-los zera o casamento do evento.
-- **O slug do dashboard antigo é segredo.** Com ele qualquer um abre o `dash.html?c=<slug>`
-  público. Fica em `entitlements.config.dashboard_slug`, a chamada à RPC sai do servidor
-  (`src/lib/dashboard.ts`) e o payload que vira prop de Client Component é montado campo a
-  campo — nunca espalhar a linha crua da RPC, que traz `slug` e ids junto.
+- **Os números do dashboard moram aqui desde a Fase 6.** Saíram do projeto
+  `mynolirdauvkubxvlddt` para `dashboard_periods`, e o slug secreto deixou de ser o que
+  separa um cliente do outro — agora é a RLS. O payload de `src/lib/dashboard.ts` continua
+  montado campo a campo: ele vira prop de Client Component e viaja no RSC, então a linha
+  crua (com `id` e `org_id`) não sai de lá.
+- **Precificação e Lives são da agência, não do cliente.** `pricing_products`,
+  `pricing_config`, `live_materials` e `live_sessions` têm policy `is_agency()` sem ramo de
+  org: nenhuma tela de cliente lê essas tabelas. `live_sessions.stream_key` é a chave da
+  transmissão do Instagram do cliente — não entra em `select` de página nenhuma; quem
+  precisa dela é o `lives-worker`, que lê com a chave secreta.
+- **Bucket `materials` é privado e a coluna guarda caminho, não URL.** No projeto antigo ele
+  era público e o mp4 de qualquer cliente abria por link direto. `source_url`/`file_url` de
+  `live_materials` guardam `<org>/raw/arquivo.mp4`; worker e painel assinam a URL na hora.
+  Guardar URL pública ali seria guardar link que não abre.
 - **`restaurants.id` é sempre o `orgs.id` do mesmo cliente.** A tabela é uma extensão 1:1 de
   `orgs` para o módulo Fila de Espera, travada por FK `on delete restrict` — nunca gerar id
   novo ali. Quem enxerga as tabelas do Fila é quem tem `profiles`, **não** quem tem
@@ -67,14 +77,18 @@ Supabase, `current_restaurant_id()` → vira `current_org_id()`, scripts
 npm run dev      # local :3000
 npm run build    # valida tipos — rodar antes de fechar qualquer fase
 npm run lint
-npm run verify   # Fases 1, 2, 3 e 4
+npm run verify   # Fases 1, 3, 4 e 6
 npm run verify:fase1   # identidade, convites, isolamento por RLS
-npm run verify:fase2   # dashboard: RPC antiga, vazamento de slug, números
 npm run verify:fase3   # bio: RLS das 4 tabelas, clique, hash de IP, CAPI, host bio.
 npm run verify:fase4   # fila: portal e agência leem 0 linhas, partner, FK, realtime
+npm run verify:fase6   # dashboard/pricing/lives: cópia linha a linha, RLS, bucket privado
 ```
 
-Os verifies das Fases 2 e 3 precisam do app respondendo para as checagens de ponta a ponta —
+O `verify:fase2` foi apagado na Fase 6: ele testava a RPC do projeto antigo e o vazamento do
+slug, e as duas coisas deixaram de existir. A checagem que sobreviveu (`?org=` só vale para
+agência) mudou de casa para o `verify:fase6`.
+
+Os verifies das Fases 3 e 6 precisam do app respondendo para as checagens de ponta a ponta —
 `npm run start` em outro terminal, ou `HUB_URL=<url>` apontando para o Vercel. Sem isso
 eles pulam essas linhas e dizem que pularam.
 

@@ -7,34 +7,26 @@ import {
 } from "@/types/dashboard";
 
 /**
- * Busca do dashboard antigo, **sempre no servidor**.
+ * Busca do dashboard, **sempre no servidor**.
  *
- * O slug do cliente no projeto antigo (`mynolirdauvkubxvlddt`) é a senha do
- * dashboard público: quem tem o slug abre `dash.html?c=<slug>` sem login. Por
- * isso ele fica guardado em `module_config.config.dashboard_slug`, a chamada à
- * RPC sai daqui e o que volta para o navegador não contém slug nem ids.
+ * Até a Fase 5 isto era um `fetch` para a RPC `get_public_dashboard` do projeto
+ * antigo, com o slug do cliente fazendo as vezes de senha. Na Fase 6 os números
+ * passaram a morar em `dashboard_periods` aqui mesmo, e o que separa uma
+ * empresa da outra é a RLS — não um slug que ninguém pode descobrir.
+ *
+ * O payload continua montado campo a campo: ele vira prop de Client Component e
+ * viaja no RSC, então a linha crua (com `id` e `org_id`) não sai daqui.
  */
 
 export type FalhaDashboard =
   | "sem-sessao"
   | "sem-org"
-  | "sem-slug"
   | "sem-dados"
-  | "sem-config"
   | "erro";
 
 export type ResultadoDashboard =
   | { ok: true; dados: DadosDashboard }
   | { ok: false; motivo: FalhaDashboard };
-
-type RespostaRpc = {
-  client?: {
-    name?: string;
-    logo_url?: string | null;
-    active_sections?: string[] | null;
-  } | null;
-  periods?: Record<string, unknown>[] | null;
-} | null;
 
 const CAMPOS_NUM = [
   "fat_mesa",
@@ -62,6 +54,14 @@ const CAMPOS_NUM = [
   "crm_vendas",
 ] as const;
 
+/** Colunas pedidas ao PostgREST — a lista existe para não vir `select=*`. */
+const COLUNAS = [
+  "period_date",
+  ...CAMPOS_NUM,
+  "obs_raw",
+  "obs_polished",
+].join(",");
+
 function num(v: unknown): number | null {
   if (v === null || v === undefined || v === "") return null;
   const n = Number(v);
@@ -72,7 +72,6 @@ function texto(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v : null;
 }
 
-/** Copia campo a campo — nunca espalhar a linha crua, que traz `id`/`client_id`. */
 function limparPeriodo(linha: Record<string, unknown>): PeriodoDash | null {
   const data = texto(linha.period_date);
   if (!data) return null;
@@ -91,10 +90,6 @@ function limparPeriodo(linha: Record<string, unknown>): PeriodoDash | null {
 export async function carregarDashboard(
   orgIdAlvo?: string,
 ): Promise<ResultadoDashboard> {
-  const url = process.env.DASHBOARD_SUPABASE_URL;
-  const chave = process.env.DASHBOARD_SUPABASE_ANON_KEY;
-  if (!url || !chave) return { ok: false, motivo: "sem-config" };
-
   const supabase = createClient();
   const {
     data: { user },
@@ -118,60 +113,52 @@ export async function carregarDashboard(
   }
   if (!orgId) return { ok: false, motivo: "sem-org" };
 
-  // A RLS de `module_config` já barra org alheia; a query só devolve linha se o
-  // usuário pertence à org (ou é agency).
-  const { data: ent } = await supabase
+  // Nome e logo saem de `orgs`; antes vinham de `clients` do projeto antigo.
+  const { data: org, error: erroOrg } = await supabase
+    .from("orgs")
+    .select("name,logo_url")
+    .eq("id", orgId)
+    .maybeSingle<{ name: string; logo_url: string | null }>();
+  if (erroOrg) return { ok: false, motivo: "erro" };
+  if (!org) return { ok: false, motivo: "sem-org" };
+
+  // A RLS de `dashboard_periods` já barra org alheia — o `.eq` é para a agência,
+  // que enxerga todas e precisa escolher uma.
+  const { data: linhas, error } = await supabase
+    .from("dashboard_periods")
+    .select(COLUNAS)
+    .eq("org_id", orgId)
+    .order("period_date")
+    .returns<Record<string, unknown>[]>();
+  if (error) return { ok: false, motivo: "erro" };
+
+  const periodos = (linhas ?? [])
+    .map(limparPeriodo)
+    .filter((p): p is PeriodoDash => p !== null);
+  if (periodos.length === 0) return { ok: false, motivo: "sem-dados" };
+
+  // Quais blocos o cliente vê. Sem configuração, vê todos.
+  const { data: cfg } = await supabase
     .from("module_config")
     .select("config")
     .eq("org_id", orgId)
     .eq("module", "dashboard")
     .maybeSingle<{ config: Record<string, unknown> | null }>();
 
-  // Sem interruptor: quem decide se o dashboard abre é o slug estar preenchido.
-  // Não existe "empresa sem o módulo" — existe empresa ainda sem configuração.
-  const slug = texto(ent?.config?.dashboard_slug);
-  if (!slug) return { ok: false, motivo: "sem-slug" };
-
-  let corpo: RespostaRpc;
-  try {
-    const resposta = await fetch(`${url}/rest/v1/rpc/get_public_dashboard`, {
-      method: "POST",
-      headers: {
-        apikey: chave,
-        Authorization: `Bearer ${chave}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ p_slug: slug }),
-      cache: "no-store",
-    });
-    if (!resposta.ok) return { ok: false, motivo: "erro" };
-    corpo = (await resposta.json()) as RespostaRpc;
-  } catch {
-    return { ok: false, motivo: "erro" };
-  }
-
-  // Slug errado ou cliente inativo no projeto antigo devolvem `null`.
-  if (!corpo?.client?.name) return { ok: false, motivo: "sem-dados" };
-
-  const periodos = (corpo.periods ?? [])
-    .map(limparPeriodo)
-    .filter((p): p is PeriodoDash => p !== null);
-  if (periodos.length === 0) return { ok: false, motivo: "sem-dados" };
-
-  const secoesBrutas = corpo.client.active_sections;
-  const secoes = Array.isArray(secoesBrutas)
-    ? SECOES_DASH.filter((s) => secoesBrutas.includes(s))
+  const secoesBrutas = cfg?.config?.secoes;
+  const secoes: SecaoDash[] = Array.isArray(secoesBrutas)
+    ? SECOES_DASH.filter((s) => (secoesBrutas as unknown[]).includes(s))
     : SECOES_DASH;
 
   return {
     ok: true,
     dados: {
       cliente: {
-        nome: corpo.client.name,
-        logoUrl: /^https?:\/\//i.test(String(corpo.client.logo_url ?? ""))
-          ? String(corpo.client.logo_url)
+        nome: org.name,
+        logoUrl: /^https?:\/\//i.test(String(org.logo_url ?? ""))
+          ? String(org.logo_url)
           : null,
-        secoes,
+        secoes: secoes.length ? secoes : SECOES_DASH,
       },
       periodos,
     },

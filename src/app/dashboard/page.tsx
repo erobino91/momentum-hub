@@ -8,10 +8,7 @@ export const dynamic = "force-dynamic";
 const AVISO: Record<FalhaDashboard, string> = {
   "sem-org":
     "Sua conta ainda não está vinculada a nenhuma empresa. Fale com a agência.",
-  "sem-slug":
-    "O dashboard ainda não foi configurado pela agência. Fale com a gente que ligamos em minutos.",
   "sem-dados": "Ainda não há resultados publicados para a sua empresa.",
-  "sem-config": "Configuração do dashboard ausente no servidor.",
   erro: "Não foi possível carregar os resultados agora. Tente de novo em instantes.",
   "sem-sessao": "",
 };

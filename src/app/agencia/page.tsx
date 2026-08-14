@@ -4,18 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { MODULES } from "@/lib/modules";
 import { campoClasse, botaoClasse } from "@/components/auth-shell";
 import { criarPagina } from "@/app/bio/actions";
-import {
-  criarOrg,
-  convidarUsuario,
-  prepararFila,
-  salvarSlugDashboard,
-} from "./actions";
-import type {
-  Invite,
-  ModuleConfig,
-  ModulosConfigurados,
-  Org,
-} from "@/types/db";
+import { criarOrg, convidarUsuario, prepararFila } from "./actions";
+import type { Invite, ModulosConfigurados, Org } from "@/types/db";
 
 export const dynamic = "force-dynamic";
 
@@ -33,11 +23,6 @@ export default async function AgenciaPage({
     .select("*")
     .order("name")
     .returns<Org[]>();
-
-  const { data: ents } = await supabase
-    .from("module_config")
-    .select("*")
-    .returns<ModuleConfig[]>();
 
   const { data: convites } = await supabase
     .from("invites")
@@ -65,14 +50,6 @@ export default async function AgenciaPage({
   const pronto = (orgId: string) =>
     prontos.get(orgId) ?? { dashboard: false, bio: false, fila: false };
 
-  const slugDashboard = (orgId: string) => {
-    const ent = ents?.find(
-      (e) => e.org_id === orgId && e.module === "dashboard",
-    );
-    const valor = ent?.config?.dashboard_slug;
-    return typeof valor === "string" ? valor : "";
-  };
-
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-6 py-12">
       <header className="flex items-start justify-between gap-4">
@@ -82,9 +59,14 @@ export default async function AgenciaPage({
           </p>
           <h1 className="mt-2 text-3xl font-semibold">Empresas</h1>
         </div>
-        <Link href="/" className="text-sm text-muted hover:text-foreground">
-          Voltar ao portal
-        </Link>
+        <div className="flex flex-col items-end gap-1 text-sm">
+          <Link href="/agencia/lives" className="text-muted hover:text-foreground">
+            Lives →
+          </Link>
+          <Link href="/" className="text-muted hover:text-foreground">
+            Voltar ao portal
+          </Link>
+        </div>
       </header>
 
       {searchParams.erro ? (
@@ -139,38 +121,29 @@ export default async function AgenciaPage({
                 </span>
               </div>
 
-              <div className="mt-5 border-t border-white/10 pt-5">
-                <p className="text-xs uppercase tracking-wider text-muted">
-                  Dashboard — slug no sistema antigo
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <form
-                    action={salvarSlugDashboard}
-                    className="flex flex-wrap gap-3"
+              {/* Desde a Fase 6 os números moram aqui: o dashboard do cliente
+                  é alimentado nesta tela, não mais no projeto antigo. */}
+              <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-white/10 pt-5 text-sm">
+                <Link
+                  href={`/agencia/${org.id}/periodos`}
+                  className={`${botaoClasse} sm:w-auto sm:px-5`}
+                >
+                  Resultados por mês
+                </Link>
+                <Link
+                  href={`/agencia/${org.id}/precificacao`}
+                  className="text-muted hover:text-foreground"
+                >
+                  Precificação iFood →
+                </Link>
+                {pronto(org.id).dashboard ? (
+                  <Link
+                    href={`/dashboard?org=${org.id}`}
+                    className="text-muted hover:text-foreground"
                   >
-                    <input type="hidden" name="org_id" value={org.id} />
-                    <input
-                      name="dashboard_slug"
-                      defaultValue={slugDashboard(org.id)}
-                      placeholder="ex.: villa-burguer"
-                      className={`${campoClasse} sm:w-64`}
-                    />
-                    <button
-                      type="submit"
-                      className={`${botaoClasse} sm:w-auto sm:px-5`}
-                    >
-                      Salvar
-                    </button>
-                  </form>
-                  {pronto(org.id).dashboard ? (
-                    <Link
-                      href={`/dashboard?org=${org.id}`}
-                      className="text-sm text-muted hover:text-foreground"
-                    >
-                      Abrir dashboard →
-                    </Link>
-                  ) : null}
-                </div>
+                    Ver o dashboard →
+                  </Link>
+                ) : null}
               </div>
 
               <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-white/10 pt-5">
