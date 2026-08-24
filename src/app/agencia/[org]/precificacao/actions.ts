@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { paraNumero } from "@/lib/numero";
 
 async function exigirAgencia() {
   const supabase = createClient();
@@ -18,41 +19,9 @@ function voltar(orgId: string, erro?: string): never {
   );
 }
 
-/** Aceita `12,90` e `12.90` — quem digita está vindo de planilha. */
+/** A mesma leitura da tela e do fechamento do mês. */
 function numero(valor: FormDataEntryValue | null): number | null {
-  const texto = String(valor ?? "").trim().replace("R$", "").trim();
-  if (!texto) return null;
-  const normalizado =
-    texto.includes(",") && texto.includes(".")
-      ? texto.replace(/\./g, "").replace(",", ".")
-      : texto.replace(",", ".");
-  const n = Number(normalizado);
-  return Number.isFinite(n) ? n : null;
-}
-
-/**
- * As quatro variáveis da conta. `taxa_extra` é percentual; `campanha`,
- * `entrega` e `cupom` são reais — unidades herdadas do projeto antigo e
- * confirmadas antes da migração.
- */
-export async function salvarVariaveis(formData: FormData) {
-  const supabase = await exigirAgencia();
-  const orgId = String(formData.get("org_id") ?? "");
-  if (!orgId) redirect("/agencia");
-
-  const { error } = await supabase.from("pricing_config").upsert(
-    {
-      org_id: orgId,
-      taxa_extra: numero(formData.get("taxa_extra")) ?? 0,
-      campanha: numero(formData.get("campanha")) ?? 0,
-      entrega: numero(formData.get("entrega")) ?? 0,
-      cupom: numero(formData.get("cupom")) ?? 0,
-    },
-    { onConflict: "org_id" },
-  );
-
-  if (error) voltar(orgId, "Não foi possível salvar as variáveis.");
-  voltar(orgId);
+  return paraNumero(String(valor ?? ""));
 }
 
 export async function criarProduto(formData: FormData) {
@@ -70,25 +39,6 @@ export async function criarProduto(formData: FormData) {
     .insert({ org_id: orgId, name, preco_balcao: preco });
 
   if (error) voltar(orgId, "Não foi possível cadastrar o produto.");
-  voltar(orgId);
-}
-
-export async function atualizarPreco(formData: FormData) {
-  const supabase = await exigirAgencia();
-  const orgId = String(formData.get("org_id") ?? "");
-  const id = String(formData.get("id") ?? "");
-  const preco = numero(formData.get("preco_balcao"));
-
-  if (!orgId || !id) redirect("/agencia");
-  if (preco === null || preco <= 0) voltar(orgId, "Preço inválido.");
-
-  const { error } = await supabase
-    .from("pricing_products")
-    .update({ preco_balcao: preco })
-    .eq("id", id)
-    .eq("org_id", orgId);
-
-  if (error) voltar(orgId, "Não foi possível atualizar o preço.");
   voltar(orgId);
 }
 

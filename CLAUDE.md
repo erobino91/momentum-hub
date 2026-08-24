@@ -126,6 +126,16 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
 - **`fat_proprio` ("Cardápio próprio") não é lido por tela nenhuma** — nem no dashboard do
   cliente, nem no painel. Continua sendo coletado; se um dia ninguém sentir falta, é
   candidato a sair.
+- **A tabela de precificação não é um `<form>`.** Cada linha tem o diálogo de remover, que é
+  um formulário, e formulário dentro de formulário é HTML inválido. Por isso `salvar.ts`
+  expõe `salvarPrecificacao` como server action chamada direto do componente
+  (`useTransition`), e não por `action={}`.
+- **A chave da transmissão só aparece dentro de diálogo.** Era um campo aberto no meio da
+  página, ao lado do seletor de arquivo, com o segredo do Instagram do cliente à mostra.
+- **`Dialogo` fecha ao enviar, menos quando `fecharAoEnviar={false}`.** Envio demorado (subir
+  vídeo) precisa da rodinha visível; fechar na hora parece que nada aconteceu.
+- Diálogo dentro de diálogo funciona (`<dialog>` nativo empilha no top layer) e o Esc fecha
+  só o de cima — verificado no navegador, é o caso de remover material.
 
 ## Base de reuso
 

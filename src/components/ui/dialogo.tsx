@@ -21,6 +21,7 @@ export function Dialogo({
   titulo,
   descricao,
   aoFechar,
+  fecharAoEnviar = true,
   className = "",
   children,
 }: {
@@ -32,6 +33,12 @@ export function Dialogo({
   descricao?: React.ReactNode;
   /** Chamado ao fechar, de qualquer jeito — Esc, fundo, × ou envio. */
   aoFechar?: () => void;
+  /**
+   * Fechar sozinho quando um formulário de dentro é enviado. Desligar quando o
+   * envio demora e a pessoa precisa ver que está acontecendo — subir um vídeo,
+   * por exemplo: fechar na hora esconde a rodinha e parece que nada aconteceu.
+   */
+  fecharAoEnviar?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -59,9 +66,9 @@ export function Dialogo({
         onClick={(e) => {
           if (e.target === ref.current) fechar();
         }}
-        // Qualquer formulário daqui de dentro fecha ao enviar; a página
+        // Por padrão, formulário daqui de dentro fecha ao enviar; a página
         // revalida em seguida e mostra o resultado.
-        onSubmit={() => fechar()}
+        onSubmit={fecharAoEnviar ? () => fechar() : undefined}
         className={`w-[min(28rem,calc(100vw-2rem))] rounded-xl border border-line-strong bg-surface-2 p-0 text-foreground shadow-2xl backdrop:bg-canvas/80 ${className}`}
       >
         <div className="p-5">
