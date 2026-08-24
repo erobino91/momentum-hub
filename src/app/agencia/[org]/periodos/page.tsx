@@ -1,31 +1,43 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { campoClasse, botaoClasse } from "@/components/auth-shell";
-import {
-  GRUPOS_PERIODO,
-  CAMPOS_PERIODO,
-  nomeDoMes,
-  primeiroDiaDoMes,
-} from "@/lib/periodos";
+import { nomeDoMes, primeiroDiaDoMes, CAMPOS_PERIODO } from "@/lib/periodos";
+import { formatarDinheiro } from "@/lib/numero";
 import type { DashboardPeriod, Org } from "@/types/db";
 import { salvarPeriodo, apagarPeriodo } from "./actions";
+import { FormularioPeriodo } from "./formulario";
 import { AgenciaShell } from "@/components/shell";
 import { AbasEmpresa } from "@/components/agencia/abas";
-import { Aviso, ConfirmarAcao, botaoEstilo } from "@/components/ui";
+import {
+  Aviso,
+  Cartao,
+  ConfirmarAcao,
+  Selo,
+  Vazio,
+  botaoEstilo,
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Resultados por mês" };
 
-/**
- * Fechamento do mês — a tela que a agência mais usa.
- *
- * Substitui o `periods.html` do projeto antigo. Uma diferença de propósito: lá
- * os campos de dinheiro tinham um input estilo caixa eletrônico (digita da
- * direita para a esquerda) que precisava de JS e ainda assim se atrapalhava com
- * colagem em formato americano. Aqui é `type="number"` puro — sem JS, e o
- * navegador já valida.
- */
+/** Colunas do período viram texto para o formulário, que trabalha em texto. */
+function comoTexto(p: DashboardPeriod | null): Record<string, string> {
+  if (!p) return {};
+  const linha = p as unknown as Record<string, unknown>;
+  return Object.fromEntries(
+    CAMPOS_PERIODO.map((c) => {
+      const v = linha[c.coluna];
+      if (v === null || v === undefined) return [c.coluna, ""];
+      return [
+        c.coluna,
+        c.tipo === "dinheiro"
+          ? formatarDinheiro(Number(v))
+          : String(Math.round(Number(v))),
+      ];
+    }),
+  );
+}
+
 export default async function PeriodosPage({
   params,
   searchParams,
@@ -52,9 +64,7 @@ export default async function PeriodosPage({
     .returns<DashboardPeriod[]>();
 
   const lista = periodos ?? [];
-  const mesEditado = searchParams.mes
-    ? primeiroDiaDoMes(searchParams.mes)
-    : null;
+  const mesEditado = searchParams.mes ? primeiroDiaDoMes(searchParams.mes) : null;
   const emEdicao = mesEditado
     ? (lista.find((p) => p.period_date === mesEditado) ?? null)
     : null;
@@ -63,15 +73,17 @@ export default async function PeriodosPage({
   const proximo = (() => {
     if (!lista.length) return new Date().toISOString().slice(0, 7);
     const [ano, mes] = lista[0].period_date.split("-").map(Number);
-    const d = new Date(Date.UTC(ano, mes, 1));
-    return d.toISOString().slice(0, 7);
+    return new Date(Date.UTC(ano, mes, 1)).toISOString().slice(0, 7);
   })();
 
-  const valor = (coluna: string) => {
-    if (!emEdicao) return "";
-    const v = (emEdicao as unknown as Record<string, unknown>)[coluna];
-    return v === null || v === undefined ? "" : String(v);
-  };
+  // O mês imediatamente anterior ao que está sendo mexido — só para sugerir
+  // valor embaixo de cada campo.
+  const anterior = emEdicao
+    ? (lista.find((p) => p.period_date < emEdicao.period_date) ?? null)
+    : (lista[0] ?? null);
+
+  const totalDe = (p: DashboardPeriod) =>
+    Number(p.fat_mesa ?? 0) + Number(p.fat_delivery ?? 0) + Number(p.fat_ifood ?? 0);
 
   return (
     <AgenciaShell
@@ -81,7 +93,9 @@ export default async function PeriodosPage({
         { rotulo: org.name, href: `/agencia/${org.id}` },
         { rotulo: "Resultados" },
       ]}
-      titulo="Resultados por mês"
+      titulo={
+        emEdicao ? `Editando ${nomeDoMes(emEdicao.period_date)}` : "Fechamento do mês"
+      }
       acoes={
         <Link
           href={`/dashboard?org=${org.id}`}
@@ -94,184 +108,99 @@ export default async function PeriodosPage({
       <AbasEmpresa orgId={org.id} ativa="resultados" />
 
       {searchParams.erro ? (
-        <div className="mb-6">
+        <div className="mb-5">
           <Aviso tom="erro">{searchParams.erro}</Aviso>
         </div>
       ) : null}
       {searchParams.ok ? (
-        <div className="mb-6">
-          <Aviso tom="ok">Salvo.</Aviso>
+        <div className="mb-5">
+          <Aviso tom="ok">Mês salvo e publicado no dashboard do cliente.</Aviso>
         </div>
       ) : null}
 
-      {/* ── Meses já fechados ─────────────────────────────────────────── */}
-      <section>
-        <h2 className="text-lg font-medium">
-          Meses fechados{" "}
-          <span className="text-sm text-muted">({lista.length})</span>
-        </h2>
-
-        {lista.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">
-            Nenhum mês publicado. Enquanto não houver o primeiro, o cliente vê o
-            card do dashboard como “em configuração”.
-          </p>
-        ) : (
-          <ul className="mt-4 divide-y divide-white/10 rounded-lg border border-white/15 bg-white/5">
-            {lista.map((p) => (
-              <li
-                key={p.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-              >
-                <div>
-                  <span className="text-sm">{nomeDoMes(p.period_date)}</span>
-                  <span className="ml-3 text-xs text-muted">
-                    {p.fat_total !== null
-                      ? `R$ ${Number(p.fat_total).toLocaleString("pt-BR", {
-                          minimumFractionDigits: 2,
-                        })}`
-                      : "sem faturamento"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <Link
-                    href={`/agencia/${org.id}/periodos?mes=${p.period_date}`}
-                    className="text-muted hover:text-foreground"
-                  >
-                    Editar
-                  </Link>
-                  {/* Apagar um mês tira 24 números do dashboard do cliente e
-                      não tem volta — daí a palavra digitada. */}
-                  <ConfirmarAcao
-                    acao={apagarPeriodo}
-                    rotulo="Apagar"
-                    titulo={`Apagar ${nomeDoMes(p.period_date)}?`}
-                    descricao={
-                      <>
-                        Os números do mês somem do dashboard de{" "}
-                        <strong className="text-foreground">{org.name}</strong>{" "}
-                        na hora. Não dá para desfazer.
-                      </>
-                    }
-                    confirmar="Apagar mês"
-                    digite={nomeDoMes(p.period_date).split("/")[0]}
-                  >
-                    <input type="hidden" name="org_id" value={org.id} />
-                    <input type="hidden" name="id" value={p.id} />
-                  </ConfirmarAcao>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* ── Formulário ────────────────────────────────────────────────── */}
-      <section className="mt-10 rounded-lg border border-white/15 bg-white/5 p-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 className="text-lg font-medium">
-            {emEdicao
-              ? `Editando ${nomeDoMes(emEdicao.period_date)}`
-              : "Novo mês"}
-          </h2>
-          {emEdicao ? (
-            <Link
-              href={`/agencia/${org.id}/periodos`}
-              className="text-sm text-muted hover:text-foreground"
-            >
-              Cancelar edição
-            </Link>
-          ) : null}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+        <div className="lg:order-1">
+          <FormularioPeriodo
+            orgId={org.id}
+            acao={salvarPeriodo}
+            valoresIniciais={comoTexto(emEdicao)}
+            anterior={comoTexto(anterior)}
+            mesAnterior={anterior?.period_date ?? null}
+            mesSugerido={proximo}
+            editando={emEdicao?.period_date ?? null}
+            obsRaw={emEdicao?.obs_raw ?? ""}
+            obsPolished={emEdicao?.obs_polished ?? ""}
+            cancelar={
+              emEdicao ? (
+                <Link
+                  href={`/agencia/${org.id}/periodos`}
+                  className={botaoEstilo("fantasma")}
+                >
+                  Cancelar edição
+                </Link>
+              ) : null
+            }
+          />
         </div>
 
-        <form action={salvarPeriodo} className="mt-5 space-y-8">
-          <input type="hidden" name="org_id" value={org.id} />
-
-          <div>
-            <label className="text-xs uppercase tracking-wider text-muted">
-              Mês
-            </label>
-            <input
-              type="month"
-              name="period_date"
-              required
-              defaultValue={
-                emEdicao ? emEdicao.period_date.slice(0, 7) : proximo
-              }
-              readOnly={Boolean(emEdicao)}
-              className={`${campoClasse} mt-2 sm:w-48`}
-            />
-            {emEdicao ? (
-              <p className="mt-2 text-xs text-muted">
-                Para lançar outro mês, cancele a edição.
-              </p>
-            ) : null}
-          </div>
-
-          {GRUPOS_PERIODO.map((grupo) => (
-            <fieldset key={grupo.titulo}>
-              <legend className="text-xs uppercase tracking-wider text-muted">
-                {grupo.titulo}
-              </legend>
-              {grupo.ajuda ? (
-                <p className="mt-1 text-xs text-muted">{grupo.ajuda}</p>
-              ) : null}
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                {grupo.campos.map((campo) => (
-                  <label key={campo.coluna} className="block text-sm">
-                    <span className="text-muted">{campo.rotulo}</span>
-                    <input
-                      name={campo.coluna}
-                      type="number"
-                      inputMode="decimal"
-                      step={campo.tipo === "dinheiro" ? "0.01" : "1"}
-                      min="0"
-                      defaultValue={valor(campo.coluna)}
-                      placeholder="—"
-                      className={`${campoClasse} mt-1`}
-                    />
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          ))}
-
-          <fieldset>
-            <legend className="text-xs uppercase tracking-wider text-muted">
-              Observações do mês
-            </legend>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm">
-                <span className="text-muted">Anotação interna</span>
-                <textarea
-                  name="obs_raw"
-                  rows={4}
-                  defaultValue={emEdicao?.obs_raw ?? ""}
-                  className={`${campoClasse} mt-1`}
-                />
-              </label>
-              <label className="block text-sm">
-                <span className="text-muted">Texto que o cliente lê</span>
-                <textarea
-                  name="obs_polished"
-                  rows={4}
-                  defaultValue={emEdicao?.obs_polished ?? ""}
-                  className={`${campoClasse} mt-1`}
-                />
-              </label>
-            </div>
-          </fieldset>
-
-          <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-6`}>
-            {emEdicao ? "Salvar alterações" : "Publicar mês"}
-          </button>
-        </form>
-      </section>
-
-      <p className="mt-6 text-xs text-muted">
-        Campo em branco fica vazio no dashboard; zero é zero de verdade. São{" "}
-        {CAMPOS_PERIODO.length} campos por mês.
-      </p>
+        {/* ── Meses já publicados ─────────────────────────────────────── */}
+        <aside className="lg:order-2">
+          <Cartao
+            titulo="Meses publicados"
+            acao={<Selo tom={lista.length ? "pronto" : "atencao"}>{lista.length}</Selo>}
+          >
+            {lista.length === 0 ? (
+              <Vazio
+                titulo="Nenhum mês ainda"
+                descricao="Enquanto não houver o primeiro, o cliente vê o dashboard como “em configuração”."
+              />
+            ) : (
+              <ul className="-mx-1 space-y-0.5">
+                {lista.map((p) => {
+                  const atual = p.period_date === emEdicao?.period_date;
+                  return (
+                    <li
+                      key={p.id}
+                      className={`flex items-center gap-2 rounded-md px-2 py-2 ${
+                        atual ? "bg-brand/15" : "hover:bg-surface-2"
+                      }`}
+                    >
+                      <Link
+                        href={`/agencia/${org.id}/periodos?mes=${p.period_date}`}
+                        className="min-w-0 flex-1"
+                      >
+                        <span className="block text-sm font-medium">
+                          {nomeDoMes(p.period_date)}
+                        </span>
+                        <span className="block text-xs tabular text-dim">
+                          R$ {formatarDinheiro(totalDe(p))}
+                        </span>
+                      </Link>
+                      <ConfirmarAcao
+                        acao={apagarPeriodo}
+                        rotulo="Apagar"
+                        titulo={`Apagar ${nomeDoMes(p.period_date)}?`}
+                        descricao={
+                          <>
+                            Os números do mês somem do dashboard de{" "}
+                            <strong className="text-foreground">{org.name}</strong>{" "}
+                            na hora. Não dá para desfazer.
+                          </>
+                        }
+                        confirmar="Apagar mês"
+                        digite={nomeDoMes(p.period_date).split("/")[0]}
+                      >
+                        <input type="hidden" name="org_id" value={org.id} />
+                        <input type="hidden" name="id" value={p.id} />
+                      </ConfirmarAcao>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Cartao>
+        </aside>
+      </div>
     </AgenciaShell>
   );
 }

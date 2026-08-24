@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CAMPOS_PERIODO, primeiroDiaDoMes } from "@/lib/periodos";
+import { paraNumero } from "@/lib/numero";
 
 /**
  * Escrita de período. A RLS (`dashboard_periods_write_agency`) já barra quem
@@ -32,10 +33,10 @@ function voltar(orgId: string, erro?: string, mes?: string): never {
  * some com o bloco.
  */
 function numero(valor: FormDataEntryValue | null): number | null {
-  const texto = String(valor ?? "").trim();
-  if (!texto) return null;
-  const n = Number(texto.replace(",", "."));
-  return Number.isFinite(n) ? n : null;
+  // `paraNumero` é a mesma leitura que o campo usa na tela, e é o que aceita
+  // `147.456,00` — o `Number(texto.replace(",", "."))` de antes devolvia NaN
+  // para qualquer valor com separador de milhar, e NaN aqui virava campo vazio.
+  return paraNumero(String(valor ?? ""));
 }
 
 export async function salvarPeriodo(formData: FormData) {

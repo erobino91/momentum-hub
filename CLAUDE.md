@@ -114,6 +114,18 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
   pergunta basta (remover produto da precificação).
 - **O formulário de dar acesso não vira diálogo.** A senha sorteada aparece uma vez no
   resultado, e diálogo que fecha ao enviar levaria a senha junto.
+- **Número entra e sai por `src/lib/numero.ts`** — a tela e a action usam a mesma leitura.
+  `paraNumero` aceita `147.456,00`, `147456,00` e o americano `147,456.00` colado de
+  planilha. Ponto seguido de exatamente três dígitos é milhar; qualquer outra quantidade é
+  decimal (`12.50` são doze e cinquenta). O `Number(texto.replace(",", "."))` que estava na
+  action devolvia NaN para qualquer valor com separador de milhar, e NaN virava campo vazio.
+- **`fat_total` e ticket médio são calculados, não digitados.** O formulário soma
+  salão + delivery + iFood e grava o resultado em `fat_total`, para a coluna deixar de
+  discordar do que o dashboard mostra. Ticket é faturamento ÷ pedidos e nem existe como
+  coluna.
+- **`fat_proprio` ("Cardápio próprio") não é lido por tela nenhuma** — nem no dashboard do
+  cliente, nem no painel. Continua sendo coletado; se um dia ninguém sentir falta, é
+  candidato a sair.
 
 ## Base de reuso
 

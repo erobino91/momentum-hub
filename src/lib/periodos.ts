@@ -36,11 +36,16 @@ export const GRUPOS_PERIODO: GrupoPeriodo[] = [
   {
     titulo: "Faturamento",
     campos: [
-      dinheiro("fat_total", "Total"),
-      dinheiro("fat_proprio", "Cardápio próprio"),
-      dinheiro("fat_ifood", "iFood"),
+      // Os três primeiros são as partes que somam o total, nesta ordem: é a
+      // conta que o dashboard do cliente faz, e a tela mostra na mesma
+      // sequência. `fat_total` continua na lista porque a action grava a coluna
+      // a partir dela — mas quem preenche é o campo calculado do formulário,
+      // não a agência.
       dinheiro("fat_mesa", "Salão"),
       dinheiro("fat_delivery", "Delivery"),
+      dinheiro("fat_ifood", "iFood"),
+      dinheiro("fat_total", "Total"),
+      dinheiro("fat_proprio", "Cardápio próprio"),
     ],
   },
   {
