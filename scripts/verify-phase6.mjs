@@ -155,11 +155,20 @@ const hub = contagens[0];
 if (!antigo?.url || !antigo?.chave) {
   pular("comparação com o projeto antigo", "sem .env.projeto-antigo do worker");
 } else {
+  // O projeto antigo foi apagado depois da migração: o host deixa de resolver e
+  // o `fetch` joga em vez de devolver status. Sem este try, a verificação inteira
+  // morria aqui — e o que ela tem de mais importante (RLS, bucket) vem depois.
+  let antigoRespondeu = true;
   const lerAntigo = async (caminho) => {
-    const r = await fetch(`${antigo.url}/rest/v1/${caminho}`, {
-      headers: { apikey: antigo.chave, Authorization: `Bearer ${antigo.chave}` },
-    });
-    return r.ok ? r.json() : [];
+    try {
+      const r = await fetch(`${antigo.url}/rest/v1/${caminho}`, {
+        headers: { apikey: antigo.chave, Authorization: `Bearer ${antigo.chave}` },
+      });
+      return r.ok ? await r.json() : [];
+    } catch {
+      antigoRespondeu = false;
+      return [];
+    }
   };
 
   const [periodosAntigos, produtosAntigos, configsAntigas, materiaisAntigos, sessoesAntigas, clientesAntigos] =
@@ -172,6 +181,9 @@ if (!antigo?.url || !antigo?.chave) {
       lerAntigo("clients?select=id,name,slug"),
     ]);
 
+  if (!antigoRespondeu) {
+    pular("comparação com o projeto antigo", "projeto apagado — nada com que comparar");
+  } else {
   checar(Number(hub.periodos) === periodosAntigos.length,
     "períodos: mesma quantidade", `hub ${hub.periodos} · antigo ${periodosAntigos.length}`);
   checar(Number(hub.produtos) === produtosAntigos.length,
@@ -217,7 +229,14 @@ if (!antigo?.url || !antigo?.chave) {
   checar(Number(orgsComPeriodo[0].n) === clientesComPeriodo,
     "cada cliente do antigo virou uma empresa aqui",
     `${orgsComPeriodo[0].n} orgs · ${clientesComPeriodo} clientes · ${clientesAntigos.length} cadastrados`);
+  }
 }
+
+checar(
+  Number(hub.periodos) > 0 && Number(hub.produtos) > 0 && Number(hub.materiais) > 0,
+  "o hub tem o dado das três frentes",
+  `${hub.periodos} meses · ${hub.produtos} produtos · ${hub.materiais} materiais`,
+);
 
 // ── 2. O que o cliente enxerga ──────────────────────────────────────────────
 console.log("\nIsolamento");
