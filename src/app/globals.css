@@ -37,8 +37,6 @@
   --warn: 251 191 36; /* #FBBF24 */
   --danger: 255 107 107; /* #FF6B6B */
 
-  /* compatibilidade: `accent` era o laranja e ainda é usado em telas antigas */
-  --accent: var(--brand);
   --background: var(--canvas);
 }
 

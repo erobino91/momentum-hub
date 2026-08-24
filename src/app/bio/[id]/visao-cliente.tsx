@@ -54,13 +54,13 @@ export function VisaoCliente({
       </header>
 
       {!pagina.active ? (
-        <p className="mt-6 rounded-md border border-white/15 bg-white/5 px-4 py-3 text-sm text-muted">
+        <p className="mt-6 rounded-md border border-line-strong bg-surface-1 px-4 py-3 text-sm text-muted">
           Esta página ainda não está no ar.
         </p>
       ) : null}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
-        <section className="rounded-lg border border-white/15 bg-white/5 p-5">
+        <section className="rounded-lg border border-line-strong bg-surface-1 p-5">
           <h2 className="text-lg font-medium">Links publicados</h2>
           <p className="mt-1 text-sm text-muted">
             Para mudar textos, links ou ordem, fale com a gente.
@@ -75,7 +75,7 @@ export function VisaoCliente({
                 return (
                   <div
                     key={b.id}
-                    className="flex items-center justify-between gap-4 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3"
+                    className="flex items-center justify-between gap-4 rounded-lg border border-line bg-surface-1 px-4 py-3"
                   >
                     <div className="min-w-0">
                       <p className="truncate font-medium">
@@ -86,7 +86,7 @@ export function VisaoCliente({
                     </div>
                     <span
                       className={`shrink-0 text-[11px] font-semibold ${
-                        noAr ? "text-emerald-400" : "text-muted"
+                        noAr ? "text-ok" : "text-muted"
                       }`}
                     >
                       {noAr ? "no ar" : "fora do ar"}
@@ -102,7 +102,7 @@ export function VisaoCliente({
           <p className="text-xs font-medium uppercase tracking-wider text-muted">
             Como está ficando
           </p>
-          <div className="mt-2 overflow-hidden rounded-[2rem] border-4 border-white/15">
+          <div className="mt-2 overflow-hidden rounded-[2rem] border-4 border-line-strong">
             <div className="max-h-[70vh] overflow-y-auto">
               <BioRender
                 modo="preview"

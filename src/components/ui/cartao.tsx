@@ -1,7 +1,6 @@
 /**
  * Caixa de conteúdo — a peça que estava escrita à mão em toda página, cada vez
- * com uma combinação diferente de `bg-white/5`, `bg-white/[0.03]`,
- * `border-white/10` e `border-white/15`.
+ * com uma combinação diferente de superfície e borda tiradas do nada.
  */
 export function Cartao({
   titulo,

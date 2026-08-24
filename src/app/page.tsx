@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { carregarSessao } from "@/lib/session";
 import { MODULES } from "@/lib/modules";
 import { PortalShell } from "@/components/shell";
-import { Vazio } from "@/components/ui";
+import { Selo, Vazio } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Portal" };
@@ -41,21 +41,33 @@ export default async function Home() {
 
             const conteudo = (
               <>
-                <h2 className="text-lg font-medium">{m.label}</h2>
-                <p className="mt-1 text-sm text-muted">{m.description}</p>
-                {aviso ? (
-                  <p className="mt-3 text-xs uppercase tracking-wider text-accent">
-                    {aviso}
-                  </p>
-                ) : null}
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-base font-semibold">{m.label}</h2>
+                  {aviso ? (
+                    <span className="flex-none">
+                      <Selo tom="atencao">{aviso}</Selo>
+                    </span>
+                  ) : (
+                    <span
+                      aria-hidden
+                      className="flex-none text-dim transition group-hover:translate-x-0.5 group-hover:text-foreground"
+                    >
+                      →
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1.5 text-sm text-muted">{m.description}</p>
               </>
             );
             const classe =
-              "block rounded-lg border border-white/15 bg-white/5 p-5 transition hover:border-accent";
+              "group block rounded-lg border border-line bg-surface-1 p-5 transition hover:border-line-strong";
 
+            // Card que não está pronto não leva a lugar nenhum — e por isso
+            // também não é um link: `aria-disabled` num `<a>` continua sendo
+            // tabulável e anunciado como link pelo leitor de tela.
             if (aviso) {
               return (
-                <div key={chave} className={`${classe} opacity-60`}>
+                <div key={chave} className={`${classe} opacity-70`}>
                   {conteudo}
                 </div>
               );

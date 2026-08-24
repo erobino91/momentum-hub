@@ -107,8 +107,8 @@ export default async function RelatorioPage({
             href={`/bio/${pagina.id}/relatorio?d=${j}`}
             className={`rounded-full border px-3 py-1 text-sm transition ${
               j === dias
-                ? "border-accent bg-accent/15 text-foreground"
-                : "border-white/15 text-muted hover:text-foreground"
+                ? "border-brand bg-brand/15 text-foreground"
+                : "border-line-strong text-muted hover:text-foreground"
             }`}
           >
             {j} dias
@@ -117,7 +117,7 @@ export default async function RelatorioPage({
       </div>
 
       <section className="mt-6 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3">
+        <div className="rounded-lg border border-line bg-surface-1 px-4 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
             Cliques no período
           </p>
@@ -125,7 +125,7 @@ export default async function RelatorioPage({
             {total.toLocaleString("pt-BR")}
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3">
+        <div className="rounded-lg border border-line bg-surface-1 px-4 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
             Botão mais clicado
           </p>
@@ -133,7 +133,7 @@ export default async function RelatorioPage({
             {campeao ? campeao.nome : "—"}
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3">
+        <div className="rounded-lg border border-line bg-surface-1 px-4 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
             Dias com clique
           </p>
@@ -144,19 +144,19 @@ export default async function RelatorioPage({
       </section>
 
       {total === 0 ? (
-        <p className="mt-8 rounded-lg border border-white/15 bg-white/5 px-4 py-6 text-sm text-muted">
+        <p className="mt-8 rounded-lg border border-line-strong bg-surface-1 px-4 py-6 text-sm text-muted">
           Nenhum clique registrado nesse período.
         </p>
       ) : (
         <>
-          <section className="mt-6 rounded-xl border border-white/10 bg-white/[0.02] p-5">
+          <section className="mt-6 rounded-xl border border-line bg-surface-1 p-5">
             <h2 className="mb-4 text-[13px] font-bold text-muted">
               Cliques por dia
             </h2>
             <CliquesPorDia dados={serieDias} />
           </section>
 
-          <section className="mt-3 rounded-xl border border-white/10 bg-white/[0.02] p-5">
+          <section className="mt-3 rounded-xl border border-line bg-surface-1 p-5">
             <h2 className="mb-4 text-[13px] font-bold text-muted">
               Cliques por botão
             </h2>
@@ -164,7 +164,7 @@ export default async function RelatorioPage({
           </section>
 
           {/* Mesma informação em texto — o gráfico não pode ser o único caminho. */}
-          <section className="mt-3 overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-5">
+          <section className="mt-3 overflow-x-auto rounded-xl border border-line bg-surface-1 p-5">
             <h2 className="mb-4 text-[13px] font-bold text-muted">Tabela</h2>
             <table className="w-full text-sm">
               <thead>
@@ -176,7 +176,7 @@ export default async function RelatorioPage({
               </thead>
               <tbody>
                 {serieBotoes.map((b) => (
-                  <tr key={b.nome} className="border-t border-white/10">
+                  <tr key={b.nome} className="border-t border-line">
                     <td className="py-2">{b.nome}</td>
                     <td className="py-2 text-right tabular-nums">
                       {b.cliques.toLocaleString("pt-BR")}

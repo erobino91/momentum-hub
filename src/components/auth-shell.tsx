@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { Aviso } from "@/components/ui";
-import { campoEstilo } from "@/components/ui/campo";
-import { botaoEstilo } from "@/components/ui/botao";
 
 export function AuthShell({
   titulo,
@@ -47,16 +45,3 @@ export function AuthShell({
     </main>
   );
 }
-
-/**
- * Compatibilidade com as telas anteriores à Fase 8.
- *
- * Eram estas duas strings o sistema de design inteiro do projeto. Continuam
- * exportadas — agora apontando para os tokens novos, para que toda página
- * ganhe o vermelho da marca e o contraste corrigido antes mesmo de ser
- * reescrita. Em código novo, usar `Campo`/`Entrada` e `Botao` de
- * `@/components/ui`.
- */
-export const campoClasse = campoEstilo;
-
-export const botaoClasse = `${botaoEstilo("primario")} w-full`;

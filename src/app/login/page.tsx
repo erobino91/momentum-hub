@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { entrar } from "@/lib/auth-actions";
-import { AuthShell, campoClasse, botaoClasse } from "@/components/auth-shell";
+import { AuthShell } from "@/components/auth-shell";
+import { BotaoEnviar, Campo, Entrada } from "@/components/ui";
 
 export const metadata = { title: "Entrar" };
 
@@ -22,26 +23,27 @@ export default function LoginPage({
         </>
       }
     >
-      <form action={entrar} className="space-y-3">
-        <input
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-          placeholder="email@empresa.com.br"
-          className={campoClasse}
-        />
-        <input
-          name="senha"
-          type="password"
-          required
-          autoComplete="current-password"
-          placeholder="Senha"
-          className={campoClasse}
-        />
-        <button type="submit" className={botaoClasse}>
+      <form action={entrar} className="space-y-4">
+        <Campo rotulo="Email">
+          <Entrada
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="email@empresa.com.br"
+          />
+        </Campo>
+        <Campo rotulo="Senha">
+          <Entrada
+            name="senha"
+            type="password"
+            required
+            autoComplete="current-password"
+          />
+        </Campo>
+        <BotaoEnviar pendente="Entrando…" className="w-full">
           Entrar
-        </button>
+        </BotaoEnviar>
       </form>
     </AuthShell>
   );

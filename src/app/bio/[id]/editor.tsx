@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BioRender } from "@/components/bio-render";
-import { campoClasse, botaoClasse } from "@/components/auth-shell";
+import { botaoEstilo, campoEstilo } from "@/components/ui";
 import { URL_BIO } from "@/lib/bio/url";
 import {
   apagarBotao,
@@ -22,7 +22,7 @@ import {
 } from "@/types/bio";
 
 const rotulo = "block text-xs font-medium uppercase tracking-wider text-muted";
-const caixa = "rounded-lg border border-white/15 bg-white/5 p-5";
+const caixa = "rounded-lg border border-line-strong bg-surface-1 p-5";
 
 /** `datetime-local` não aceita ISO com fuso; corta no minuto. */
 function paraInput(iso: string | null) {
@@ -95,7 +95,7 @@ export function EditorBio({
       </header>
 
       {erro ? (
-        <p className="mt-6 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+        <p className="mt-6 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
           {erro}
         </p>
       ) : null}
@@ -117,7 +117,7 @@ export function EditorBio({
                   name="title"
                   value={titulo}
                   onChange={(e) => setTitulo(e.target.value)}
-                  className={`${campoClasse} mt-1`}
+                  className={`${campoEstilo} mt-1`}
                 />
               </div>
 
@@ -131,7 +131,7 @@ export function EditorBio({
                   rows={3}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  className={`${campoClasse} mt-1`}
+                  className={`${campoEstilo} mt-1`}
                 />
               </div>
 
@@ -145,7 +145,7 @@ export function EditorBio({
                   value={avatar}
                   onChange={(e) => setAvatar(e.target.value)}
                   placeholder="https://..."
-                  className={`${campoClasse} mt-1`}
+                  className={`${campoEstilo} mt-1`}
                 />
               </div>
 
@@ -170,7 +170,7 @@ export function EditorBio({
                       onChange={(e) =>
                         setCores({ ...cores, [chave]: e.target.value })
                       }
-                      className="mt-1 h-10 w-full cursor-pointer rounded-md border border-white/15 bg-white/5"
+                      className="mt-1 h-10 w-full cursor-pointer rounded-md border border-line-strong bg-surface-1"
                     />
                   </div>
                 ))}
@@ -186,7 +186,7 @@ export function EditorBio({
                 Página no ar
               </label>
 
-              <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-6`}>
+              <button type="submit" className={`${botaoEstilo("primario")} sm:w-auto sm:px-6`}>
                 Salvar página
               </button>
             </form>
@@ -207,8 +207,8 @@ export function EditorBio({
                   onDrop={() => soltar(b.id)}
                   className={`rounded-lg border p-4 transition ${
                     arrastando === b.id
-                      ? "border-accent bg-accent/5"
-                      : "border-white/10 bg-white/[0.03]"
+                      ? "border-brand bg-brand/10"
+                      : "border-line bg-surface-1"
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -232,14 +232,14 @@ export function EditorBio({
                           defaultValue={b.icon ?? ""}
                           placeholder="🍔"
                           aria-label="Ícone"
-                          className={`${campoClasse} w-16 text-center`}
+                          className={`${campoEstilo} w-16 text-center`}
                         />
                         <input
                           name="label"
                           defaultValue={b.label}
                           placeholder="Texto do botão"
                           aria-label="Texto do botão"
-                          className={`${campoClasse} flex-1 sm:min-w-[12rem]`}
+                          className={`${campoEstilo} flex-1 sm:min-w-[12rem]`}
                         />
                       </div>
 
@@ -248,7 +248,7 @@ export function EditorBio({
                         defaultValue={b.url}
                         placeholder="https://..."
                         aria-label="Link de destino"
-                        className={campoClasse}
+                        className={campoEstilo}
                       />
 
                       <details className="text-sm text-muted">
@@ -260,7 +260,7 @@ export function EditorBio({
                               type="datetime-local"
                               name="starts_at"
                               defaultValue={paraInput(b.starts_at)}
-                              className={`${campoClasse} mt-1`}
+                              className={`${campoEstilo} mt-1`}
                             />
                           </div>
                           <div>
@@ -269,7 +269,7 @@ export function EditorBio({
                               type="datetime-local"
                               name="ends_at"
                               defaultValue={paraInput(b.ends_at)}
-                              className={`${campoClasse} mt-1`}
+                              className={`${campoEstilo} mt-1`}
                             />
                           </div>
                         </div>
@@ -294,7 +294,7 @@ export function EditorBio({
                         <button
                           type="submit"
                           formAction={apagarBotao}
-                          className="text-sm text-red-400 transition hover:text-red-300"
+                          className="text-sm text-danger transition hover:text-danger"
                         >
                           Apagar
                         </button>
@@ -312,28 +312,28 @@ export function EditorBio({
 
             <form
               action={criarBotao}
-              className="mt-5 flex flex-wrap gap-3 border-t border-white/10 pt-5"
+              className="mt-5 flex flex-wrap gap-3 border-t border-line pt-5"
             >
               <input type="hidden" name="page_id" value={pagina.id} />
               <input
                 name="icon"
                 placeholder="🍔"
                 aria-label="Ícone"
-                className={`${campoClasse} w-16 text-center`}
+                className={`${campoEstilo} w-16 text-center`}
               />
               <input
                 name="label"
                 required
                 placeholder="Texto do botão"
-                className={`${campoClasse} sm:w-52`}
+                className={`${campoEstilo} sm:w-52`}
               />
               <input
                 name="url"
                 required
                 placeholder="https://..."
-                className={`${campoClasse} sm:w-64`}
+                className={`${campoEstilo} sm:w-64`}
               />
-              <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-5`}>
+              <button type="submit" className={`${botaoEstilo("primario")}`}>
                 Adicionar
               </button>
             </form>
@@ -361,7 +361,7 @@ export function EditorBio({
                   name="pixel_id"
                   defaultValue={pagina.pixel_id ?? ""}
                   placeholder="só números"
-                  className={`${campoClasse} mt-1 sm:w-80`}
+                  className={`${campoEstilo} mt-1 sm:w-80`}
                 />
               </div>
 
@@ -375,11 +375,11 @@ export function EditorBio({
                   type="password"
                   autoComplete="off"
                   placeholder={temToken ? "deixe vazio para manter" : "colar token"}
-                  className={`${campoClasse} mt-1 sm:w-80`}
+                  className={`${campoEstilo} mt-1 sm:w-80`}
                 />
                 <p className="mt-1.5 text-xs text-muted">
                   Status:{" "}
-                  <span className={temToken ? "text-emerald-400" : "text-muted"}>
+                  <span className={temToken ? "text-ok" : "text-muted"}>
                     {temToken ? "configurado" : "não configurado"}
                   </span>
                   {temToken ? " · por segurança, não é exibido de volta" : null}
@@ -387,14 +387,14 @@ export function EditorBio({
               </div>
 
               <div className="flex flex-wrap items-center gap-4">
-                <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-6`}>
+                <button type="submit" className={`${botaoEstilo("primario")} sm:w-auto sm:px-6`}>
                   Salvar
                 </button>
                 {temToken ? (
                   <button
                     type="submit"
                     formAction={removerToken}
-                    className="text-sm text-red-400 transition hover:text-red-300"
+                    className="text-sm text-danger transition hover:text-danger"
                   >
                     Remover token
                   </button>
@@ -407,7 +407,7 @@ export function EditorBio({
         {/* ------------------------------------------------------ preview */}
         <aside className="lg:sticky lg:top-8 lg:self-start">
           <p className={rotulo}>Preview</p>
-          <div className="mt-2 overflow-hidden rounded-[2rem] border-4 border-white/15">
+          <div className="mt-2 overflow-hidden rounded-[2rem] border-4 border-line-strong">
             <div className="max-h-[70vh] overflow-y-auto">
               <BioRender
                 modo="preview"

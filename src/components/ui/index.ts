@@ -3,8 +3,8 @@
  *
  * Antes disto o "sistema de design" eram duas strings exportadas de
  * `auth-shell.tsx` — `campoClasse` e `botaoClasse` — usadas para input, select,
- * textarea e até para input de arquivo. Elas continuam existindo lá, apontando
- * para estes tokens, enquanto as telas migram uma por vez.
+ * textarea e até para input de arquivo. As duas foram apagadas quando a última
+ * tela migrou; se alguma voltar a aparecer, é a ideia errada voltando.
  */
 export {
   Botao,

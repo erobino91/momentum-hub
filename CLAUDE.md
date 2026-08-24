@@ -87,8 +87,10 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
   do projeto fazia isso antes.
 - **Rótulo visível sempre** (`Campo`), nunca só `placeholder`. Campo tem 16px no celular:
   abaixo disso o Safari do iPhone dá zoom sozinho ao focar.
-- `campoClasse` e `botaoClasse` continuam exportados de `auth-shell.tsx` só para as telas
-  ainda não migradas. Não usar em código novo.
+- `campoClasse` e `botaoClasse` **não existem mais** — foram apagados quando a última tela
+  migrou. Não existe mais nenhuma classe de cor solta no `src/`: `border-white/x`,
+  `bg-white/x`, `text-red-300` e companhia saíram todas, e o alias `accent` da era laranja
+  também.
 - **Nome de cor não pode colidir com utilitária do Tailwind.** A superfície de fundo chama-se
   `canvas`, não `base`: com `colors.base`, o Tailwind emite um `.text-base` de **cor** depois
   do `.text-base` de tamanho de fonte, e todo texto com essa classe vira quase preto. Vale
@@ -136,6 +138,14 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
   vídeo) precisa da rodinha visível; fechar na hora parece que nada aconteceu.
 - Diálogo dentro de diálogo funciona (`<dialog>` nativo empilha no top layer) e o Esc fecha
   só o de cima — verificado no navegador, é o caso de remover material.
+- **Cor de gráfico é literal, não token.** O recharts escreve `fill` como atributo de
+  apresentação do SVG, e `var()` só é resolvido em propriedade CSS — token ali vira cor
+  inválida. As constantes de `grafico.tsx` acompanham `globals.css` na mão.
+- **O verde do faturamento não vira vermelho.** Verde ali é semântica (dinheiro, alta), não
+  marca; o vermelho da Momentum entra no símbolo, no traço da seção e no botão principal.
+- **`/dashboard` não monta o próprio cabeçalho.** Quem monta é o `PortalShell`, igual às
+  outras telas do cliente — antes o cliente saía do portal para uma tela que não parecia o
+  mesmo produto.
 
 ## Base de reuso
 

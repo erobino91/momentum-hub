@@ -136,7 +136,7 @@ function NavAgencia({
         ativo={secao === "bio"}
       />
 
-      <p className="px-2.5 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-[0.14em] text-dim">
+      <p className="px-2.5 pb-1.5 pt-4 text-[11px] font-bold uppercase tracking-[0.14em] text-dim">
         Atalhos
       </p>
       <ItemNav href="/" icone="portal" rotulo="Portal do cliente" />

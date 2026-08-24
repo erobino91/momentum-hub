@@ -18,11 +18,11 @@ import {
  * Uma medida só (cliques) em cada gráfico, então uma cor só: identidade fica no
  * eixo, não na cor. `#e8500f` é o laranja da marca puxado para dentro da faixa
  * de luminosidade de tema escuro (OKLCH L 0.48–0.67) — passa nos seis testes
- * contra o fundo #0b0d12, incluindo daltonismo e contraste.
+ * contra o fundo --canvas (#0A0C10), incluindo daltonismo e contraste.
  */
 const COR = "#e8500f";
 const GRADE = "rgba(255,255,255,0.06)";
-const TINTA = "#8a93a6";
+const TINTA = "#9AA3B4"; // --muted, literal: ver a nota em dashboard/grafico.tsx
 
 function Balao({
   active,
@@ -36,7 +36,7 @@ function Balao({
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="rounded-md border border-white/15 bg-[#12151c] px-3 py-2 shadow-lg">
+    <div className="rounded-md border border-line-strong bg-surface-2 px-3 py-2 shadow-lg">
       <p className="text-[11px] uppercase tracking-wider text-muted">{p.nome}</p>
       <p className="mt-1 text-sm font-medium tabular-nums">
         {p.cliques.toLocaleString("pt-BR")} {sufixo}
@@ -88,7 +88,7 @@ export function CliquesPorDia({
             strokeWidth={2}
             fill="url(#grad-cliques)"
             dot={false}
-            activeDot={{ r: 5, fill: "#0b0d12", stroke: COR, strokeWidth: 2 }}
+            activeDot={{ r: 5, fill: "#0A0C10", stroke: COR, strokeWidth: 2 }}
           />
         </AreaChart>
       </ResponsiveContainer>

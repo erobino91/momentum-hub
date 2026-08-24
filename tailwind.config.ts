@@ -34,8 +34,8 @@ const config: Config = {
         warn: cor("warn"),
         danger: cor("danger"),
 
-        // Telas anteriores à Fase 8 ainda usam estes dois nomes.
-        accent: cor("brand"),
+        // `background` sobrevive porque é nome de utilitária esperada; o
+        // `accent` da era laranja morreu junto com a última tela que o usava.
         background: cor("canvas"),
       },
       borderRadius: {

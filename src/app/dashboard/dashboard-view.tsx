@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Fragment, useMemo, useState } from "react";
 import type { DadosDashboard, PeriodoDash, SecaoDash } from "@/types/dashboard";
 import { Grafico, type PontoGrafico } from "./grafico";
@@ -17,6 +16,7 @@ import {
   variacao,
   type Variacao,
 } from "./formato";
+import { campoEstilo, opcaoEstilo } from "@/components/ui";
 
 const COR = {
   total: "#10B981",
@@ -55,8 +55,8 @@ function Delta({ v }: { v: Variacao }) {
   const cor = !v
     ? "text-muted"
     : v.subiu
-      ? "text-emerald-400"
-      : "text-red-400";
+      ? "text-ok"
+      : "text-danger";
   return <p className={`mt-1.5 text-[11px] font-semibold ${cor}`}>{textoVariacao(v)}</p>;
 }
 
@@ -70,7 +70,7 @@ function Cartao({
   delta?: Variacao;
 }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3">
+    <div className="rounded-lg border border-line bg-surface-1 px-4 py-3">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
         {label}
       </p>
@@ -83,7 +83,7 @@ function Cartao({
 function Badge({ texto, cor }: { texto: string; cor: string }) {
   return (
     <span
-      className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+      className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide"
       style={{ background: `${cor}22`, color: cor }}
     >
       {texto}
@@ -101,7 +101,7 @@ function Bloco({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
+    <section className="rounded-xl border border-line bg-surface-1 p-5">
       <h3 className="mb-4 flex items-center gap-2 text-sm font-bold">
         {titulo}
         {badge ? <Badge texto={badge.texto} cor={badge.cor} /> : null}
@@ -114,7 +114,7 @@ function Bloco({
 function TituloSecao({ children }: { children: React.ReactNode }) {
   return (
     <h2 className="mb-4 flex items-center gap-2 pl-1 text-[11px] font-bold uppercase tracking-[0.1em] text-muted">
-      <span className="h-3.5 w-[3px] rounded-sm bg-accent" />
+      <span className="h-3.5 w-[3px] rounded-sm bg-brand" />
       {children}
     </h2>
   );
@@ -149,18 +149,18 @@ function Funil({
         return (
           <div
             key={chave}
-            className="flex min-w-[calc(50%-4px)] flex-1 flex-col overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] sm:min-w-0"
+            className="flex min-w-[calc(50%-4px)] flex-1 flex-col overflow-hidden rounded-lg border border-line bg-surface-1 sm:min-w-0"
           >
             <div className="flex-1 px-3 pb-2.5 pt-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
                 {FUNIL_ETAPAS[i]}
               </p>
               <p className="mt-1 text-base font-medium tabular-nums">
                 {fmtNum(valor)}
               </p>
               <p
-                className={`mt-2 text-[10px] font-semibold ${
-                  !v ? "text-muted" : v.subiu ? "text-emerald-400" : "text-red-400"
+                className={`mt-2 text-[11px] font-semibold ${
+                  !v ? "text-muted" : v.subiu ? "text-ok" : "text-danger"
                 }`}
               >
                 {v
@@ -255,14 +255,7 @@ function BlocoTrafego({
 
 /* ────────────────────────────── tela ────────────────────────────── */
 
-export function DashboardView({
-  dados,
-  prefixoTitulo,
-}: {
-  dados: DadosDashboard;
-  /** Preenchido quando a agência abre o dashboard de um cliente. */
-  prefixoTitulo?: string;
-}) {
+export function DashboardView({ dados }: { dados: DadosDashboard }) {
   const { cliente, periodos } = dados;
   const [idx, setIdx] = useState(periodos.length - 1);
 
@@ -317,47 +310,36 @@ export function DashboardView({
   const obs = atual.obs_polished || atual.obs_raw || "";
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-      <header className="flex flex-col gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-5">
-        <div className="flex flex-wrap items-center gap-4">
-          {cliente.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={cliente.logoUrl}
-              alt=""
-              className="h-12 w-12 rounded-lg border border-white/10 bg-white/5 object-contain"
-            />
-          ) : null}
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-semibold">
-              {prefixoTitulo ? `${prefixoTitulo} · ` : ""}
-              {cliente.nome}
-            </h1>
-            <p className="mt-0.5 text-xs text-muted">{mes}</p>
-          </div>
-          <div className="flex-1" />
-          <Link
-            href="/"
-            className="text-sm text-muted transition hover:text-foreground"
-          >
-            Voltar ao portal
-          </Link>
-        </div>
-        <label className="flex flex-col gap-1 sm:max-w-xs">
-          <span className="sr-only">Mês</span>
+    // O cabeçalho da tela é o `PortalShell`; aqui começa o conteúdo. Antes esta
+    // página montava o próprio `<main>` e o próprio topo, e o cliente saía do
+    // portal para um lugar que não parecia o mesmo produto.
+    <>
+      <div className="mb-6 flex flex-wrap items-center gap-4">
+        {cliente.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cliente.logoUrl}
+            alt=""
+            className="h-11 w-11 rounded-lg border border-line bg-surface-1 object-contain"
+          />
+        ) : null}
+        <label className="flex-1 sm:max-w-[220px]">
+          <span className="mb-1.5 block text-xs font-semibold text-muted">
+            Mês
+          </span>
           <select
             value={idx}
             onChange={(e) => setIdx(Number(e.target.value))}
-            className="w-full rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm font-medium outline-none transition focus:border-accent"
+            className={`${campoEstilo} font-medium`}
           >
             {periodos.map((p, i) => (
-              <option key={p.period_date} value={i} className="bg-[#12151c]">
+              <option key={p.period_date} value={i} className={opcaoEstilo}>
                 {fmtMes(p.period_date)}
               </option>
             ))}
           </select>
         </label>
-      </header>
+      </div>
 
       {tem("faturamento") ? (
         <section className="mt-8">
@@ -381,7 +363,7 @@ export function DashboardView({
               Resultado de {mes}
             </p>
           </div>
-          <div className="mt-2.5 rounded-xl border border-white/10 bg-white/[0.02] p-5">
+          <div className="mt-2.5 rounded-xl border border-line bg-surface-1 p-5">
             <p className="mb-3 text-[13px] font-bold text-muted">
               Evolução — Faturamento Total
             </p>
@@ -579,16 +561,16 @@ export function DashboardView({
       {obs ? (
         <section className="mt-8">
           <TituloSecao>Destaques do mês</TituloSecao>
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
+          <div className="rounded-xl border border-line bg-surface-1 p-6">
             <Observacoes texto={obs} />
           </div>
         </section>
       ) : null}
 
-      <footer className="mt-8 flex items-center gap-2 border-t border-white/10 pt-5 text-xs text-muted">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+      <footer className="mt-8 flex items-center gap-2 border-t border-line pt-5 text-xs text-muted">
+        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ok" />
         Atualizado · {mes}
       </footer>
-    </main>
+    </>
   );
 }

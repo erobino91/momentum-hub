@@ -1,13 +1,22 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { campoClasse, botaoClasse } from "@/components/auth-shell";
 import { criarPagina } from "./actions";
 import { URL_BIO } from "@/lib/bio/url";
 import type { LinkPage } from "@/types/bio";
 import type { Org } from "@/types/db";
 import { AgenciaShell, PortalShell } from "@/components/shell";
-import { Aviso, Vazio } from "@/components/ui";
+import {
+  Aviso,
+  BotaoEnviar,
+  Campo,
+  Dialogo,
+  Entrada,
+  Selecao,
+  Selo,
+  Vazio,
+  opcaoEstilo,
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Bio" };
@@ -72,7 +81,7 @@ export default async function BioIndex({
             <Link
               key={p.id}
               href={`/bio/${p.id}`}
-              className="flex items-center justify-between gap-4 rounded-lg border border-white/15 bg-white/5 px-5 py-4 transition hover:border-accent"
+              className="flex items-center justify-between gap-4 rounded-lg border border-line bg-surface-1 px-5 py-4 transition hover:border-line-strong"
             >
               <div className="min-w-0">
                 {ehAgencia ? (
@@ -85,53 +94,20 @@ export default async function BioIndex({
                   {URL_BIO}/{p.slug}
                 </p>
               </div>
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                  p.active
-                    ? "bg-emerald-400/15 text-emerald-300"
-                    : "bg-white/10 text-muted"
-                }`}
-              >
-                {p.active ? "no ar" : "rascunho"}
+              <span className="shrink-0">
+                <Selo tom={p.active ? "pronto" : "neutro"}>
+                  {p.active ? "no ar" : "rascunho"}
+                </Selo>
               </span>
             </Link>
           ))}
         </div>
       )}
 
-      {ehAgencia ? (
-        <section className="mt-8 rounded-lg border border-white/15 bg-white/5 p-5">
-          <h2 className="text-lg font-medium">Nova página</h2>
-          <p className="mt-1 text-sm text-muted">
-            O endereço é o final do link: {URL_BIO}/
-            <span className="text-foreground">endereco-do-cliente</span>
-          </p>
-          <form action={criarPagina} className="mt-4 flex flex-wrap gap-3">
-            <select name="org_id" required className={`${campoClasse} sm:w-52`}>
-              <option value="">Empresa…</option>
-              {(orgs ?? []).map((o) => (
-                <option key={o.id} value={o.id} className="bg-[#12151c]">
-                  {o.name}
-                </option>
-              ))}
-            </select>
-            <input
-              name="title"
-              required
-              placeholder="Nome que aparece na página"
-              className={`${campoClasse} sm:w-56`}
-            />
-            <input
-              name="slug"
-              required
-              placeholder="endereco-do-cliente"
-              className={`${campoClasse} sm:w-48`}
-            />
-            <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-5`}>
-              Criar
-            </button>
-          </form>
-        </section>
+      {ehAgencia && (orgs ?? []).length ? (
+        <div className="mt-6">
+          <DialogoNovaPagina orgs={orgs ?? []} />
+        </div>
       ) : null}
     </>
   );
@@ -156,5 +132,49 @@ export default async function BioIndex({
     >
       {conteudo}
     </PortalShell>
+  );
+}
+
+/**
+ * Criar página de bio. Sai do formulário sempre aberto no rodapé: é uma ação
+ * por cliente, não algo que se faça toda visita.
+ */
+function DialogoNovaPagina({ orgs }: { orgs: Pick<Org, "id" | "name">[] }) {
+  return (
+    <Dialogo
+      rotulo="+ Nova página"
+      variante="primario"
+      tamanho="sm"
+      titulo="Nova página de bio"
+      descricao={`O endereço é o final do link: ${URL_BIO}/endereco-do-cliente`}
+    >
+      <form action={criarPagina} className="space-y-3">
+        <Campo rotulo="Empresa" obrigatorio>
+          <Selecao name="org_id" required defaultValue="">
+            <option value="" disabled className={opcaoEstilo}>
+              Escolha…
+            </option>
+            {orgs.map((o) => (
+              <option key={o.id} value={o.id} className={opcaoEstilo}>
+                {o.name}
+              </option>
+            ))}
+          </Selecao>
+        </Campo>
+        <Campo rotulo="Nome que aparece na página" obrigatorio>
+          <Entrada name="title" required placeholder="BB Onça Burguers" />
+        </Campo>
+        <Campo
+          rotulo="Endereço"
+          obrigatorio
+          ajuda="Só letras minúsculas, números e hífen."
+        >
+          <Entrada name="slug" required pattern="[a-z0-9-]+" placeholder="bb-onca" />
+        </Campo>
+        <div className="flex justify-end pt-1">
+          <BotaoEnviar pendente="Criando…">Criar página</BotaoEnviar>
+        </div>
+      </form>
+    </Dialogo>
   );
 }

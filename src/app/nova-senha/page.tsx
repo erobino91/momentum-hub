@@ -1,5 +1,6 @@
 import { definirSenha } from "@/lib/auth-actions";
-import { AuthShell, campoClasse, botaoClasse } from "@/components/auth-shell";
+import { AuthShell } from "@/components/auth-shell";
+import { BotaoEnviar, Campo, Entrada } from "@/components/ui";
 
 export const metadata = { title: "Nova senha" };
 
@@ -14,19 +15,19 @@ export default function NovaSenhaPage({
       subtitulo="Defina a senha que você vai usar daqui pra frente."
       erro={searchParams.erro}
     >
-      <form action={definirSenha} className="space-y-3">
-        <input
-          name="senha"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          placeholder="Nova senha (mínimo 8 caracteres)"
-          className={campoClasse}
-        />
-        <button type="submit" className={botaoClasse}>
+      <form action={definirSenha} className="space-y-4">
+        <Campo rotulo="Nova senha" ajuda="Mínimo de 8 caracteres.">
+          <Entrada
+            name="senha"
+            type="password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+          />
+        </Campo>
+        <BotaoEnviar pendente="Salvando…" className="w-full">
           Salvar senha
-        </button>
+        </BotaoEnviar>
       </form>
     </AuthShell>
   );

@@ -30,7 +30,7 @@ function Balao({
   if (!active || !payload?.length) return null;
   const ponto = payload[0].payload;
   return (
-    <div className="rounded-md border border-white/15 bg-[#12151c] px-3 py-2 shadow-lg">
+    <div className="rounded-md border border-line-strong bg-surface-2 px-3 py-2 shadow-lg">
       <p className="text-[11px] uppercase tracking-wider text-muted">
         {ponto.mes}
       </p>
@@ -44,7 +44,22 @@ function Balao({
 /**
  * Evolução dos últimos meses. Mesma leitura do dash.html (linha suavizada com
  * área), repintada para o fundo escuro do portal.
+ *
+ * As cores aqui são literais, não tokens: o recharts escreve `fill` como
+ * atributo de apresentação do SVG, e `var()` não é resolvido em atributo — só
+ * em propriedade CSS. Os valores acompanham `globals.css` na mão.
  */
+const COR_TEXTO = "#9AA3B4"; // --muted
+const COR_FUNDO = "#0A0C10"; // --canvas
+
+/** `150000` → `150 mil`. "R$ 200.000" no eixo não cabe e quebra em duas linhas. */
+function tickCurto(v: number) {
+  if (Math.abs(v) >= 1_000_000)
+    return `${(v / 1_000_000).toFixed(1).replace(".", ",")} mi`;
+  if (Math.abs(v) >= 1_000) return `${Math.round(v / 1_000)} mil`;
+  return String(Math.round(v));
+}
+
 export function Grafico({
   dados,
   cor,
@@ -77,17 +92,15 @@ export function Grafico({
             dataKey="eixo"
             tickLine={false}
             axisLine={false}
-            tick={{ fill: "#8a93a6", fontSize: 11 }}
+            tick={{ fill: COR_TEXTO, fontSize: 11 }}
             dy={6}
           />
           <YAxis
             tickLine={false}
             axisLine={false}
-            width={72}
-            tick={{ fill: "#8a93a6", fontSize: 11 }}
-            tickFormatter={(v: number) =>
-              `R$ ${Math.round(v).toLocaleString("pt-BR")}`
-            }
+            width={58}
+            tick={{ fill: COR_TEXTO, fontSize: 11 }}
+            tickFormatter={tickCurto}
           />
           <Tooltip
             content={<Balao />}
@@ -99,8 +112,8 @@ export function Grafico({
             stroke={cor}
             strokeWidth={2.5}
             fill={`url(#${id})`}
-            dot={{ r: 4, fill: "#0b0d12", stroke: cor, strokeWidth: 2 }}
-            activeDot={{ r: 6, fill: "#0b0d12", stroke: cor, strokeWidth: 2 }}
+            dot={{ r: 4, fill: COR_FUNDO, stroke: cor, strokeWidth: 2 }}
+            activeDot={{ r: 6, fill: COR_FUNDO, stroke: cor, strokeWidth: 2 }}
           />
         </AreaChart>
       </ResponsiveContainer>
