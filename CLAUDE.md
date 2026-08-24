@@ -52,11 +52,17 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   afirma isso explicitamente para ninguém adicionar o bypass por reflexo.
 - **Não existe módulo "liberado" para um cliente e não para outro.** O serviço não é
   fragmentado: todo cliente tem os quatro módulos. O que varia é o módulo estar
-  **configurado** — e isso é derivado do recurso existir (slug do dashboard preenchido,
-  página de bio criada, restaurante preparado), nunca um estado marcado na mão. Quem
-  responde é `modulos_configurados(org)`; `module_config` só guarda configuração. Se
-  aparecer a vontade de "desligar só para este cliente", é a ideia errada voltando: o
-  caminho é não configurar ainda, e o cliente vê **"em configuração"**.
+  **configurado** — e isso é derivado do recurso existir **para valer**, nunca de um estado
+  marcado na mão: dashboard = ter mês publicado; bio = ter página **no ar** (`active`), não
+  só linha criada; fila = restaurante preparado. Quem responde é `modulos_configurados(org)`;
+  `module_config` só guarda configuração. Se aparecer a vontade de "desligar só para este
+  cliente", é a ideia errada voltando: o caminho é não configurar ainda, e o cliente vê
+  **"em configuração"**.
+- **Recurso existir não é recurso funcionar.** `link_pages.active` nasce `false` e
+  `criarPagina` não mexe nele, então toda página de bio nasce rascunho — e a página pública
+  é lida com `.eq("active", true)`. Enquanto a regra foi "existe linha", a BB Onça teve o
+  card de Bio aceso apontando para um 404. Ao acrescentar módulo ou critério, a pergunta é
+  "o cliente clicando nisto chega em algo que funciona?", não "a linha existe?".
 - **`fila` é por usuário, não por empresa.** Quem clica no card é uma pessoa, e o acesso
   ao Fila vem de `profiles`. Restaurante existir com o dono ainda sem `profiles` acende o
   card para levar a "esta conta não atende nenhum restaurante" — por isso `prepararFila`

@@ -119,9 +119,13 @@ export default async function EmpresaPage({
         <Cartao
           titulo={MODULES.bio.label}
           descricao={
-            pagina
-              ? `${URL_BIO}/${pagina.slug}`
-              : "Nasce com o nome e o endereço da própria empresa."
+            !pagina
+              ? "Nasce com o nome e o endereço da própria empresa."
+              : pagina.active
+                ? `${URL_BIO}/${pagina.slug}`
+                : // Página nasce rascunho: o endereço só responde depois de
+                  // ligar "Página no ar" no editor.
+                  "Criada, mas ainda não está no ar — o endereço devolve 404."
           }
           acao={
             <Selo tom={pagina ? (pagina.active ? "pronto" : "atencao") : "atencao"}>
@@ -130,8 +134,11 @@ export default async function EmpresaPage({
           }
         >
           {pagina ? (
-            <Link href={`/bio/${pagina.id}`} className={botaoEstilo("secundario", "sm")}>
-              Editar página
+            <Link
+              href={`/bio/${pagina.id}`}
+              className={botaoEstilo(pagina.active ? "secundario" : "primario", "sm")}
+            >
+              {pagina.active ? "Editar página" : "Publicar página"}
             </Link>
           ) : (
             <form action={criarPagina}>

@@ -176,14 +176,23 @@ export function EditorBio({
                 ))}
               </div>
 
-              <label className="flex items-center gap-2 text-sm">
+              {/* Este interruptor é o que publica. Enquanto estiver desligado
+                  o endereço público devolve 404, e o card de Bio no portal do
+                  cliente aparece como "em configuração". */}
+              <label className="flex items-start gap-2.5 rounded-md border border-line bg-surface-2 p-3 text-sm">
                 <input
                   type="checkbox"
                   name="active"
                   defaultChecked={pagina.active}
-                  className="h-4 w-4 accent-brand"
+                  className="mt-0.5 h-4 w-4 accent-brand"
                 />
-                Página no ar
+                <span>
+                  <span className="font-medium">Página no ar</span>
+                  <span className="mt-0.5 block text-xs text-dim">
+                    Desligada, o endereço devolve 404 e o cliente vê o módulo
+                    como “em configuração”.
+                  </span>
+                </span>
               </label>
 
               <button type="submit" className={`${botaoEstilo("primario")} sm:w-auto sm:px-6`}>
