@@ -65,6 +65,31 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
 - Migrations versionadas em `supabase/migrations/`, nunca DDL solto no painel.
 - Nunca imprimir chaves ou segredos na saída, nem dentro de comandos.
 
+## Interface (Fase 8)
+
+Os tokens moram em `src/app/globals.css` e são mapeados em `tailwind.config.ts`. As
+primitivas ficam em `src/components/ui/` — **código novo usa elas**, não classe solta.
+
+- **Token em canal RGB, não em hex.** `--brand: 227 27 27`, mapeado como
+  `rgb(var(--brand) / <alpha-value>)`. É o que faz `bg-brand/15` funcionar: com o valor em
+  `var(--x)` cru, o Tailwind 3 **não gera a regra** e a classe some sem erro — foi o que
+  acontecia com `bg-accent/15` no selo de "pronto" da `/agencia`.
+- **Vermelho da marca é `#E31B1B`** (o mesmo da `lp-agencia`), com branco por cima. Como
+  texto no escuro ele reprova em contraste (4,1:1) — para isso existe `brand-ink`
+  (`#FF5A5A`, 6,4:1).
+- **Marca ≠ perigo.** Vermelho preenchido só na ação principal (uma por tela), no símbolo,
+  na aba ativa e no anel de foco; nunca em selo de estado. Em lista, quem apaga é a variante
+  `destrutivo` (neutra até o hover) dentro de `ConfirmarAcao` — o vermelho cheio de apagar só
+  aparece dentro do diálogo, com a intenção já declarada.
+- **Nada destrutivo sem `ConfirmarAcao`.** Use `digite="<palavra>"` no que não dá para
+  desfazer (apagar mês, apagar empresa).
+- **Todo formulário envia por `BotaoEnviar`**, que mostra o estado de envio. Só um formulário
+  do projeto fazia isso antes.
+- **Rótulo visível sempre** (`Campo`), nunca só `placeholder`. Campo tem 16px no celular:
+  abaixo disso o Safari do iPhone dá zoom sozinho ao focar.
+- `campoClasse` e `botaoClasse` continuam exportados de `auth-shell.tsx` só para as telas
+  ainda não migradas. Não usar em código novo.
+
 ## Base de reuso
 
 Copiar padrões do `../Fila de Espera` (projeto mais maduro do workspace): clients

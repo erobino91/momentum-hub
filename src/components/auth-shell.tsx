@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Aviso } from "@/components/ui";
+import { campoEstilo } from "@/components/ui/campo";
+import { botaoEstilo } from "@/components/ui/botao";
 
 export function AuthShell({
   titulo,
@@ -20,22 +23,22 @@ export function AuthShell({
       <div className="w-full max-w-sm">
         <Link
           href="/"
-          className="text-xs uppercase tracking-[0.3em] text-muted hover:text-foreground"
+          className="text-xs font-semibold uppercase tracking-[0.3em] text-dim transition hover:text-foreground"
         >
           Momentum Digital
         </Link>
-        <h1 className="mt-3 text-2xl font-semibold">{titulo}</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight">{titulo}</h1>
         {subtitulo ? <p className="mt-2 text-sm text-muted">{subtitulo}</p> : null}
 
         {erro ? (
-          <p className="mt-6 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-            {erro}
-          </p>
+          <div className="mt-6">
+            <Aviso tom="erro">{erro}</Aviso>
+          </div>
         ) : null}
         {aviso ? (
-          <p className="mt-6 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
-            {aviso}
-          </p>
+          <div className="mt-6">
+            <Aviso tom="ok">{aviso}</Aviso>
+          </div>
         ) : null}
 
         <div className="mt-6">{children}</div>
@@ -45,8 +48,15 @@ export function AuthShell({
   );
 }
 
-export const campoClasse =
-  "w-full rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent";
+/**
+ * Compatibilidade com as telas anteriores à Fase 8.
+ *
+ * Eram estas duas strings o sistema de design inteiro do projeto. Continuam
+ * exportadas — agora apontando para os tokens novos, para que toda página
+ * ganhe o vermelho da marca e o contraste corrigido antes mesmo de ser
+ * reescrita. Em código novo, usar `Campo`/`Entrada` e `Botao` de
+ * `@/components/ui`.
+ */
+export const campoClasse = campoEstilo;
 
-export const botaoClasse =
-  "w-full rounded-md bg-accent px-3 py-2 text-sm font-medium text-black transition hover:opacity-90";
+export const botaoClasse = `${botaoEstilo("primario")} w-full`;

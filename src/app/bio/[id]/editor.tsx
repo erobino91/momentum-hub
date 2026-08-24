@@ -181,7 +181,7 @@ export function EditorBio({
                   type="checkbox"
                   name="active"
                   defaultChecked={pagina.active}
-                  className="h-4 w-4 accent-[color:var(--accent)]"
+                  className="h-4 w-4 accent-brand"
                 />
                 Página no ar
               </label>
@@ -281,7 +281,7 @@ export function EditorBio({
                             type="checkbox"
                             name="active"
                             defaultChecked={b.active}
-                            className="h-4 w-4 accent-[color:var(--accent)]"
+                            className="h-4 w-4 accent-brand"
                           />
                           Ativo
                         </label>

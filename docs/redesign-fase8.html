@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Momentum Hub — Redesenho</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ── superfícies · 4 níveis (hoje: 5 valores improvisados de bg-white/x) ── */
+  --base:#0A0C10; --s1:#11141B; --s2:#171B24; --s3:#1E2430;
+  /* ── linhas · 2 níveis ── */
+  --line:#232936; --line-strong:#333B4C;
+  /* ── texto · 3 níveis, todos ≥4,5:1 sobre --base ── */
+  --fg:#F2F4F8;      /* 17,8:1 */
+  --muted:#9AA3B4;   /*  7,7:1 */
+  --dim:#7A8496;     /*  5,2:1 */
+  /* ── MARCA · vermelho Momentum (lp-agencia) ── */
+  --brand:#E31B1B;          /* preenchimento — branco por cima dá 4,7:1 */
+  --brand-hover:#C01515;
+  --brand-ink:#FF5A5A;      /* vermelho como TEXTO no escuro — 6,4:1 */
+  --brand-soft:rgba(227,27,27,.16);
+  /* ── semânticos ── */
+  --ok:#34D399; --ok-soft:rgba(52,211,153,.13);
+  --warn:#FBBF24; --warn-soft:rgba(251,191,36,.13);
+  --danger:#FF6B6B; --danger-soft:rgba(255,107,107,.13);
+  /* ── raio · 3 degraus (hoje: 5 misturados) ── */
+  --r1:6px; --r2:10px; --r3:14px;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--base);color:var(--fg);
+  font:15px/1.55 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;padding:34px 20px 90px;
+}
+.wrap{max-width:1200px;margin:0 auto}
+code{font:12.5px var(--mono);background:var(--s2);padding:1px 5px;border-radius:4px;color:var(--muted)}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ─────────────── documento ─────────────── */
+.doc-head{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:8px}
+.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--brand-ink);font-weight:700}
+h1{font-size:32px;font-weight:700;letter-spacing:-.025em;margin-top:11px}
+.doc-head p{color:var(--muted);margin-top:11px;max-width:66ch;font-size:14.5px}
+.step{margin:58px 0 8px;display:flex;align-items:center;gap:12px}
+.step-n{width:27px;height:27px;border-radius:var(--r1);background:var(--brand);color:#fff;
+  display:grid;place-items:center;font-size:12.5px;font-weight:800;flex:none}
+.step h2{font-size:20px;font-weight:700;letter-spacing:-.015em}
+.step-sub{color:var(--muted);font-size:13.5px;margin:0 0 20px 39px;max-width:76ch}
+
+.frame{border:1px solid var(--line);border-radius:var(--r3);overflow:hidden;background:var(--s1)}
+.frame-cap{background:var(--s2);border-bottom:1px solid var(--line);padding:9px 14px;
+  font:600 11px/1 var(--mono);color:var(--dim);letter-spacing:.06em;display:flex;gap:8px;align-items:center}
+.dot{width:8px;height:8px;border-radius:99px;background:var(--line-strong)}
+
+/* ─────────────── tokens ─────────────── */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+.sw{border:1px solid var(--line);border-radius:var(--r2);overflow:hidden}
+.sw i{display:block;height:48px}
+.sw b{display:block;padding:8px 10px 2px;font-size:12px;font-weight:600}
+.sw span{display:block;padding:0 10px 9px;font:11px var(--mono);color:var(--dim)}
+.sw em{font-style:normal;color:var(--ok)}
+
+/* ─────────────── shell ─────────────── */
+.app{display:grid;grid-template-columns:216px 1fr;min-height:570px}
+.side{background:var(--s1);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:3px}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 20px}
+.brand-mark{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;
+  display:grid;place-items:center;font-weight:800;font-size:14px;flex:none;letter-spacing:-.03em}
+.brand-txt{font-weight:700;font-size:14px;letter-spacing:-.02em;line-height:1.25}
+.brand-txt small{display:block;font-size:10.5px;color:var(--dim);font-weight:500;letter-spacing:.04em}
+.nav-lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+  font-weight:700;padding:16px 8px 6px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 9px;border-radius:var(--r1);
+  color:var(--muted);text-decoration:none;font-size:13.5px;font-weight:500;min-height:36px;
+  transition:background .15s var(--ease),color .15s var(--ease)}
+.nav a:hover{background:var(--s2);color:var(--fg)}
+.nav a.on{background:var(--brand-soft);color:var(--fg);font-weight:600;box-shadow:inset 2px 0 0 var(--brand)}
+.nav .ico{width:16px;text-align:center;opacity:.9;font-size:13px}
+.nav .tag{margin-left:auto;font:700 10.5px var(--mono);color:var(--dim);background:var(--s2);
+  padding:2px 7px;border-radius:99px}
+.side-foot{margin-top:auto;border-top:1px solid var(--line);padding:13px 8px 2px;font-size:12px;color:var(--dim)}
+.side-foot b{display:block;color:var(--muted);font-weight:600;font-size:12.5px}
+
+.main{background:var(--base);display:flex;flex-direction:column;min-width:0}
+.topbar{border-bottom:1px solid var(--line);padding:15px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.crumb{font-size:12px;color:var(--dim)}
+.crumb b{color:var(--fg);font-weight:600}
+.topbar h3{font-size:19.5px;font-weight:700;letter-spacing:-.02em;margin-top:3px;display:flex;align-items:center;gap:10px}
+.spacer{flex:1}
+.body{padding:20px 22px}
+
+/* ─────────────── primitivas ─────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid transparent;
+  border-radius:var(--r1);padding:8px 14px;font:600 13.5px/1.3 inherit;cursor:pointer;white-space:nowrap;
+  min-height:36px;transition:background .15s var(--ease),border-color .15s var(--ease),color .15s var(--ease)}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{background:var(--brand-hover)}
+.btn-secondary{background:var(--s2);color:var(--fg);border-color:var(--line-strong)}
+.btn-secondary:hover{background:var(--s3)}
+.btn-ghost{background:transparent;color:var(--muted)}
+.btn-ghost:hover{color:var(--fg);background:var(--s2)}
+.btn-destructive{background:transparent;color:var(--muted);border-color:var(--line-strong)}
+.btn-destructive:hover{color:var(--danger);border-color:rgba(255,107,107,.45);background:var(--danger-soft)}
+.btn-danger-solid{background:var(--danger);color:#1A0505}
+.btn-sm{padding:5px 10px;font-size:12.5px;min-height:30px}
+.btn[disabled]{opacity:.42;cursor:not-allowed}
+.spin{width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+  border-radius:99px;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.field{display:block}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;background:var(--s2);border:1px solid var(--line-strong);
+  border-radius:var(--r1);color:var(--fg);padding:9px 11px;font:14.5px inherit;min-height:40px}
+.field input::placeholder{color:var(--dim)}
+.field .hint{font-size:11.5px;color:var(--dim);margin-top:5px}
+.field .err{font-size:11.5px;color:var(--danger);margin-top:5px;display:flex;gap:5px;align-items:center}
+.field input.invalid{border-color:var(--danger)}
+.field .focus{border-color:var(--brand);outline:2px solid var(--brand);outline-offset:1px}
+.money{position:relative}
+.money>span{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:13.5px;pointer-events:none}
+.money input{padding-left:33px;font-variant-numeric:tabular-nums;text-align:right}
+.calc input{background:var(--base);color:var(--muted);border-style:dashed;text-align:right;
+  font-variant-numeric:tabular-nums}
+
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:3px 9px;
+  font-size:11.5px;font-weight:600;white-space:nowrap}
+.pill i{width:6px;height:6px;border-radius:99px;background:currentColor;flex:none}
+.p-ok{background:var(--ok-soft);color:var(--ok)}
+.p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-off{background:var(--s3);color:var(--dim)}
+.p-err{background:var(--danger-soft);color:var(--danger)}
+
+/* ─────────────── tabela ─────────────── */
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:190px;max-width:310px}
+.search input{width:100%;background:var(--s1);border:1px solid var(--line-strong);border-radius:var(--r1);
+  color:var(--fg);padding:8px 11px 8px 31px;font:13.5px inherit;min-height:36px}
+.search>span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:13px}
+.seg{display:inline-flex;background:var(--s1);border:1px solid var(--line);border-radius:var(--r1);padding:2px}
+.seg button{border:0;background:transparent;color:var(--muted);font:600 12.5px inherit;
+  padding:5px 11px;border-radius:4px;cursor:pointer}
+.seg button.on{background:var(--s3);color:var(--fg)}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+  font-weight:700;padding:0 12px 9px;border-bottom:1px solid var(--line)}
+tbody tr{border-bottom:1px solid var(--line)}
+tbody tr:hover{background:var(--s1)}
+tbody td{padding:11px 12px;vertical-align:middle}
+.cli{display:flex;align-items:center;gap:10px}
+.av{width:32px;height:32px;border-radius:8px;background:var(--s3);display:grid;place-items:center;
+  font-weight:700;font-size:12px;color:var(--muted);flex:none;letter-spacing:-.02em}
+.cli b{font-weight:600;display:block;letter-spacing:-.01em}
+.cli small{color:var(--dim);font:11.5px var(--mono)}
+.mods{display:flex;gap:5px}
+.mod{width:25px;height:23px;border-radius:5px;display:grid;place-items:center;font-size:10.5px;
+  font-weight:700;background:var(--s2);color:var(--dim);border:1px solid var(--line)}
+.mod.on{background:var(--ok-soft);color:var(--ok);border-color:rgba(52,211,153,.3)}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.row-act{display:flex;gap:5px;justify-content:flex-end;opacity:.5;transition:opacity .15s var(--ease)}
+tbody tr:hover .row-act{opacity:1}
+
+/* ─────────────── abas ─────────────── */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:0 -22px 18px;padding:0 22px;overflow-x:auto}
+.tabs a{padding:10px 13px;font-size:13.5px;font-weight:600;color:var(--muted);text-decoration:none;
+  border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;cursor:pointer}
+.tabs a:hover{color:var(--fg)}
+.tabs a.on{color:var(--fg);border-bottom-color:var(--brand)}
+
+/* ─────────────── blocos ─────────────── */
+.card{background:var(--s1);border:1px solid var(--line);border-radius:var(--r2);padding:15px}
+.card h4{font-size:13.5px;font-weight:600;margin-bottom:3px}
+.card p{font-size:12.5px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.kpi{background:var(--s1);border:1px solid var(--line);border-radius:var(--r2);padding:13px 15px}
+.kpi span{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);font-weight:700}
+.kpi b{display:block;font-size:20px;font-weight:700;margin-top:5px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi em{font-style:normal;font-size:11.5px;font-weight:600;color:var(--ok)}
+.fs{border:1px solid var(--line);border-radius:var(--r2);padding:15px;background:var(--s1)}
+.fs legend{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+  font-weight:700;padding:0 7px;margin-left:-7px}
+.savebar{position:sticky;bottom:0;background:linear-gradient(to top,var(--base) 62%,transparent);
+  padding:15px 0 2px;display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+.savebar .st{font-size:12.5px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.skel{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);
+  background-size:200% 100%;animation:sk 1.3s infinite;border-radius:4px;height:12px}
+@keyframes sk{to{background-position:-200% 0}}
+
+/* ─────────────── diálogo ─────────────── */
+.dlg-bg{background:rgba(4,6,9,.7);padding:36px;display:grid;place-items:center;backdrop-filter:blur(3px)}
+.dlg{width:100%;max-width:414px;background:var(--s2);border:1px solid var(--line-strong);
+  border-radius:var(--r3);padding:21px;box-shadow:0 24px 64px rgba(0,0,0,.65)}
+.dlg h4{font-size:16.5px;font-weight:700;margin-bottom:7px;letter-spacing:-.015em}
+.dlg p{font-size:13.5px;color:var(--muted);line-height:1.55}
+.dlg .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:19px}
+
+/* ─────────────── nota / antes-depois ─────────────── */
+.note{border-left:2px solid var(--brand);background:var(--s1);border-radius:0 var(--r2) var(--r2) 0;
+  padding:12px 15px;font-size:13px;color:var(--muted);margin-top:15px;line-height:1.55}
+.note b{color:var(--fg);font-weight:600}
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:15px}
+.ba>div{border:1px solid var(--line);border-radius:var(--r2);overflow:hidden}
+.ba h5{font:700 10.5px/1 var(--mono);letter-spacing:.11em;text-transform:uppercase;
+  padding:9px 13px;border-bottom:1px solid var(--line)}
+.ba .old h5{background:var(--danger-soft);color:var(--danger)}
+.ba .new h5{background:var(--ok-soft);color:var(--ok)}
+.ba ul{list-style:none;padding:12px 14px;display:grid;gap:8px}
+.ba li{font-size:13px;color:var(--muted);padding-left:16px;position:relative;line-height:1.5}
+.ba li::before{content:"×";position:absolute;left:1px;color:var(--danger);font-weight:700}
+.ba .new li::before{content:"✓";color:var(--ok);font-size:11px}
+.rule{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.rule:last-child{border-bottom:0}
+.rule i{font-style:normal;width:20px;flex:none;text-align:center;font-size:13px}
+.rule p{font-size:13px;color:var(--muted);line-height:1.5}
+.rule p b{color:var(--fg);font-weight:600}
+
+/* ─────────────── celular ─────────────── */
+.phone{width:290px;border:1px solid var(--line-strong);border-radius:20px;overflow:hidden;background:var(--base);flex:none}
+.ph-top{background:var(--s1);border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;gap:9px}
+.ph-body{padding:12px 12px 16px}
+.ph-row{border:1px solid var(--line);border-radius:var(--r2);background:var(--s1);padding:11px 12px;margin-bottom:8px}
+.ph-row .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+
+@media(max-width:860px){
+  .app{grid-template-columns:1fr}.side{display:none}
+  .ba,.grid2,.grid3{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="doc-head">
+  <p class="eyebrow">Momentum Hub · proposta de UI/UX · Fase 8</p>
+  <h1>Redesenho do painel da agência</h1>
+  <p>O portal do cliente está razoável. O painel interno não: 10 empresas viram 10 cartões idênticos
+  num scroll de ~4.000px, com três botões laranja cada e um formulário de senha sempre aberto.
+  Abaixo: o sistema visual no <b style="color:var(--fg)">vermelho da marca</b>, e as telas que mais doem, redesenhadas.</p>
+</div>
+
+<!-- ══════════════ 1 · TOKENS ══════════════ -->
+<div class="step"><span class="step-n">1</span><h2>Tokens</h2></div>
+<p class="step-sub">Hoje existem 4 variáveis CSS e o resto é improviso — <code>bg-white/5</code>,
+<code>bg-white/[0.03]</code>, <code>bg-white/[0.02]</code>, <code>border-white/10</code>,
+<code>border-white/15</code>: cinco jeitos de dizer “superfície” em 88 usos, mais 4 raios misturados.
+O laranja <code>#ff5a1f</code> sai; entra o vermelho <code>#E31B1B</code> da <code>lp-agencia</code>,
+e a fonte passa a ser Inter — a mesma do site da agência.</p>
+
+<div class="frame"><div class="frame-cap"><i class="dot"></i>globals.css · tailwind.config.ts</div>
+<div style="padding:17px">
+  <div class="swatches">
+    <div class="sw"><i style="background:#E31B1B"></i><b>brand</b><span>#E31B1B</span></div>
+    <div class="sw"><i style="background:#C01515"></i><b>brand-hover</b><span>#C01515</span></div>
+    <div class="sw"><i style="background:#FF5A5A"></i><b>brand-ink</b><span>#FF5A5A <em>6,4:1</em></span></div>
+    <div class="sw"><i style="background:#0A0C10"></i><b>base</b><span>#0A0C10</span></div>
+    <div class="sw"><i style="background:#11141B"></i><b>surface-1</b><span>#11141B</span></div>
+    <div class="sw"><i style="background:#171B24"></i><b>surface-2</b><span>#171B24</span></div>
+    <div class="sw"><i style="background:#1E2430"></i><b>surface-3</b><span>#1E2430</span></div>
+    <div class="sw"><i style="background:#232936"></i><b>line</b><span>#232936</span></div>
+    <div class="sw"><i style="background:#9AA3B4"></i><b>muted</b><span>#9AA3B4 <em>7,7:1</em></span></div>
+    <div class="sw"><i style="background:#7A8496"></i><b>dim</b><span>#7A8496 <em>5,2:1</em></span></div>
+    <div class="sw"><i style="background:#34D399"></i><b>ok</b><span>#34D399</span></div>
+    <div class="sw"><i style="background:#FBBF24"></i><b>warn</b><span>#FBBF24</span></div>
+    <div class="sw"><i style="background:#FF6B6B"></i><b>danger</b><span>#FF6B6B</span></div>
+  </div>
+  <div class="note" style="margin-top:16px"><b>Contraste medido, não chutado.</b> O
+  <code>--muted</code> de hoje (<code>#8a93a6</code>) e os <code>text-[10px]</code> espalhados pelo
+  dashboard ficam no limite. Aqui todo texto passa de 4,5:1 sobre o fundo, e o corpo sobe de 14px
+  para 15px.</div>
+</div></div>
+
+<!-- ══════════════ 2 · REGRA DA COR ══════════════ -->
+<div class="step"><span class="step-n">2</span><h2>A regra que faz o vermelho funcionar</h2></div>
+<p class="step-sub">Marca vermelha tem um problema só, e é sério: vermelho também é a cor de perigo.
+Se “Publicar mês” e “Apagar mês” forem os dois vermelhos, a tela mente. A saída é separar por
+<b>forma</b>, não por matiz.</p>
+
+<div class="frame"><div class="frame-cap"><i class="dot"></i>brand ≠ danger</div>
+<div style="padding:6px 17px 17px">
+  <div class="rule"><i style="color:var(--brand-ink)">●</i><p><b>Vermelho preenchido = só a ação
+    principal.</b> Uma por tela. Mais o símbolo da marca, o indicador da aba ativa e o anel de foco.</p></div>
+  <div class="rule"><i style="color:var(--brand-ink)">●</i><p><b>Vermelho nunca vira etiqueta de
+    estado.</b> Pílula só existe em verde/âmbar/cinza/rosa — então uma pílula vermelha só pode
+    significar erro, sem ambiguidade.</p></div>
+  <div class="rule"><i style="color:var(--danger)">●</i><p><b>Destrutivo em lista é neutro</b>
+    (contorno cinza, vira rosa no hover). O vermelho cheio de “apagar” só aparece
+    <b>dentro do diálogo</b> — depois que a intenção já foi declarada.</p></div>
+  <div class="rule"><i style="color:var(--dim)">●</i><p><b>Cor nunca é o único sinal.</b> Toda pílula
+    tem ponto + palavra; todo erro tem texto. Diretriz <code>color-not-only</code>.</p></div>
+
+  <div style="display:flex;gap:26px;flex-wrap:wrap;margin-top:18px;padding-top:17px;border-top:1px solid var(--line)">
+    <div>
+      <p class="eyebrow" style="color:var(--dim);margin-bottom:10px">Botões — 5 variantes, não 1</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary">Publicar mês</button>
+        <button class="btn btn-secondary">Preparar fila</button>
+        <button class="btn btn-ghost">Cancelar</button>
+        <button class="btn btn-destructive">Apagar</button>
+        <button class="btn btn-primary" disabled><span class="spin"></span>Salvando…</button>
+      </div>
+      <p style="font-size:12px;color:var(--dim);margin-top:9px">Hoje todo botão é o mesmo laranja
+      <code>w-full</code>, e todo uso reescreve com <code>sm:w-auto sm:px-5</code>.</p>
+    </div>
+    <div>
+      <p class="eyebrow" style="color:var(--dim);margin-bottom:10px">Estado</p>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <span class="pill p-ok"><i></i>pronto</span>
+        <span class="pill p-warn"><i></i>em configuração</span>
+        <span class="pill p-off"><i></i>em breve</span>
+        <span class="pill p-err"><i></i>falhou</span>
+      </div>
+      <p class="eyebrow" style="color:var(--dim);margin:16px 0 10px">Carregando</p>
+      <div style="display:grid;gap:7px;width:170px">
+        <div class="skel" style="width:100%"></div><div class="skel" style="width:72%"></div>
+      </div>
+    </div>
+    <div style="min-width:200px">
+      <p class="eyebrow" style="color:var(--dim);margin-bottom:10px">Campo — rótulo visível</p>
+      <div class="field"><label for="d1">Faturamento — iFood</label>
+        <div class="money"><span>R$</span><input id="d1" class="focus" value="18.430,00"></div>
+        <p class="hint">Máscara pt-BR. Hoje é <code>type="number"</code> cru: digita-se com ponto.</p>
+      </div>
+      <div class="field" style="margin-top:12px"><label for="d2">Endereço da página</label>
+        <input id="d2" class="invalid" value="bb onça">
+        <p class="err">● Só letras minúsculas, números e hífen. Sugestão: <code>bb-onca</code></p>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ══════════════ 3 · /AGENCIA ══════════════ -->
+<div class="step"><span class="step-n">3</span><h2>/agencia — de 10 cartões para uma tabela</h2></div>
+<p class="step-sub">Menu lateral fixo: hoje não existe navegação nenhuma, são links de texto cinza
+reposicionados a cada página. Mais busca, filtros e formulários atrás de botão.</p>
+
+<div class="frame"><div class="frame-cap"><i class="dot"></i>portal.mmtdigital.com.br/agencia</div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="brand-mark">M</span>
+      <span class="brand-txt">Momentum<small>Área da agência</small></span></div>
+    <nav class="nav">
+      <a class="on"><span class="ico">▦</span>Empresas<span class="tag">10</span></a>
+      <a><span class="ico">◉</span>Lives<span class="tag" style="background:var(--danger-soft);color:var(--danger)">1</span></a>
+      <a><span class="ico">◈</span>Páginas de bio</a>
+      <p class="nav-lbl">Atalhos</p>
+      <a><span class="ico">↗</span>Portal do cliente</a>
+      <a><span class="ico">↗</span>Fila de Espera</a>
+    </nav>
+    <div class="side-foot"><b>Luis</b>agência · sair</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div><p class="crumb"><b>Empresas</b></p><h3>10 empresas</h3></div>
+      <span class="spacer"></span>
+      <button class="btn btn-primary">+ Nova empresa</button>
+    </div>
+    <div class="body">
+      <div class="toolbar">
+        <div class="search"><span>⌕</span><input placeholder="Buscar empresa…"></div>
+        <div class="seg"><button class="on">Todas</button><button>Mês atrasado</button><button>Sem acesso</button></div>
+      </div>
+
+      <table>
+        <thead><tr>
+          <th>Empresa</th><th>Módulos</th><th>Acessos</th>
+          <th class="num">Último mês</th><th class="num">Faturamento</th><th></th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><div class="cli"><span class="av">BB</span><span><b>BB Onça Burguers</b><small>bb-onca</small></span></div></td>
+            <td><div class="mods"><span class="mod on" title="Dashboard">D</span><span class="mod on" title="Bio">B</span><span class="mod on" title="Fila">F</span><span class="mod" title="CMV">C</span></div></td>
+            <td><span class="pill p-ok"><i></i>2</span></td>
+            <td class="num">jul/26</td>
+            <td class="num">R$ 184.320</td>
+            <td><div class="row-act">
+              <button class="btn btn-secondary btn-sm">Resultados</button>
+              <button class="btn btn-ghost btn-sm" aria-label="Mais ações">⋯</button></div></td>
+          </tr>
+          <tr>
+            <td><div class="cli"><span class="av">VB</span><span><b>Villa Burguer</b><small>villa-burguer</small></span></div></td>
+            <td><div class="mods"><span class="mod on">D</span><span class="mod on">B</span><span class="mod">F</span><span class="mod">C</span></div></td>
+            <td><span class="pill p-ok"><i></i>1</span></td>
+            <td class="num">jul/26</td>
+            <td class="num">R$ 96.100</td>
+            <td><div class="row-act">
+              <button class="btn btn-secondary btn-sm">Resultados</button>
+              <button class="btn btn-ghost btn-sm" aria-label="Mais ações">⋯</button></div></td>
+          </tr>
+          <tr style="background:var(--s1)">
+            <td><div class="cli"><span class="av">DB</span><span><b>Doceria Brandina Sanches</b><small>brandina</small></span></div></td>
+            <td><div class="mods"><span class="mod">D</span><span class="mod">B</span><span class="mod">F</span><span class="mod">C</span></div></td>
+            <td><span class="pill p-warn"><i></i>ninguém</span></td>
+            <td class="num" style="color:var(--dim)">—</td>
+            <td class="num" style="color:var(--dim)">—</td>
+            <td><div class="row-act" style="opacity:1">
+              <button class="btn btn-primary btn-sm">Configurar</button>
+              <button class="btn btn-ghost btn-sm" aria-label="Mais ações">⋯</button></div></td>
+          </tr>
+          <tr>
+            <td><div class="cli"><span class="av">DJ</span><span><b>Don Joseph Belvedere</b><small>don-joseph</small></span></div></td>
+            <td><div class="mods"><span class="mod on">D</span><span class="mod">B</span><span class="mod">F</span><span class="mod">C</span></div></td>
+            <td><span class="pill p-ok"><i></i>1</span></td>
+            <td class="num" style="color:var(--warn)">mai/26</td>
+            <td class="num">R$ 61.740</td>
+            <td><div class="row-act">
+              <button class="btn btn-secondary btn-sm">Resultados</button>
+              <button class="btn btn-ghost btn-sm" aria-label="Mais ações">⋯</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note"><b>O que a tabela responde e o cartão não:</b> quem está sem acesso, quem
+      está com o fechamento atrasado, quem nunca foi configurado — de um olhar, sem rolar.
+      “mai/26” em âmbar é o alerta de mês pendente, que hoje não existe em lugar nenhum.</div>
+    </div>
+  </div>
+</div></div>
+
+<div class="ba">
+  <div class="old"><h5>hoje</h5><ul>
+    <li>10 <code>&lt;section&gt;</code> idênticas empilhadas — ~4.000px de rolagem</li>
+    <li>O formulário “Dar acesso ao portal” fica aberto nas 10, com a senha do cliente</li>
+    <li>Três botões vermelhos por cartão disputando o olho</li>
+    <li>Sem busca, sem filtro, sem ordenação</li>
+    <li>10 chamadas <code>modulos_configurados</code> em série + <code>listUsers(1000)</code> por load</li>
+  </ul></div>
+  <div class="new"><h5>proposta</h5><ul>
+    <li>Uma linha por empresa: as 10 cabem sem rolar</li>
+    <li>Dar acesso vira diálogo, aberto pelo <code>⋯</code> da linha</li>
+    <li>Um preenchido só — na empresa que está pendente</li>
+    <li>Busca + filtros “mês atrasado” e “sem acesso”</li>
+    <li>Uma RPC devolve as 10 de uma vez</li>
+  </ul></div>
+</div>
+
+<!-- ══════════════ 4 · DETALHE ══════════════ -->
+<div class="step"><span class="step-n">4</span><h2>/agencia/[org] — a empresa ganha uma casa</h2></div>
+<p class="step-sub">Hoje não existe tela da empresa: resultados e precificação são rotas soltas e,
+para trocar de cliente, volta-se à lista e rola. Com abas, o contexto fica preso na URL e
+o botão “voltar” do navegador funciona.</p>
+
+<div class="frame"><div class="frame-cap"><i class="dot"></i>/agencia/bb-onca</div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="brand-mark">M</span>
+      <span class="brand-txt">Momentum<small>Área da agência</small></span></div>
+    <nav class="nav">
+      <a class="on"><span class="ico">▦</span>Empresas<span class="tag">10</span></a>
+      <a><span class="ico">◉</span>Lives</a>
+      <a><span class="ico">◈</span>Páginas de bio</a>
+    </nav>
+    <div class="side-foot"><b>Luis</b>agência · sair</div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div><p class="crumb">Empresas / <b>BB Onça Burguers</b></p>
+        <h3>BB Onça Burguers <span class="pill p-ok"><i></i>tudo pronto</span></h3></div>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost btn-sm">Ver como o cliente ↗</button>
+    </div>
+    <div class="body">
+      <div class="tabs">
+        <a class="on">Visão geral</a><a>Resultados</a><a>Precificação</a><a>Bio</a><a>Lives</a><a>Acessos</a>
+      </div>
+
+      <div class="grid4" style="margin-bottom:16px">
+        <div class="kpi"><span>Faturamento jul</span><b>R$ 184.320</b><em>↑ 12,4%</em></div>
+        <div class="kpi"><span>Meses publicados</span><b>7</b></div>
+        <div class="kpi"><span>Produtos iFood</span><b>96</b></div>
+        <div class="kpi"><span>Cliques no bio</span><b>1.204</b><em>↑ 8,1%</em></div>
+      </div>
+
+      <div class="grid3">
+        <div class="card"><div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
+          <div><h4>Dashboard</h4><p>7 meses publicados · último jul/26</p></div><span class="pill p-ok"><i></i></span></div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:12px">Fechar agosto</button></div>
+        <div class="card"><div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
+          <div><h4>Bio</h4><p>bio.mmtdigital.com.br/bb-onca</p></div><span class="pill p-ok"><i></i></span></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:12px">Editar página</button></div>
+        <div class="card"><div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
+          <div><h4>Fila de Espera</h4><p>Preparada · 2 operadores</p></div><span class="pill p-ok"><i></i></span></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:12px">Abrir ↗</button></div>
+      </div>
+
+      <div class="note"><b>Precificação sai da lista principal.</b> É ferramenta de uma empresa só —
+      mora aqui dentro, não como link cinza na lista de todas.</div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ══════════════ 5 · FECHAMENTO ══════════════ -->
+<div class="step"><span class="step-n">5</span><h2>Fechamento do mês — a tela mais usada</h2></div>
+<p class="step-sub">24 campos <code>type="number"</code> sem máscara, todos abertos ao mesmo tempo,
+com o botão de salvar no fim de uma página longa e nenhum sinal de carregamento ao enviar.</p>
+
+<div class="frame"><div class="frame-cap"><i class="dot"></i>/agencia/bb-onca/resultados · agosto/2026</div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="brand-mark">M</span>
+      <span class="brand-txt">Momentum<small>Área da agência</small></span></div>
+    <nav class="nav"><a class="on"><span class="ico">▦</span>Empresas<span class="tag">10</span></a>
+      <a><span class="ico">◉</span>Lives</a><a><span class="ico">◈</span>Páginas de bio</a></nav>
+    <div class="side-foot"><b>Luis</b>agência · sair</div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div><p class="crumb">Empresas / BB Onça / <b>Resultados</b></p><h3>Fechando agosto/2026</h3></div>
+      <span class="spacer"></span>
+      <span class="pill p-warn"><i></i>11 de 24 campos</span>
+      <button class="btn btn-ghost btn-sm">Copiar de julho</button>
+    </div>
+    <div class="body">
+      <div class="tabs"><a>Visão geral</a><a class="on">Resultados</a><a>Precificação</a><a>Bio</a><a>Lives</a><a>Acessos</a></div>
+
+      <fieldset class="fs"><legend>Faturamento</legend>
+        <div class="grid4" style="margin-top:7px">
+          <div class="field"><label>Salão</label><div class="money"><span>R$</span><input value="147.456,00"></div></div>
+          <div class="field"><label>Delivery</label><div class="money"><span>R$</span><input value="18.430,00"></div></div>
+          <div class="field"><label>iFood</label><div class="money"><span>R$</span><input value="18.434,00"></div></div>
+          <div class="field calc"><label style="color:var(--dim)">Total — calculado</label>
+            <div class="money"><span>R$</span><input value="184.320,00" disabled></div>
+            <p class="hint">Soma das partes.</p></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fs" style="margin-top:12px"><legend>Pedidos</legend>
+        <div class="grid4" style="margin-top:7px">
+          <div class="field"><label>Salão</label><input value="2.140" style="text-align:right;font-variant-numeric:tabular-nums"></div>
+          <div class="field"><label>Delivery</label><input value="612" style="text-align:right;font-variant-numeric:tabular-nums"></div>
+          <div class="field calc"><label style="color:var(--dim)">Ticket salão</label><input value="R$ 68,90" disabled></div>
+          <div class="field calc"><label style="color:var(--dim)">Ticket delivery</label><input value="R$ 30,11" disabled></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fs" style="margin-top:12px;opacity:.6"><legend>Funil do cardápio · Funil do iFood · Meta · Google · CRM</legend>
+        <p style="font-size:13px;color:var(--dim);margin-top:7px">▸ 5 grupos recolhidos — abrem ao
+        clicar. Grupo inteiro em branco não precisa ocupar tela.</p>
+      </fieldset>
+
+      <div class="savebar">
+        <button class="btn btn-primary">Publicar agosto</button>
+        <button class="btn btn-ghost">Descartar</button>
+        <span class="st">● rascunho salvo às 14:32</span>
+      </div>
+
+      <div class="note"><b>Isto é bug de dado, não de estética:</b> a tela pede
+      <code>fat_total</code> como campo, mas o dashboard do cliente <b>ignora essa coluna</b> e
+      recompõe o total somando salão + delivery + iFood. Quem digita um total que não bate nunca
+      descobre — o número simplesmente some. Vira campo calculado, como acima.</div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ══════════════ 6 · DESTRUTIVO ══════════════ -->
+<div class="step"><span class="step-n">6</span><h2>Ações destrutivas</h2></div>
+<p class="step-sub">Hoje “Apagar” (um mês inteiro de faturamento), “remover” (produto, material de
+live) são <b>texto cinza de 12px, sem confirmação nenhuma</b>. Um clique errado e o mês do cliente
+sumiu do dashboard.</p>
+
+<div class="frame"><div class="frame-cap"><i class="dot"></i>ConfirmDialog — &lt;dialog&gt; nativo, sem biblioteca</div>
+<div class="dlg-bg">
+  <div class="dlg">
+    <h4>Apagar julho/2026?</h4>
+    <p>Os 24 números do mês somem do dashboard de
+      <b style="color:var(--fg)">BB Onça Burguers</b> na hora. Não dá para desfazer.</p>
+    <div class="field" style="margin-top:15px"><label for="c1">Digite <code>julho</code> para confirmar</label>
+      <input id="c1" placeholder="julho" autocomplete="off"></div>
+    <div class="acts"><button class="btn btn-ghost">Cancelar</button>
+      <button class="btn btn-danger-solid">Apagar mês</button></div>
+  </div>
+</div></div>
+
+<!-- ══════════════ 7 · CELULAR ══════════════ -->
+<div class="step"><span class="step-n">7</span><h2>No celular</h2></div>
+<p class="step-sub">Hoje os formulários <code>flex-wrap</code> viram caixas empilhadas sem rótulo —
+três campos brancos e nenhuma pista do que é cada um. A tabela vira lista; o menu vira gaveta.</p>
+
+<div class="frame"><div class="frame-cap"><i class="dot"></i>375px</div>
+<div style="padding:20px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;background:var(--s2)">
+  <div class="phone">
+    <div class="ph-top"><span class="btn btn-ghost btn-sm" style="padding:4px 7px">☰</span>
+      <b style="font-size:14px;letter-spacing:-.02em">Empresas</b>
+      <span class="spacer"></span><span class="pill p-off">10</span></div>
+    <div class="ph-body">
+      <div class="search" style="max-width:none;margin-bottom:11px"><span>⌕</span><input placeholder="Buscar…"></div>
+      <div class="ph-row">
+        <div class="top"><b style="font-size:13.5px">BB Onça Burguers</b><span class="pill p-ok"><i></i>jul</span></div>
+        <div class="mods" style="margin-top:9px"><span class="mod on">D</span><span class="mod on">B</span><span class="mod on">F</span><span class="mod">C</span>
+          <span class="spacer"></span><span class="num" style="font-size:12.5px;color:var(--muted)">R$ 184.320</span></div>
+      </div>
+      <div class="ph-row" style="border-color:var(--line-strong)">
+        <div class="top"><b style="font-size:13.5px">Doceria Brandina</b><span class="pill p-warn"><i></i>configurar</span></div>
+        <div class="mods" style="margin-top:9px"><span class="mod">D</span><span class="mod">B</span><span class="mod">F</span><span class="mod">C</span>
+          <span class="spacer"></span><span style="font-size:12.5px;color:var(--dim)">sem acesso</span></div>
+      </div>
+      <div class="ph-row">
+        <div class="top"><b style="font-size:13.5px">Don Joseph</b><span class="pill p-warn"><i></i>mai</span></div>
+        <div class="mods" style="margin-top:9px"><span class="mod on">D</span><span class="mod">B</span><span class="mod">F</span><span class="mod">C</span>
+          <span class="spacer"></span><span class="num" style="font-size:12.5px;color:var(--muted)">R$ 61.740</span></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:6px">+ Nova empresa</button>
+    </div>
+  </div>
+  <div style="max-width:330px;align-self:center">
+    <p class="eyebrow" style="color:var(--dim)">Regras aplicadas</p>
+    <div style="margin-top:11px">
+      <div class="rule"><i>◻</i><p>Alvo de toque <b>≥ 44px</b> em botão, linha e campo</p></div>
+      <div class="rule"><i>◻</i><p>Corpo <b>16px</b> no celular — abaixo disso o iOS dá zoom sozinho no campo</p></div>
+      <div class="rule"><i>◻</i><p>Sem rolagem horizontal: a tabela de 6 colunas vira lista de 2 linhas</p></div>
+      <div class="rule"><i>◻</i><p>Rótulo sempre visível — nunca só <code>placeholder</code></p></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ══════════════ 8 · ORDEM ══════════════ -->
+<div class="step"><span class="step-n">8</span><h2>Ordem de execução</h2></div>
+<p class="step-sub">Seis etapas. Cada uma fecha sozinha — dá para parar no meio sem deixar a
+plataforma pela metade. Um commit por etapa, como nas fases anteriores.</p>
+
+<div class="frame"><div class="frame-cap"><i class="dot"></i>Fase 8 — UI/UX</div>
+<div style="padding:4px 17px 17px">
+  <table>
+    <thead><tr><th style="width:36px">#</th><th>Etapa</th><th>Entrega</th><th class="num">Peso</th></tr></thead>
+    <tbody>
+      <tr><td class="num" style="color:var(--dim)">1</td>
+        <td><b>Tokens + primitivas</b><br><small style="color:var(--dim)">globals.css, tailwind.config, src/components/ui/</small></td>
+        <td style="color:var(--muted)">Vermelho da marca, Inter, escala de superfície e raio; Button, Field, Select, Card, Pill, Table, Dialog, ConfirmDialog, SubmitButton, EmptyState</td>
+        <td class="num">P</td></tr>
+      <tr><td class="num" style="color:var(--dim)">2</td>
+        <td><b>Shell + navegação</b><br><small style="color:var(--dim)">AppShell, breadcrumb, metadata por rota</small></td>
+        <td style="color:var(--muted)">Menu lateral na agência, topo no cliente; fim dos links cinza soltos e do título “Momentum Hub” em toda aba</td>
+        <td class="num">P</td></tr>
+      <tr><td class="num" style="color:var(--dim)">3</td>
+        <td><b>/agencia vira tabela</b><br><small style="color:var(--dim)">+ /agencia/[org] com abas</small></td>
+        <td style="color:var(--muted)">Busca, filtros, diálogos de acesso; uma RPC no lugar do laço de 10</td>
+        <td class="num">M</td></tr>
+      <tr><td class="num" style="color:var(--dim)">4</td>
+        <td><b>Fechamento do mês</b><br><small style="color:var(--dim)">máscara BRL, grupos recolhíveis, campos calculados</small></td>
+        <td style="color:var(--muted)">Barra de salvar fixa, estado de envio, <code>fat_total</code> calculado, copiar do mês anterior</td>
+        <td class="num">M</td></tr>
+      <tr><td class="num" style="color:var(--dim)">5</td>
+        <td><b>Precificação + Lives</b><br><small style="color:var(--dim)">tabela editável, chave da live em diálogo</small></td>
+        <td style="color:var(--muted)">96 produtos editados com 1 salvamento em vez de 96 recarregamentos de página</td>
+        <td class="num">M</td></tr>
+      <tr><td class="num" style="color:var(--dim)">6</td>
+        <td><b>Portal e bio no sistema novo</b><br><small style="color:var(--dim)">/, /dashboard, /bio</small></td>
+        <td style="color:var(--muted)">Mesma linguagem visual dos dois lados; acessibilidade e celular fechados</td>
+        <td class="num">P</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>A VPS das lives (Fase 7) fica para depois</b> — é infraestrutura, não bloqueia
+  nada disto.</div>
+</div></div>
+
+</div>
+</body>
+</html>

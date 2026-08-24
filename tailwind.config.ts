@@ -1,5 +1,8 @@
 import type { Config } from "tailwindcss";
 
+/** Todo token vem de `globals.css` em canais RGB — ver o comentário de lá. */
+const cor = (nome: string) => `rgb(var(--${nome}) / <alpha-value>)`;
+
 const config: Config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,10 +12,40 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        muted: "var(--muted)",
-        accent: "var(--accent)",
+        base: cor("base"),
+        surface: {
+          1: cor("surface-1"),
+          2: cor("surface-2"),
+          3: cor("surface-3"),
+        },
+        line: {
+          DEFAULT: cor("line"),
+          strong: cor("line-strong"),
+        },
+        foreground: cor("foreground"),
+        muted: cor("muted"),
+        dim: cor("dim"),
+        brand: {
+          DEFAULT: cor("brand"),
+          hover: cor("brand-hover"),
+          ink: cor("brand-ink"),
+        },
+        ok: cor("ok"),
+        warn: cor("warn"),
+        danger: cor("danger"),
+
+        // Telas anteriores à Fase 8 ainda usam estes dois nomes.
+        accent: cor("brand"),
+        background: cor("base"),
+      },
+      borderRadius: {
+        // 3 degraus em vez dos 5 que estavam espalhados pelo projeto.
+        md: "6px",
+        lg: "10px",
+        xl: "14px",
+      },
+      fontFamily: {
+        sans: ["var(--fonte-inter)", "system-ui", "sans-serif"],
       },
     },
   },

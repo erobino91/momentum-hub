@@ -2,15 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Tokens do Momentum Hub.
+ *
+ * Valores em canais RGB separados por espaço, não em hex: é o que deixa o
+ * modificador de opacidade do Tailwind funcionar (`bg-brand/15` vira
+ * `rgb(var(--brand) / 0.15)`). Com `--brand: #E31B1B` o `/15` seria ignorado.
+ *
+ * Quem precisar da cor crua em CSS usa `rgb(var(--brand))`.
+ */
 :root {
-  --background: #0b0d12;
-  --foreground: #f5f6f8;
-  --muted: #8a93a6;
-  --accent: #ff5a1f;
+  /* superfícies — 4 níveis, do fundo da tela ao elemento mais alto */
+  --base: 10 12 16; /* #0A0C10 */
+  --surface-1: 17 20 27; /* #11141B */
+  --surface-2: 23 27 36; /* #171B24 */
+  --surface-3: 30 36 48; /* #1E2430 */
+
+  /* linhas — divisor e contorno */
+  --line: 35 41 54; /* #232936 */
+  --line-strong: 51 59 76; /* #333B4C */
+
+  /* texto — os três passam de 4,5:1 sobre --base */
+  --foreground: 242 244 248; /* #F2F4F8 · 17,8:1 */
+  --muted: 154 163 180; /* #9AA3B4 ·  7,7:1 */
+  --dim: 122 132 150; /* #7A8496 ·  5,2:1 */
+
+  /* marca — vermelho Momentum, o mesmo da lp-agencia */
+  --brand: 227 27 27; /* #E31B1B · preenchimento; branco por cima dá 4,7:1 */
+  --brand-hover: 192 21 21; /* #C01515 */
+  --brand-ink: 255 90 90; /* #FF5A5A · o vermelho como TEXTO no escuro, 6,4:1 */
+
+  /* semânticos — nunca são o único sinal, sempre acompanham ícone ou palavra */
+  --ok: 52 211 153; /* #34D399 */
+  --warn: 251 191 36; /* #FBBF24 */
+  --danger: 255 107 107; /* #FF6B6B */
+
+  /* compatibilidade: `accent` era o laranja e ainda é usado em telas antigas */
+  --accent: var(--brand);
+  --background: var(--base);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: rgb(var(--base));
+  color: rgb(var(--foreground));
   -webkit-font-smoothing: antialiased;
+}
+
+/**
+ * Foco visível em tudo que recebe teclado. Antes o único sinal era a borda do
+ * campo mudando 1px de cor — invisível em botão, link e aba.
+ */
+:focus-visible {
+  outline: 2px solid rgb(var(--brand));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: rgb(var(--brand) / 0.3);
+}
+
+/* Números em coluna não podem dançar de largura. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
