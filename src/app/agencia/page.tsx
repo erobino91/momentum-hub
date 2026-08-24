@@ -7,9 +7,12 @@ import { criarPagina } from "@/app/bio/actions";
 import { criarOrg, prepararFila } from "./actions";
 import { clienteSecreto } from "@/lib/supabase/secreto";
 import { NovoAcesso } from "./novo-acesso";
+import { AgenciaShell } from "@/components/shell";
+import { Aviso } from "@/components/ui";
 import type { Membership, ModulosConfigurados, Org } from "@/types/db";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Empresas" };
 
 export default async function AgenciaPage({
   searchParams,
@@ -66,31 +69,18 @@ export default async function AgenciaPage({
     prontos.get(orgId) ?? { dashboard: false, bio: false, fila: false };
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-4xl px-6 py-12">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-muted">
-            Área da agência
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold">Empresas</h1>
-        </div>
-        <div className="flex flex-col items-end gap-1 text-sm">
-          <Link href="/agencia/lives" className="text-muted hover:text-foreground">
-            Lives →
-          </Link>
-          <Link href="/" className="text-muted hover:text-foreground">
-            Voltar ao portal
-          </Link>
-        </div>
-      </header>
-
+    <AgenciaShell
+      secao="empresas"
+      migalha={[{ rotulo: "Empresas" }]}
+      titulo={`${(orgs ?? []).length} empresas`}
+    >
       {searchParams.erro ? (
-        <p className="mt-6 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-          {searchParams.erro}
-        </p>
+        <div className="mb-6">
+          <Aviso tom="erro">{searchParams.erro}</Aviso>
+        </div>
       ) : null}
 
-      <section className="mt-10 rounded-lg border border-white/15 bg-white/5 p-5">
+      <section className="rounded-lg border border-white/15 bg-white/5 p-5">
         <h2 className="text-lg font-medium">Nova empresa</h2>
         <form action={criarOrg} className="mt-4 flex flex-wrap gap-3">
           <input
@@ -219,7 +209,7 @@ export default async function AgenciaPage({
           );
         })}
       </div>
-    </main>
+    </AgenciaShell>
   );
 }
 

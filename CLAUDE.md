@@ -89,6 +89,17 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
   abaixo disso o Safari do iPhone dá zoom sozinho ao focar.
 - `campoClasse` e `botaoClasse` continuam exportados de `auth-shell.tsx` só para as telas
   ainda não migradas. Não usar em código novo.
+- **Nome de cor não pode colidir com utilitária do Tailwind.** A superfície de fundo chama-se
+  `canvas`, não `base`: com `colors.base`, o Tailwind emite um `.text-base` de **cor** depois
+  do `.text-base` de tamanho de fonte, e todo texto com essa classe vira quase preto. Vale
+  para qualquer nome novo — `text-*`, `font-*` e `leading-*` já existem como escala.
+- **Cada variante de botão declara a própria cor de borda.** Entre duas utilitárias de
+  `border-color`, quem ganha é a que vem depois na folha de estilo, não no `className`.
+- **A casca vem de `src/components/shell.tsx`**: `AgenciaShell` (menu lateral) para as telas
+  da agência, `PortalShell` (barra no topo) para as do cliente. Página não monta `<main>` nem
+  cabeçalho próprio. `/bio` escolhe uma ou outra pelo papel de quem entrou.
+- **Toda rota exporta `metadata.title`** — o layout raiz aplica o template `%s · Momentum
+  Hub`. Sem isso a aba do navegador não diz em que tela o usuário está.
 
 ## Base de reuso
 

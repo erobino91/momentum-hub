@@ -2,6 +2,8 @@ import Link from "next/link";
 import { pedirRecuperacao } from "@/lib/auth-actions";
 import { AuthShell, campoClasse, botaoClasse } from "@/components/auth-shell";
 
+export const metadata = { title: "Esqueci minha senha" };
+
 export default function EsqueciSenhaPage({
   searchParams,
 }: {

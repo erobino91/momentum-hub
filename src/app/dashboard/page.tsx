@@ -5,6 +5,8 @@ import { DashboardView } from "./dashboard-view";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "Dashboard" };
+
 const AVISO: Record<FalhaDashboard, string> = {
   "sem-org":
     "Sua conta ainda não está vinculada a nenhuma empresa. Fale com a agência.",

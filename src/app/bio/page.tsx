@@ -6,8 +6,11 @@ import { criarPagina } from "./actions";
 import { URL_BIO } from "@/lib/bio/url";
 import type { LinkPage } from "@/types/bio";
 import type { Org } from "@/types/db";
+import { AgenciaShell, PortalShell } from "@/components/shell";
+import { Aviso, Vazio } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Bio" };
 
 type Resumo = Pick<LinkPage, "id" | "slug" | "title" | "active" | "org_id">;
 
@@ -42,34 +45,29 @@ export default async function BioIndex({
   const nomeOrg = (id: string) =>
     orgs?.find((o) => o.id === id)?.name ?? "empresa";
 
-  return (
-    <main className="mx-auto min-h-screen w-full max-w-3xl px-6 py-12">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-muted">Bio</p>
-          <h1 className="mt-2 text-3xl font-semibold">
-            {ehAgencia ? "Páginas de links" : "Sua página de links"}
-          </h1>
-        </div>
-        <Link href="/" className="text-sm text-muted hover:text-foreground">
-          Voltar ao portal
-        </Link>
-      </header>
-
+  const conteudo = (
+    <>
       {searchParams.erro ? (
-        <p className="mt-6 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-          {searchParams.erro}
-        </p>
+        <div className="mb-6">
+          <Aviso tom="erro">{searchParams.erro}</Aviso>
+        </div>
       ) : null}
 
       {(paginas ?? []).length === 0 ? (
-        <p className="mt-8 rounded-lg border border-white/15 bg-white/5 px-4 py-6 text-sm text-muted">
-          {ehAgencia
-            ? "Nenhuma página criada ainda."
-            : "Sua página de links ainda está sendo montada pela agência."}
-        </p>
+        <Vazio
+          titulo={
+            ehAgencia
+              ? "Nenhuma página criada ainda"
+              : "Sua página de links ainda está sendo montada"
+          }
+          descricao={
+            ehAgencia
+              ? "Crie a primeira no formulário abaixo."
+              : "A agência avisa assim que ela estiver no ar."
+          }
+        />
       ) : (
-        <div className="mt-8 space-y-3">
+        <div className="space-y-3">
           {(paginas ?? []).map((p) => (
             <Link
               key={p.id}
@@ -135,6 +133,28 @@ export default async function BioIndex({
           </form>
         </section>
       ) : null}
-    </main>
+    </>
+  );
+
+  // A mesma tela serve aos dois: a agência chega por ela pelo menu lateral e vê
+  // as páginas de todas as empresas; o cliente chega pelo card do portal e vê a
+  // dele. Quem separa o que cada um enxerga é a RLS, não esta escolha de casca.
+  return ehAgencia ? (
+    <AgenciaShell
+      secao="bio"
+      migalha={[{ rotulo: "Páginas de bio" }]}
+      titulo="Páginas de links"
+    >
+      {conteudo}
+    </AgenciaShell>
+  ) : (
+    <PortalShell
+      titulo="Sua página de links"
+      migalha={[{ rotulo: "Portal", href: "/" }, { rotulo: "Bio" }]}
+      email={user.email ?? null}
+      ehAgencia={false}
+    >
+      {conteudo}
+    </PortalShell>
   );
 }

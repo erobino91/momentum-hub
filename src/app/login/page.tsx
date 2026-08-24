@@ -2,6 +2,8 @@ import Link from "next/link";
 import { entrar } from "@/lib/auth-actions";
 import { AuthShell, campoClasse, botaoClasse } from "@/components/auth-shell";
 
+export const metadata = { title: "Entrar" };
+
 export default function LoginPage({
   searchParams,
 }: {

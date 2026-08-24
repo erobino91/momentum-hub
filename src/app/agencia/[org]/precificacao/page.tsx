@@ -11,7 +11,11 @@ import {
   apagarProduto,
 } from "./actions";
 
+import { AgenciaShell } from "@/components/shell";
+import { Aviso } from "@/components/ui";
+
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Precificação iFood" };
 
 /**
  * Precificação iFood — ferramenta interna, o cliente não tem esta tela nem lê
@@ -64,30 +68,27 @@ export default async function PrecificacaoPage({
   );
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-6 py-12">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-muted">
-            {org.name}
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold">Precificação iFood</h1>
-          <p className="mt-2 text-sm text-muted">
-            Preço de balcão + o que a plataforma come, em três fases.
-          </p>
-        </div>
-        <Link href="/agencia" className="text-sm text-muted hover:text-foreground">
-          Empresas
-        </Link>
-      </header>
+    <AgenciaShell
+      secao="empresas"
+      migalha={[
+        { rotulo: "Empresas", href: "/agencia" },
+        { rotulo: org.name, href: "/agencia" },
+        { rotulo: "Precificação" },
+      ]}
+      titulo="Precificação iFood"
+    >
+      <p className="-mt-1 mb-6 text-sm text-muted">
+        Preço de balcão + o que a plataforma come, em três fases.
+      </p>
 
       {searchParams.erro ? (
-        <p className="mt-6 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-          {searchParams.erro}
-        </p>
+        <div className="mb-6">
+          <Aviso tom="erro">{searchParams.erro}</Aviso>
+        </div>
       ) : null}
 
       {/* ── Variáveis ─────────────────────────────────────────────────── */}
-      <section className="mt-10 rounded-lg border border-white/15 bg-white/5 p-5">
+      <section className="rounded-lg border border-white/15 bg-white/5 p-5">
         <h2 className="text-lg font-medium">Variáveis</h2>
         <form action={salvarVariaveis} className="mt-4 grid gap-3 sm:grid-cols-5">
           <input type="hidden" name="org_id" value={org.id} />
@@ -269,6 +270,6 @@ export default async function PrecificacaoPage({
           </p>
         ) : null}
       </section>
-    </main>
+    </AgenciaShell>
   );
 }

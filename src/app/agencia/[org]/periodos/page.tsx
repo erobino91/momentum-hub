@@ -10,8 +10,11 @@ import {
 } from "@/lib/periodos";
 import type { DashboardPeriod, Org } from "@/types/db";
 import { salvarPeriodo, apagarPeriodo } from "./actions";
+import { AgenciaShell } from "@/components/shell";
+import { Aviso, botaoEstilo } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Resultados por mês" };
 
 /**
  * Fechamento do mês — a tela que a agência mais usa.
@@ -70,40 +73,36 @@ export default async function PeriodosPage({
   };
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-4xl px-6 py-12">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-muted">
-            {org.name}
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold">Resultados por mês</h1>
-        </div>
-        <div className="flex flex-col items-end gap-1 text-sm">
-          <Link href="/agencia" className="text-muted hover:text-foreground">
-            Empresas
-          </Link>
-          <Link
-            href={`/dashboard?org=${org.id}`}
-            className="text-muted hover:text-foreground"
-          >
-            Ver o dashboard →
-          </Link>
-        </div>
-      </header>
-
+    <AgenciaShell
+      secao="empresas"
+      migalha={[
+        { rotulo: "Empresas", href: "/agencia" },
+        { rotulo: org.name, href: "/agencia" },
+        { rotulo: "Resultados" },
+      ]}
+      titulo="Resultados por mês"
+      acoes={
+        <Link
+          href={`/dashboard?org=${org.id}`}
+          className={botaoEstilo("secundario", "sm")}
+        >
+          Ver o dashboard
+        </Link>
+      }
+    >
       {searchParams.erro ? (
-        <p className="mt-6 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-          {searchParams.erro}
-        </p>
+        <div className="mb-6">
+          <Aviso tom="erro">{searchParams.erro}</Aviso>
+        </div>
       ) : null}
       {searchParams.ok ? (
-        <p className="mt-6 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
-          Salvo.
-        </p>
+        <div className="mb-6">
+          <Aviso tom="ok">Salvo.</Aviso>
+        </div>
       ) : null}
 
       {/* ── Meses já fechados ─────────────────────────────────────────── */}
-      <section className="mt-10">
+      <section>
         <h2 className="text-lg font-medium">
           Meses fechados{" "}
           <span className="text-sm text-muted">({lista.length})</span>
@@ -261,6 +260,6 @@ export default async function PeriodosPage({
         Campo em branco fica vazio no dashboard; zero é zero de verdade. São{" "}
         {CAMPOS_PERIODO.length} campos por mês.
       </p>
-    </main>
+    </AgenciaShell>
   );
 }

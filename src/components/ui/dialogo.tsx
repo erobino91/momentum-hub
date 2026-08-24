@@ -62,7 +62,7 @@ export function Dialogo({
         // Qualquer formulário daqui de dentro fecha ao enviar; a página
         // revalida em seguida e mostra o resultado.
         onSubmit={() => fechar()}
-        className={`w-[min(28rem,calc(100vw-2rem))] rounded-xl border border-line-strong bg-surface-2 p-0 text-foreground shadow-2xl backdrop:bg-base/80 ${className}`}
+        className={`w-[min(28rem,calc(100vw-2rem))] rounded-xl border border-line-strong bg-surface-2 p-0 text-foreground shadow-2xl backdrop:bg-canvas/80 ${className}`}
       >
         <div className="p-5">
           <div className="flex items-start justify-between gap-4">

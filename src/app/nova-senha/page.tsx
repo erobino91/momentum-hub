@@ -1,6 +1,8 @@
 import { definirSenha } from "@/lib/auth-actions";
 import { AuthShell, campoClasse, botaoClasse } from "@/components/auth-shell";
 
+export const metadata = { title: "Nova senha" };
+
 export default function NovaSenhaPage({
   searchParams,
 }: {

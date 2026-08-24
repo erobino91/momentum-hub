@@ -5,6 +5,8 @@ import type { LinkButton, LinkPage } from "@/types/bio";
 import { EditorBio } from "./editor";
 import { VisaoCliente } from "./visao-cliente";
 
+export const metadata = { title: "Editor da bio" };
+
 export const dynamic = "force-dynamic";
 
 export default async function EditorPage({

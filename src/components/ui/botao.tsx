@@ -23,14 +23,23 @@ export type VarianteBotao =
 
 export type TamanhoBotao = "md" | "sm";
 
+/**
+ * Cada variante declara a **própria** cor de borda.
+ *
+ * Um `border-transparent` na base não serviria: entre duas utilitárias de
+ * `border-color` quem ganha é a que vier depois na folha de estilo, não a que
+ * vier depois no `className` — e o Tailwind emite `.border-transparent` depois
+ * de `.border-line-strong`. O contorno do botão destrutivo sumia por isso.
+ */
 const VARIANTE: Record<VarianteBotao, string> = {
-  primario: "bg-brand text-white hover:bg-brand-hover",
+  primario: "border-transparent bg-brand text-white hover:bg-brand-hover",
   secundario:
-    "border border-line-strong bg-surface-2 text-foreground hover:bg-surface-3",
-  fantasma: "text-muted hover:bg-surface-2 hover:text-foreground",
+    "border-line-strong bg-surface-2 text-foreground hover:bg-surface-3",
+  fantasma:
+    "border-transparent text-muted hover:bg-surface-2 hover:text-foreground",
   destrutivo:
-    "border border-line-strong text-muted hover:border-danger/45 hover:bg-danger/10 hover:text-danger",
-  perigo: "bg-danger text-base hover:brightness-95",
+    "border-line-strong text-muted hover:border-danger/45 hover:bg-danger/10 hover:text-danger",
+  perigo: "border-transparent bg-danger text-canvas hover:brightness-95",
 };
 
 const TAMANHO: Record<TamanhoBotao, string> = {
@@ -44,7 +53,7 @@ export function botaoEstilo(
   tamanho: TamanhoBotao = "md",
 ) {
   return [
-    "inline-flex items-center justify-center gap-2 rounded-md border border-transparent",
+    "inline-flex items-center justify-center gap-2 rounded-md border",
     "font-semibold leading-tight whitespace-nowrap transition",
     "disabled:cursor-not-allowed disabled:opacity-40",
     VARIANTE[variante],

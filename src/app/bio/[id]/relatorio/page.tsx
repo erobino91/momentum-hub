@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { LinkPage } from "@/types/bio";
 import { CliquesPorBotao, CliquesPorDia } from "./graficos";
 
+export const metadata = { title: "Relatório de cliques" };
+
 export const dynamic = "force-dynamic";
 
 const FUSO = "America/Sao_Paulo";

@@ -11,7 +11,11 @@ import {
   encerrarLive,
 } from "./actions";
 
+import { AgenciaShell } from "@/components/shell";
+import { Aviso } from "@/components/ui";
+
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Lives" };
 
 const ROTULO_STATUS: Record<LiveSession["status"], string> = {
   starting: "iniciando",
@@ -65,33 +69,24 @@ export default async function LivesPage({
   const ativaDe = (orgId: string) => ativas.find((s) => s.org_id === orgId);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-6 py-12">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-muted">
-            Área da agência
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold">Lives</h1>
-          <p className="mt-2 text-sm text-muted">
-            Vídeo em loop para o Instagram Live. Quem transmite é o worker na
-            máquina ligada — esta tela só manda o recado.
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-1 text-sm">
-          <Link href="/agencia" className="text-muted hover:text-foreground">
-            Empresas
-          </Link>
-          <AtualizacaoAutomatica ativa={ativas.length > 0} />
-        </div>
-      </header>
+    <AgenciaShell
+      secao="lives"
+      migalha={[{ rotulo: "Lives" }]}
+      titulo="Lives"
+      acoes={<AtualizacaoAutomatica ativa={ativas.length > 0} />}
+    >
+      <p className="-mt-1 mb-6 max-w-2xl text-sm text-muted">
+        Vídeo em loop para o Instagram Live. Quem transmite é o worker na
+        máquina ligada — esta tela só manda o recado.
+      </p>
 
       {searchParams.erro ? (
-        <p className="mt-6 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-          {searchParams.erro}
-        </p>
+        <div className="mb-6">
+          <Aviso tom="erro">{searchParams.erro}</Aviso>
+        </div>
       ) : null}
 
-      <div className="mt-10 space-y-6">
+      <div className="space-y-6">
         {(orgs ?? []).map((org) => {
           const lista = materiaisDe(org.id);
           const ativa = ativaDe(org.id);
@@ -292,6 +287,6 @@ export default async function LivesPage({
           );
         })}
       </div>
-    </main>
+    </AgenciaShell>
   );
 }

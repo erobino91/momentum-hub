@@ -12,7 +12,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        base: cor("base"),
+        canvas: cor("canvas"),
         surface: {
           1: cor("surface-1"),
           2: cor("surface-2"),
@@ -36,7 +36,7 @@ const config: Config = {
 
         // Telas anteriores à Fase 8 ainda usam estes dois nomes.
         accent: cor("brand"),
-        background: cor("base"),
+        background: cor("canvas"),
       },
       borderRadius: {
         // 3 degraus em vez dos 5 que estavam espalhados pelo projeto.

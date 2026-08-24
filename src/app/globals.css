@@ -13,7 +13,7 @@
  */
 :root {
   /* superfícies — 4 níveis, do fundo da tela ao elemento mais alto */
-  --base: 10 12 16; /* #0A0C10 */
+  --canvas: 10 12 16; /* #0A0C10 */
   --surface-1: 17 20 27; /* #11141B */
   --surface-2: 23 27 36; /* #171B24 */
   --surface-3: 30 36 48; /* #1E2430 */
@@ -22,7 +22,7 @@
   --line: 35 41 54; /* #232936 */
   --line-strong: 51 59 76; /* #333B4C */
 
-  /* texto — os três passam de 4,5:1 sobre --base */
+  /* texto — os três passam de 4,5:1 sobre --canvas */
   --foreground: 242 244 248; /* #F2F4F8 · 17,8:1 */
   --muted: 154 163 180; /* #9AA3B4 ·  7,7:1 */
   --dim: 122 132 150; /* #7A8496 ·  5,2:1 */
@@ -39,11 +39,11 @@
 
   /* compatibilidade: `accent` era o laranja e ainda é usado em telas antigas */
   --accent: var(--brand);
-  --background: var(--base);
+  --background: var(--canvas);
 }
 
 body {
-  background: rgb(var(--base));
+  background: rgb(var(--canvas));
   color: rgb(var(--foreground));
   -webkit-font-smoothing: antialiased;
 }
