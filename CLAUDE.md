@@ -100,6 +100,20 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
   cabeçalho próprio. `/bio` escolhe uma ou outra pelo papel de quem entrou.
 - **Toda rota exporta `metadata.title`** — o layout raiz aplica o template `%s · Momentum
   Hub`. Sem isso a aba do navegador não diz em que tela o usuário está.
+- **O painel da agência lê `agencia_empresas()` e `agencia_acessos()`**, não monta a lista
+  consulta a consulta. As duas são `security definer` e começam por `is_agency()` — sem essa
+  linha seriam um jeito de qualquer sessão listar as empresas todas. `agencia_acessos()` lê
+  `auth.users` e aposentou o `listUsers(1000)` da Admin API na tela.
+- **Faturamento do mês é sempre `fat_mesa + fat_delivery + fat_ifood`**, nunca a coluna
+  `fat_total`. Vale na RPC e no `dashboard-view.tsx` — as duas telas não podem discordar.
+- **Filtro e busca ficam na URL** (`?q=`, `?filtro=`), por formulário GET: recarregar,
+  voltar e mandar o link para alguém precisam dar no mesmo resultado.
+- **Tabela vira lista no celular** (`hidden lg:block` + `lg:hidden`). Tabela que rola de lado
+  esconde coluna e obriga a arrastar para descobrir o que existe.
+- **`ConfirmarAcao` com `digite=` no que não tem volta** (apagar mês); sem `digite` quando a
+  pergunta basta (remover produto da precificação).
+- **O formulário de dar acesso não vira diálogo.** A senha sorteada aparece uma vez no
+  resultado, e diálogo que fecha ao enviar levaria a senha junto.
 
 ## Base de reuso
 

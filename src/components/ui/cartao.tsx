@@ -22,7 +22,11 @@ export function Cartao({
       className={`rounded-lg border border-line bg-surface-1 p-5 ${className}`}
     >
       {titulo || acao ? (
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        // Sem `flex-wrap`: com ele, uma descrição um pouco mais longa empurrava
+        // o selo para a linha de baixo, e cartões lado a lado ficavam com a
+        // etiqueta em alturas diferentes. O bloco de texto encolhe (`min-w-0`)
+        // e quebra por dentro; o selo fica no canto, sempre.
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
             {titulo ? (
               <h2 className="text-base font-semibold">{titulo}</h2>
@@ -31,7 +35,7 @@ export function Cartao({
               <p className="mt-1 text-sm text-muted">{descricao}</p>
             ) : null}
           </div>
-          {acao}
+          {acao ? <div className="flex-none">{acao}</div> : null}
         </div>
       ) : null}
       {children}

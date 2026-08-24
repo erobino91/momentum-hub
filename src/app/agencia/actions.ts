@@ -19,9 +19,16 @@ async function exigirAgencia() {
   return supabase;
 }
 
-function voltar(erro?: string): never {
-  revalidatePath("/agencia");
-  redirect(erro ? `/agencia?erro=${encodeURIComponent(erro)}` : "/agencia?ok=1");
+/**
+ * Volta para onde a ação foi disparada. `destino` chega por campo escondido —
+ * a mesma ação é usada da lista geral e da tela de uma empresa, e mandar as
+ * duas para `/agencia` fazia perder o lugar.
+ */
+function voltar(erro?: string, destino = "/agencia"): never {
+  revalidatePath(destino);
+  redirect(
+    erro ? `${destino}?erro=${encodeURIComponent(erro)}` : `${destino}?ok=1`,
+  );
 }
 
 export async function criarOrg(formData: FormData) {
@@ -119,14 +126,15 @@ export async function salvarSlugDashboard(formData: FormData) {
 export async function prepararFila(formData: FormData) {
   const supabase = await exigirAgencia();
   const orgId = String(formData.get("org_id") ?? "");
-  if (!orgId) voltar("Empresa inválida.");
+  const destino = String(formData.get("destino") ?? "/agencia");
+  if (!orgId) voltar("Empresa inválida.", destino);
 
   const { data: org } = await supabase
     .from("orgs")
     .select("name, slug")
     .eq("id", orgId)
     .maybeSingle<{ name: string; slug: string }>();
-  if (!org) voltar("Empresa não encontrada.");
+  if (!org) voltar("Empresa não encontrada.", destino);
 
   const secreto = clienteSecreto();
 
@@ -140,7 +148,7 @@ export async function prepararFila(formData: FormData) {
     const { error } = await secreto
       .from("restaurants")
       .insert({ id: orgId, name: org.name, slug: org.slug });
-    if (error) voltar("Não foi possível preparar a fila. O endereço já pode existir.");
+    if (error) voltar("Não foi possível preparar a fila. O endereço já pode existir.", destino);
   }
 
   // Todos os donos da empresa que ainda não têm acesso ao salão.
@@ -152,9 +160,7 @@ export async function prepararFila(formData: FormData) {
     .returns<{ user_id: string }[]>();
 
   if (!donos?.length) {
-    voltar(
-      "Restaurante criado, mas ninguém desta empresa tem acesso ao portal ainda. Convide o dono e clique de novo.",
-    );
+    voltar("Restaurante criado, mas ninguém desta empresa tem acesso ao portal ainda. Convide o dono e clique de novo.", destino);
   }
 
   const { data: jaTem } = await secreto
@@ -176,10 +182,10 @@ export async function prepararFila(formData: FormData) {
         role: "partner",
       })),
     );
-    if (error) voltar("Restaurante criado, mas não foi possível dar acesso ao dono.");
+    if (error) voltar("Restaurante criado, mas não foi possível dar acesso ao dono.", destino);
   }
 
-  voltar();
+  voltar(undefined, destino);
 }
 
 export type ResultadoAcesso =

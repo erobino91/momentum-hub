@@ -1,229 +1,174 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MODULES } from "@/lib/modules";
-import { campoClasse, botaoClasse } from "@/components/auth-shell";
-import { criarPagina } from "@/app/bio/actions";
-import { criarOrg, prepararFila } from "./actions";
-import { clienteSecreto } from "@/lib/supabase/secreto";
-import { NovoAcesso } from "./novo-acesso";
+import { criarOrg } from "./actions";
 import { AgenciaShell } from "@/components/shell";
-import { Aviso } from "@/components/ui";
-import type { Membership, ModulosConfigurados, Org } from "@/types/db";
+import {
+  Aviso,
+  BotaoEnviar,
+  Campo,
+  Dialogo,
+  Entrada,
+  Vazio,
+} from "@/components/ui";
+import { TabelaEmpresas } from "@/components/agencia/tabela-empresas";
+import { carregarEmpresas, mesAtrasado } from "@/lib/agencia";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Empresas" };
 
+type Filtro = "todas" | "atrasadas" | "sem-acesso";
+
+const FILTROS: { chave: Filtro; rotulo: string }[] = [
+  { chave: "todas", rotulo: "Todas" },
+  { chave: "atrasadas", rotulo: "Mês atrasado" },
+  { chave: "sem-acesso", rotulo: "Sem acesso" },
+];
+
 export default async function AgenciaPage({
   searchParams,
 }: {
-  searchParams: { erro?: string; ok?: string };
+  searchParams: { erro?: string; ok?: string; q?: string; filtro?: Filtro };
 }) {
   const supabase = createClient();
   const { data: ehAgencia } = await supabase.rpc("is_agency");
   if (!ehAgencia) redirect("/");
 
-  const { data: orgs } = await supabase
-    .from("orgs")
-    .select("*")
-    .order("name")
-    .returns<Org[]>();
+  // Uma chamada. Antes eram treze por carregamento: orgs, memberships,
+  // listUsers(1000) e um `modulos_configurados` por empresa, em série.
+  const empresas = await carregarEmpresas();
 
-  // Quem já entra no portal, por empresa. O email mora em `auth.users`, que a
-  // sessão da agência não lê — daí a chave secreta, server-side.
-  const { data: vinculos } = await supabase
-    .from("memberships")
-    .select("user_id,org_id,role")
-    .returns<Pick<Membership, "user_id" | "org_id" | "role">[]>();
+  const busca = (searchParams.q ?? "").trim().toLowerCase();
+  const filtro: Filtro = searchParams.filtro ?? "todas";
 
-  const { data: usuarios } = await clienteSecreto().auth.admin.listUsers({
-    perPage: 1000,
+  const lista = empresas.filter((e) => {
+    if (busca && !`${e.name} ${e.slug}`.toLowerCase().includes(busca))
+      return false;
+    if (filtro === "atrasadas") return mesAtrasado(e.ultimo_mes);
+    if (filtro === "sem-acesso") return e.acessos === 0;
+    return true;
   });
-  const emailDe = new Map(
-    (usuarios?.users ?? []).map((u) => [u.id, u.email ?? u.id]),
-  );
 
-  const acessos = (orgId: string) =>
-    (vinculos ?? [])
-      .filter((v) => v.org_id === orgId)
-      .map((v) => `${emailDe.get(v.user_id) ?? "—"} (${v.role})`);
-
-  // Estado real de cada empresa, do mesmo lugar que o portal do cliente lê —
-  // assim a área da agência não pode discordar do que o cliente está vendo.
-  const prontos = new Map<string, ModulosConfigurados>();
-  for (const org of orgs ?? []) {
-    const { data } = await supabase.rpc("modulos_configurados", {
-      p_org: org.id,
-    });
-    prontos.set(
-      org.id,
-      (data as ModulosConfigurados) ?? {
-        dashboard: false,
-        bio: false,
-        fila: false,
-      },
-    );
-  }
-
-  const pronto = (orgId: string) =>
-    prontos.get(orgId) ?? { dashboard: false, bio: false, fila: false };
+  const contagem = (f: Filtro) =>
+    f === "atrasadas"
+      ? empresas.filter((e) => mesAtrasado(e.ultimo_mes)).length
+      : f === "sem-acesso"
+        ? empresas.filter((e) => e.acessos === 0).length
+        : empresas.length;
 
   return (
     <AgenciaShell
       secao="empresas"
       migalha={[{ rotulo: "Empresas" }]}
-      titulo={`${(orgs ?? []).length} empresas`}
+      titulo={`${empresas.length} ${empresas.length === 1 ? "empresa" : "empresas"}`}
+      acoes={<DialogoNovaEmpresa />}
     >
       {searchParams.erro ? (
-        <div className="mb-6">
+        <div className="mb-5">
           <Aviso tom="erro">{searchParams.erro}</Aviso>
         </div>
       ) : null}
 
-      <section className="rounded-lg border border-white/15 bg-white/5 p-5">
-        <h2 className="text-lg font-medium">Nova empresa</h2>
-        <form action={criarOrg} className="mt-4 flex flex-wrap gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-2.5">
+        {/* Formulário GET: a busca fica na URL, então dá para recarregar e
+            compartilhar o resultado. */}
+        <form className="relative min-w-[200px] flex-1 sm:max-w-xs">
+          {filtro !== "todas" ? (
+            <input type="hidden" name="filtro" value={filtro} />
+          ) : null}
+          <label htmlFor="q" className="sr-only">
+            Buscar empresa
+          </label>
           <input
-            name="name"
-            required
-            placeholder="Nome"
-            className={`${campoClasse} sm:w-56`}
+            id="q"
+            name="q"
+            defaultValue={searchParams.q ?? ""}
+            placeholder="Buscar empresa…"
+            className="min-h-9 w-full rounded-md border border-line-strong bg-surface-1 px-3 py-1.5 text-sm outline-none transition placeholder:text-dim focus:border-brand"
           />
-          <input
-            name="slug"
-            required
-            placeholder="slug-da-empresa"
-            className={`${campoClasse} sm:w-56`}
-          />
-          <button type="submit" className={`${botaoClasse} sm:w-auto sm:px-5`}>
-            Criar
-          </button>
         </form>
-      </section>
 
-      <div className="mt-8 space-y-6">
-        {(orgs ?? []).map((org) => {
-          return (
-            <section
-              key={org.id}
-              className="rounded-lg border border-white/15 bg-white/5 p-5"
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <h2 className="text-lg font-medium">{org.name}</h2>
-                <span className="text-xs text-muted">{org.slug}</span>
-              </div>
-
-              {/* Não há o que ligar: o cliente tem os quatro módulos. O que a
-                  agência faz aqui é preparar cada um — e enquanto não preparar,
-                  o cliente vê o card apagado, escrito "em configuração". */}
-              <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                <Selo pronto={pronto(org.id).dashboard} nome={MODULES.dashboard.label} />
-                <Selo pronto={pronto(org.id).bio} nome={MODULES.bio.label} />
-                <Selo pronto={pronto(org.id).fila} nome={MODULES.fila.label} />
-                <span className="rounded-full border border-white/15 px-3 py-1 text-muted">
-                  {MODULES.cmv.label} · em breve
-                </span>
-              </div>
-
-              {/* Desde a Fase 6 os números moram aqui: o dashboard do cliente
-                  é alimentado nesta tela, não mais no projeto antigo. */}
-              <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-white/10 pt-5 text-sm">
-                <Link
-                  href={`/agencia/${org.id}/periodos`}
-                  className={`${botaoClasse} sm:w-auto sm:px-5`}
-                >
-                  Resultados por mês
-                </Link>
-                <Link
-                  href={`/agencia/${org.id}/precificacao`}
-                  className="text-muted hover:text-foreground"
-                >
-                  Precificação iFood →
-                </Link>
-                {pronto(org.id).dashboard ? (
-                  <Link
-                    href={`/dashboard?org=${org.id}`}
-                    className="text-muted hover:text-foreground"
-                  >
-                    Ver o dashboard →
-                  </Link>
-                ) : null}
-              </div>
-
-              <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-white/10 pt-5">
-                {pronto(org.id).bio ? (
-                  <Link
-                    href="/bio"
-                    className="text-sm text-muted hover:text-foreground"
-                  >
-                    Página de bio criada — editar →
-                  </Link>
-                ) : (
-                  // Nasce com o endereço e o nome da própria empresa; a agência
-                  // ajusta no editor, para onde esta ação já leva.
-                  <form action={criarPagina}>
-                    <input type="hidden" name="org_id" value={org.id} />
-                    <input type="hidden" name="slug" value={org.slug} />
-                    <input type="hidden" name="title" value={org.name} />
-                    <button
-                      type="submit"
-                      className={`${botaoClasse} sm:w-auto sm:px-5`}
-                    >
-                      Criar página de bio
-                    </button>
-                  </form>
-                )}
-
-                {pronto(org.id).fila ? (
-                  <a
-                    href={MODULES.fila.href}
-                    className="text-sm text-muted hover:text-foreground"
-                  >
-                    Fila preparada — abrir →
-                  </a>
-                ) : (
-                  <form action={prepararFila}>
-                    <input type="hidden" name="org_id" value={org.id} />
-                    <button
-                      type="submit"
-                      className={`${botaoClasse} sm:w-auto sm:px-5`}
-                    >
-                      Preparar fila
-                    </button>
-                  </form>
-                )}
-              </div>
-
-              <NovoAcesso orgId={org.id} />
-
-              {acessos(org.id).length > 0 ? (
-                <p className="mt-3 text-xs text-muted">
-                  Com acesso: {acessos(org.id).join(", ")}
-                </p>
-              ) : (
-                <p className="mt-3 text-xs text-muted">
-                  Ninguém desta empresa entra no portal ainda.
-                </p>
-              )}
-            </section>
-          );
-        })}
+        <div className="flex rounded-md border border-line bg-surface-1 p-0.5">
+          {FILTROS.map((f) => {
+            const params = new URLSearchParams();
+            if (searchParams.q) params.set("q", searchParams.q);
+            if (f.chave !== "todas") params.set("filtro", f.chave);
+            const qs = params.toString();
+            return (
+              <Link
+                key={f.chave}
+                href={`/agencia${qs ? `?${qs}` : ""}`}
+                className={`rounded px-2.5 py-1.5 text-xs font-semibold transition ${
+                  filtro === f.chave
+                    ? "bg-surface-3 text-foreground"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                {f.rotulo}
+                <span className="ml-1.5 tabular text-dim">{contagem(f.chave)}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
+
+      {lista.length === 0 ? (
+        <Vazio
+          titulo={
+            busca
+              ? `Nenhuma empresa com “${searchParams.q}”`
+              : filtro === "atrasadas"
+                ? "Nenhum fechamento atrasado"
+                : filtro === "sem-acesso"
+                  ? "Toda empresa tem alguém entrando no portal"
+                  : "Nenhuma empresa cadastrada"
+          }
+          descricao={
+            filtro === "todas" && !busca
+              ? "Crie a primeira em “Nova empresa”."
+              : undefined
+          }
+        />
+      ) : (
+        <TabelaEmpresas empresas={lista} />
+      )}
     </AgenciaShell>
   );
 }
 
-/** Estado de um módulo para uma empresa. Informativo — não é um botão. */
-function Selo({ pronto, nome }: { pronto: boolean; nome: string }) {
+/**
+ * O formulário de nova empresa vivia aberto no topo da página, ocupando espaço
+ * o ano inteiro para uma ação que acontece uma vez por cliente.
+ */
+function DialogoNovaEmpresa() {
   return (
-    <span
-      className={`rounded-full border px-3 py-1 ${
-        pronto
-          ? "border-accent bg-accent/15 text-foreground"
-          : "border-white/15 text-muted"
-      }`}
+    <Dialogo
+      rotulo="+ Nova empresa"
+      variante="primario"
+      tamanho="sm"
+      titulo="Nova empresa"
+      descricao="O endereço é o que aparece no link da página de bio e no Fila de Espera."
     >
-      {nome} · {pronto ? "pronto" : "em configuração"}
-    </span>
+      <form action={criarOrg} className="space-y-3">
+        <Campo rotulo="Nome" obrigatorio>
+          <Entrada name="name" required placeholder="Ex.: BB Onça Burguers" autoFocus />
+        </Campo>
+        <Campo
+          rotulo="Endereço"
+          obrigatorio
+          ajuda="Só letras minúsculas, números e hífen."
+        >
+          <Entrada
+            name="slug"
+            required
+            pattern="[a-z0-9-]+"
+            placeholder="bb-onca"
+          />
+        </Campo>
+        <div className="flex justify-end pt-1">
+          <BotaoEnviar pendente="Criando…">Criar empresa</BotaoEnviar>
+        </div>
+      </form>
+    </Dialogo>
   );
 }

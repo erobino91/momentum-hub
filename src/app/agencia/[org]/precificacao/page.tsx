@@ -12,7 +12,8 @@ import {
 } from "./actions";
 
 import { AgenciaShell } from "@/components/shell";
-import { Aviso } from "@/components/ui";
+import { AbasEmpresa } from "@/components/agencia/abas";
+import { Aviso, ConfirmarAcao } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Precificação iFood" };
@@ -72,11 +73,13 @@ export default async function PrecificacaoPage({
       secao="empresas"
       migalha={[
         { rotulo: "Empresas", href: "/agencia" },
-        { rotulo: org.name, href: "/agencia" },
+        { rotulo: org.name, href: `/agencia/${org.id}` },
         { rotulo: "Precificação" },
       ]}
       titulo="Precificação iFood"
     >
+      <AbasEmpresa orgId={org.id} ativa="precificacao" />
+
       <p className="-mt-1 mb-6 text-sm text-muted">
         Preço de balcão + o que a plataforma come, em três fases.
       </p>
@@ -244,16 +247,18 @@ export default async function PrecificacaoPage({
                       </span>
                     </td>
                     <td className="py-2 pl-3 text-right">
-                      <form action={apagarProduto}>
+                      {/* Produto some do cálculo, não do cardápio do cliente:
+                          a pergunta basta, sem palavra digitada. */}
+                      <ConfirmarAcao
+                        acao={apagarProduto}
+                        rotulo="Remover"
+                        titulo={`Remover ${p.name}?`}
+                        descricao="O produto sai desta tabela de precificação. O cardápio do cliente não muda."
+                        confirmar="Remover produto"
+                      >
                         <input type="hidden" name="org_id" value={org.id} />
                         <input type="hidden" name="id" value={p.id} />
-                        <button
-                          type="submit"
-                          className="text-xs text-muted transition hover:text-red-300"
-                        >
-                          remover
-                        </button>
-                      </form>
+                      </ConfirmarAcao>
                     </td>
                   </tr>
                 );

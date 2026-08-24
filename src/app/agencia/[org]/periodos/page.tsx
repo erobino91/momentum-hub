@@ -11,7 +11,8 @@ import {
 import type { DashboardPeriod, Org } from "@/types/db";
 import { salvarPeriodo, apagarPeriodo } from "./actions";
 import { AgenciaShell } from "@/components/shell";
-import { Aviso, botaoEstilo } from "@/components/ui";
+import { AbasEmpresa } from "@/components/agencia/abas";
+import { Aviso, ConfirmarAcao, botaoEstilo } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Resultados por mês" };
@@ -77,7 +78,7 @@ export default async function PeriodosPage({
       secao="empresas"
       migalha={[
         { rotulo: "Empresas", href: "/agencia" },
-        { rotulo: org.name, href: "/agencia" },
+        { rotulo: org.name, href: `/agencia/${org.id}` },
         { rotulo: "Resultados" },
       ]}
       titulo="Resultados por mês"
@@ -90,6 +91,8 @@ export default async function PeriodosPage({
         </Link>
       }
     >
+      <AbasEmpresa orgId={org.id} ativa="resultados" />
+
       {searchParams.erro ? (
         <div className="mb-6">
           <Aviso tom="erro">{searchParams.erro}</Aviso>
@@ -137,16 +140,25 @@ export default async function PeriodosPage({
                   >
                     Editar
                   </Link>
-                  <form action={apagarPeriodo}>
+                  {/* Apagar um mês tira 24 números do dashboard do cliente e
+                      não tem volta — daí a palavra digitada. */}
+                  <ConfirmarAcao
+                    acao={apagarPeriodo}
+                    rotulo="Apagar"
+                    titulo={`Apagar ${nomeDoMes(p.period_date)}?`}
+                    descricao={
+                      <>
+                        Os números do mês somem do dashboard de{" "}
+                        <strong className="text-foreground">{org.name}</strong>{" "}
+                        na hora. Não dá para desfazer.
+                      </>
+                    }
+                    confirmar="Apagar mês"
+                    digite={nomeDoMes(p.period_date).split("/")[0]}
+                  >
                     <input type="hidden" name="org_id" value={org.id} />
                     <input type="hidden" name="id" value={p.id} />
-                    <button
-                      type="submit"
-                      className="text-muted transition hover:text-red-300"
-                    >
-                      Apagar
-                    </button>
-                  </form>
+                  </ConfirmarAcao>
                 </div>
               </li>
             ))}
