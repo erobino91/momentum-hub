@@ -12,12 +12,14 @@ export type AbaEmpresa =
   | "geral"
   | "resultados"
   | "precificacao"
+  | "financeiro"
   | "acessos";
 
 const ABAS: { chave: AbaEmpresa; rotulo: string; caminho: string }[] = [
   { chave: "geral", rotulo: "Visão geral", caminho: "" },
   { chave: "resultados", rotulo: "Resultados", caminho: "/periodos" },
   { chave: "precificacao", rotulo: "Precificação", caminho: "/precificacao" },
+  { chave: "financeiro", rotulo: "Financeiro", caminho: "/financeiro" },
   { chave: "acessos", rotulo: "Acessos", caminho: "/acessos" },
 ];
 

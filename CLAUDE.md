@@ -5,7 +5,7 @@ Supabase (`@supabase/ssr`), deploy Vercel região `gru1`.
 
 ## Antes de mexer
 
-Ler `../MOMENTUM-HUB-PLANO.md` (raiz do workspace). São 8 fases (0–7), **uma por vez**:
+Ler `../MOMENTUM-HUB-PLANO.md` (raiz do workspace). São 10 fases (0–9), **uma por vez**:
 ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
 
 ## Regras do projeto
@@ -32,6 +32,21 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   separa um cliente do outro — agora é a RLS. O payload de `src/lib/dashboard.ts` continua
   montado campo a campo: ele vira prop de Client Component e viaja no RSC, então a linha
   crua (com `id` e `org_id`) não sai de lá.
+- **O financeiro é da agência, e o cliente não vê a própria mensalidade.**
+  `billing_contracts`, `billing_values` e `billing_charges` têm policy
+  `is_agency()` sem ramo de org — nem o dono da empresa lê o próprio contrato.
+  Três decisões sustentam o resto: **o contrato não guarda valor** (o valor mora
+  em `billing_values` com a data de vigência, e reajuste é linha nova — uma
+  coluna `valor_atual` seria a segunda verdade); **a cobrança do mês é
+  materializada com o valor congelado** (derivar do contrato de hoje faria o
+  passado se reescrever quando alguém pausa ou reajusta); e **não existe status
+  "atrasado"** — é `pendente` com vencimento no passado, calculado por
+  `estadoCobranca()` em `src/lib/financeiro.ts`. Status de atraso gravado
+  envelhece calado: ninguém roda o job, e a tela mente sem dar sinal.
+- **Dia 31 não existe em fevereiro.** `vencimento_do_mes()` corta no último dia
+  do mês, e mora no banco para a geração e a tela não discordarem da data.
+  `gerar_cobrancas()` é idempotente (`do nothing` no conflito): é o que dispensa
+  cron, e clicar duas vezes não desfaz pagamento nem reescreve valor.
 - **Precificação e Lives são da agência, não do cliente.** `pricing_products`,
   `pricing_config`, `live_materials` e `live_sessions` têm policy `is_agency()` sem ramo de
   org: nenhuma tela de cliente lê essas tabelas. `live_sessions.stream_key` é a chave da
@@ -165,11 +180,12 @@ Supabase, `current_restaurant_id()` → vira `current_org_id()`, scripts
 npm run dev      # local :3000
 npm run build    # valida tipos — rodar antes de fechar qualquer fase
 npm run lint
-npm run verify   # Fases 1, 3, 4 e 6
+npm run verify   # Fases 1, 3, 4, 6 e 9
 npm run verify:fase1   # identidade, acesso dado pela agência, isolamento por RLS
 npm run verify:fase3   # bio: RLS das 4 tabelas, clique, hash de IP, CAPI, host bio.
 npm run verify:fase4   # fila: portal e agência leem 0 linhas, partner, FK, realtime
 npm run verify:fase6   # dashboard/pricing/lives: cópia linha a linha, RLS, bucket privado
+npm run verify:fase9   # financeiro: RLS das 3 tabelas, bordas de calendário, valor congelado
 ```
 
 O `verify:fase2` foi apagado na Fase 6: ele testava a RPC do projeto antigo e o vazamento do
