@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 /** Uma linha de `agencia_empresas()`. */
@@ -22,6 +23,17 @@ export type AcessoPainel = {
   desde: string;
   ultimo_acesso: string | null;
 };
+
+/**
+ * Porta de entrada de toda server action da agência. A RLS já barra quem não é
+ * agência; isto existe para devolver uma tela em vez do erro cru do PostgREST.
+ */
+export async function exigirAgencia() {
+  const supabase = createClient();
+  const { data: ehAgencia } = await supabase.rpc("is_agency");
+  if (!ehAgencia) redirect("/");
+  return supabase;
+}
 
 export async function carregarEmpresas(): Promise<EmpresaPainel[]> {
   const supabase = createClient();

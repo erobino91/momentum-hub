@@ -2,21 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { exigirAgencia } from "@/lib/agencia";
 import { CAMPOS_PERIODO, primeiroDiaDoMes } from "@/lib/periodos";
 import { paraNumero } from "@/lib/numero";
-
-/**
- * Escrita de período. A RLS (`dashboard_periods_write_agency`) já barra quem
- * não é agência; a checagem aqui existe para devolver mensagem em vez de erro
- * cru do PostgREST.
- */
-async function exigirAgencia() {
-  const supabase = createClient();
-  const { data: ehAgencia } = await supabase.rpc("is_agency");
-  if (!ehAgencia) redirect("/");
-  return supabase;
-}
 
 function voltar(orgId: string, erro?: string, mes?: string): never {
   revalidatePath(`/agencia/${orgId}/periodos`);

@@ -13,6 +13,9 @@ const CAMINHOS = {
   bio: "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7",
   portal: "M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10",
   fila: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+  // Cédula: retângulo, a moeda no meio e as duas marcas das pontas.
+  financeiro:
+    "M2 6h20v12H2zM14.5 12a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0M5.5 10v4M18.5 10v4",
   externo: "M7 17 17 7M8 7h9v9",
   menu: "M3 6h18M3 12h18M3 18h18",
   voltar: "M15 18l-6-6 6-6",

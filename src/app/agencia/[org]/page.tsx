@@ -7,6 +7,7 @@ import { criarPagina } from "@/app/bio/actions";
 import { prepararFila } from "../actions";
 import { AgenciaShell } from "@/components/shell";
 import { AbasEmpresa } from "@/components/agencia/abas";
+import { Numero } from "@/components/agencia/numero";
 import { BotaoEnviar, Cartao, Selo, botaoEstilo } from "@/components/ui";
 import {
   carregarEmpresas,
@@ -195,27 +196,5 @@ export default async function EmpresaPage({
         configurado. {MODULES.cmv.label} chega depois.
       </p>
     </AgenciaShell>
-  );
-}
-
-function Numero({
-  rotulo,
-  valor,
-  alerta,
-}: {
-  rotulo: string;
-  valor: string;
-  alerta?: string;
-}) {
-  return (
-    <div className="rounded-lg border border-line bg-surface-1 px-4 py-3">
-      <p className="text-[10.5px] font-bold uppercase tracking-wider text-dim">
-        {rotulo}
-      </p>
-      <p className="mt-1 text-xl font-bold tabular tracking-tight">{valor}</p>
-      {alerta ? (
-        <p className="mt-1 text-[11.5px] font-semibold text-warn">{alerta}</p>
-      ) : null}
-    </div>
   );
 }

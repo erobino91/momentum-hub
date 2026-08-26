@@ -17,7 +17,7 @@ import { Icone, type NomeIcone } from "@/components/icone";
  * uma coisa e sair (barra no topo, sem menu).
  */
 
-export type SecaoAgencia = "empresas" | "lives" | "bio";
+export type SecaoAgencia = "empresas" | "financeiro" | "lives" | "bio";
 
 export type Migalha = { rotulo: string; href?: string };
 
@@ -120,6 +120,12 @@ function NavAgencia({
         rotulo="Empresas"
         ativo={secao === "empresas"}
         contador={empresas}
+      />
+      <ItemNav
+        href="/agencia/financeiro"
+        icone="financeiro"
+        rotulo="Financeiro"
+        ativo={secao === "financeiro"}
       />
       <ItemNav
         href="/agencia/lives"
