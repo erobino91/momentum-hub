@@ -118,3 +118,58 @@ export type LiveSession = {
   created_at: string;
 };
 
+
+/* ─────────────────────────── Fase 9 — financeiro ─────────────────────────── */
+
+export type SituacaoContrato = "ativo" | "pausado" | "encerrado";
+
+export type FormaPagamento =
+  | "pix"
+  | "boleto"
+  | "cartao"
+  | "transferencia"
+  | "outro";
+
+/**
+ * Contrato de mensalidade. **Não guarda valor** — o valor mora em
+ * `billing_values` com a data de vigência, para reajuste não reescrever o
+ * passado. Não criar `valor_atual` aqui: seria uma segunda verdade.
+ */
+export type BillingContract = {
+  id: string;
+  org_id: string;
+  situacao: SituacaoContrato;
+  /** 1 a 31. A data real da cobrança sai de `vencimento_do_mes()` no banco. */
+  dia_vencimento: number;
+  forma_pagamento: FormaPagamento | null;
+  cliente_desde: string | null;
+  observacao: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BillingValue = {
+  id: string;
+  contract_id: string;
+  valor: number;
+  vigente_desde: string;
+  created_at: string;
+};
+
+/**
+ * Uma cobrança por mês por empresa, com o valor congelado na geração.
+ * `status` não tem "atrasado": atrasado é `pendente` com vencimento no passado,
+ * e quem responde isso é `estadoCobranca()` em `@/lib/financeiro`.
+ */
+export type BillingCharge = {
+  id: string;
+  org_id: string;
+  competencia: string;
+  vencimento: string;
+  valor: number;
+  status: "pendente" | "pago" | "cancelado";
+  pago_em: string | null;
+  observacao: string | null;
+  created_at: string;
+  updated_at: string;
+};
