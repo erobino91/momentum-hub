@@ -53,6 +53,8 @@ export type EstadoCobranca =
   | "pendente"
   | "cancelado"
   | "nao-gerada"
+  | "pausado"
+  | "encerrado"
   | "sem-contrato";
 
 export function estadoCobranca(
@@ -60,7 +62,14 @@ export function estadoCobranca(
   hoje = hojeISO(),
 ): EstadoCobranca {
   if (!linha.contrato_id) return "sem-contrato";
-  if (!linha.cobranca_id || !linha.status) return "nao-gerada";
+  // Sem cobrança no mês, o contrato decide o que dizer. "Não gerada" num
+  // contrato pausado seria mentira por omissão: sugere que falta clicar em
+  // gerar, e a geração nunca vai pegar essa empresa.
+  if (!linha.cobranca_id || !linha.status) {
+    if (linha.situacao === "pausado") return "pausado";
+    if (linha.situacao === "encerrado") return "encerrado";
+    return "nao-gerada";
+  }
   if (linha.status === "pago") return "pago";
   if (linha.status === "cancelado") return "cancelado";
   // Comparação de texto porque as duas datas são `YYYY-MM-DD`: ordem
@@ -79,6 +88,8 @@ const ROTULO: Record<EstadoCobranca, string> = {
   pendente: "em aberto",
   cancelado: "cancelado",
   "nao-gerada": "não gerada",
+  pausado: "pausado",
+  encerrado: "encerrado",
   "sem-contrato": "sem contrato",
 };
 

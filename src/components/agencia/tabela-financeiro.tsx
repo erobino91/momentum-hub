@@ -45,7 +45,9 @@ const PESO: Record<EstadoCobranca, number> = {
   "nao-gerada": 2,
   pago: 3,
   cancelado: 4,
-  "sem-contrato": 5,
+  pausado: 5,
+  encerrado: 6,
+  "sem-contrato": 7,
 };
 
 const TOM: Record<EstadoCobranca, TomSelo> = {
@@ -54,6 +56,8 @@ const TOM: Record<EstadoCobranca, TomSelo> = {
   "nao-gerada": "neutro",
   pago: "pronto",
   cancelado: "neutro",
+  pausado: "neutro",
+  encerrado: "neutro",
   "sem-contrato": "atencao",
 };
 
@@ -122,7 +126,11 @@ function Linha({
 
   return (
     <tr className="transition hover:bg-surface-1">
-      <td className={tdEstilo}>
+      {/* `w-full max-w-0`: sem largura declarada, `table-layout: auto` deixa a
+          célula crescer com o conteúdo e o `truncate` de dentro nunca dispara —
+          um nome comprido empurra as colunas de dinheiro e a data quebra em
+          duas linhas. Com isto a coluna fica com a sobra e o nome corta. */}
+      <td className={`${tdEstilo} w-full max-w-0`}>
         <Link
           href={`/agencia/${l.org_id}/financeiro`}
           className="flex items-center gap-3 rounded-md"
@@ -142,11 +150,11 @@ function Linha({
         </Link>
       </td>
 
-      <td className={`${tdEstilo} ${numEstilo}`}>
+      <td className={`${tdEstilo} ${numEstilo} whitespace-nowrap`}>
         <Vencimento linha={l} estado={estado} hoje={hoje} />
       </td>
 
-      <td className={`${tdEstilo} ${numEstilo}`}>
+      <td className={`${tdEstilo} ${numEstilo} whitespace-nowrap`}>
         <ValorDaLinha linha={l} />
       </td>
 
@@ -254,7 +262,12 @@ function Acoes({
   estado: EstadoCobranca;
   mes: string;
 }) {
-  if (estado === "sem-contrato" || estado === "nao-gerada") {
+  if (
+    estado === "sem-contrato" ||
+    estado === "nao-gerada" ||
+    estado === "pausado" ||
+    estado === "encerrado"
+  ) {
     return (
       <Link
         href={`/agencia/${l.org_id}/financeiro`}
