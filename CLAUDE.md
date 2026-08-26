@@ -222,6 +222,11 @@ Aplicadas pela API de gestão (`POST /v1/projects/{ref}/database/query`) com o t
 `.supabase-token.txt`. **Mandar o arquivo inteiro numa requisição devolve 400 sem corpo** —
 por isso o script corta nas linhas `-- ------` e manda seção por seção.
 
+**Script novo que fala com essa API precisa mandar `User-Agent`.** Sem ele o Cloudflare da
+Supabase devolve `403` com corpo `error code: 1010` — bloqueio pela assinatura do cliente, não
+por token inválido, e o 403 faz parecer que o token morreu. O `curl` passa porque manda o
+dele; `urllib` do Python e `fetch` sem header, não.
+
 ## Quem cria a conta do cliente
 
 **A agência.** Em `/agencia`, `criarAcessoCliente` cria o usuário pela Admin API (chave
