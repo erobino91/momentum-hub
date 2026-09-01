@@ -74,3 +74,174 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/**
+ * Bio — layout "Vitrine".
+ *
+ * A página pública do bio veste as cores do cliente, não as da Momentum: nada
+ * aqui usa token do portal. As cores chegam por variável inline
+ * (`--bio-destaque`, `--bio-raio`, ...) montada em `bio-render.tsx` a partir do
+ * tema salvo, e o nicho entra como classe de textura e de forma.
+ *
+ * Classes prefixadas com `bio-` de propósito: cor nova no `tailwind.config.ts`
+ * corre o risco de colidir com utilitária (foi o caso de `text-base`), e este
+ * visual não é reaproveitado em tela nenhuma do portal.
+ *
+ * Movimento: a regra global de `prefers-reduced-motion` no topo deste arquivo
+ * já zera tudo daqui — não há media query própria.
+ */
+
+.bio-vitrine {
+  --bio-raio: 16px;
+  --bio-pad: 15px 18px;
+  --bio-pad-cta: 20px 22px;
+  --bio-peso: 600;
+}
+
+.bio-forma-generosa {
+  --bio-raio: 22px;
+  --bio-pad: 18px 20px;
+  --bio-pad-cta: 24px 24px;
+  --bio-peso: 700;
+}
+
+.bio-forma-firme {
+  --bio-raio: 14px;
+  --bio-pad: 16px 18px;
+  --bio-pad-cta: 21px 22px;
+  --bio-peso: 650;
+}
+
+.bio-forma-delicada {
+  --bio-raio: 26px;
+  --bio-pad: 14px 20px;
+  --bio-pad-cta: 19px 22px;
+  --bio-peso: 550;
+}
+
+.bio-forma-reta {
+  --bio-raio: 8px;
+  --bio-pad: 16px 18px;
+  --bio-pad-cta: 21px 22px;
+  --bio-peso: 600;
+}
+
+/* Cartão de link. A cor vem inline; aqui mora só a forma e o movimento. */
+.bio-cartao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: var(--bio-pad);
+  border-radius: var(--bio-raio);
+  font-weight: var(--bio-peso);
+  text-align: left;
+  animation: bio-entrar 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--ordem, 0) * 60ms + 120ms);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.bio-cartao:hover {
+  transform: translateY(-2px);
+}
+
+.bio-cartao:active {
+  transform: translateY(1px);
+}
+
+/* O filete que dá a cor do negócio ao cartão neutro. */
+.bio-cartao-filete {
+  flex: 0 0 4px;
+  align-self: stretch;
+  min-height: 1.5rem;
+  border-radius: 999px;
+  background: var(--bio-destaque);
+}
+
+/* O CTA: cheio da cor de destaque, maior e elevado. Um por página. */
+.bio-cartao-cta {
+  padding: var(--bio-pad-cta);
+  font-size: 1.12rem;
+  box-shadow: 0 10px 26px -12px rgb(0 0 0 / 0.55);
+}
+
+.bio-cartao-cta:hover {
+  box-shadow: 0 16px 32px -12px rgb(0 0 0 / 0.6);
+}
+
+/* Só a seta do CTA respira — as dos outros cartões ficam paradas. */
+.bio-cartao-cta .bio-seta {
+  animation: bio-seta-respira 2.6s ease-in-out infinite;
+}
+
+.bio-texturas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bio-textura-grao {
+  opacity: 0.16;
+  background-image:
+    radial-gradient(circle at 18% 22%, #fff 0.9px, transparent 1.1px),
+    radial-gradient(circle at 63% 47%, #fff 0.9px, transparent 1.1px),
+    radial-gradient(circle at 41% 78%, #fff 0.9px, transparent 1.1px),
+    radial-gradient(circle at 86% 64%, #fff 0.9px, transparent 1.1px);
+  background-size: 46px 46px, 62px 62px, 54px 54px, 78px 78px;
+}
+
+.bio-textura-xadrez {
+  opacity: 0.04;
+  background-image: repeating-linear-gradient(
+    45deg,
+    #fff 0 18px,
+    transparent 18px 52px
+  );
+}
+
+.bio-textura-confete {
+  opacity: 0.3;
+  background-image:
+    radial-gradient(circle at 12% 18%, #fff 2.5px, transparent 3px),
+    radial-gradient(circle at 74% 31%, #fff 1.8px, transparent 2.3px),
+    radial-gradient(circle at 33% 66%, #fff 2.2px, transparent 2.7px),
+    radial-gradient(circle at 89% 82%, #fff 1.6px, transparent 2.1px);
+  background-size: 120px 120px, 96px 96px, 140px 140px, 108px 108px;
+}
+
+/* Seigaiha — a onda japonesa em arcos concêntricos. */
+.bio-textura-ondas {
+  opacity: 0.07;
+  background-image: radial-gradient(
+    circle at 50% 100%,
+    transparent 0 9px,
+    #fff 9px 10px,
+    transparent 10px 17px,
+    #fff 17px 18px,
+    transparent 18px 25px,
+    #fff 25px 26px,
+    transparent 26px
+  );
+  background-size: 52px 26px;
+}
+
+@keyframes bio-entrar {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bio-seta-respira {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}

@@ -115,7 +115,12 @@ export function VisaoCliente({
                   pixelId: pagina.pixel_id,
                   botoes: botoes
                     .filter((b) => botaoNoAr(b))
-                    .map((b) => ({ id: b.id, label: b.label, icon: b.icon })),
+                    .map((b) => ({
+                      id: b.id,
+                      label: b.label,
+                      icon: b.icon,
+                      destaque: b.destaque,
+                    })),
                 }}
               />
             </div>

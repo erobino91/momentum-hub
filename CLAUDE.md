@@ -82,6 +82,14 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   ao Fila vem de `profiles`. Restaurante existir com o dono ainda sem `profiles` acende o
   card para levar a "esta conta não atende nenhum restaurante" — por isso `prepararFila`
   cria os dois.
+- **A página pública do bio veste a cor do cliente, não a da Momentum.** Nada em
+  `bio-render.tsx` usa token do portal: as cores saem do `theme` (jsonb) e entram como estilo
+  inline; a forma mora nas classes `bio-*` de `globals.css`. São dois visuais — o **clássico**
+  (o linktree neutro, que é o padrão e por isso página publicada não muda de cara em deploy) e a
+  **Vitrine**, um layout só para todos os nichos, com paleta, textura, forma e sugestões vindas
+  de `src/lib/bio/nichos.ts`. Nicho novo é uma entrada naquele objeto, não uma varredura pelo
+  `src/`. Qual link é o CTA é a coluna `link_buttons.destaque`, não "o primeiro da lista":
+  restaurante com duas unidades tem dois principais e eles não são vizinhos na ordem.
 - **RLS em toda tabela nova**, filtrando por `current_org_id()`.
 - Migrations versionadas em `supabase/migrations/`, nunca DDL solto no painel.
 - Nunca imprimir chaves ou segredos na saída, nem dentro de comandos.

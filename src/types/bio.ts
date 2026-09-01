@@ -1,19 +1,30 @@
+export type NichoBio = "classico" | "burguer" | "pizza" | "doceria" | "sushi";
+
 export type TemaBio = {
   /** Cor de fundo da página pública. */
   fundo?: string;
+  /** Fim do gradiente do fundo. Vazio = cor chapada. */
+  fundo2?: string;
   /** Cor do texto. */
   texto?: string;
   /** Cor de preenchimento dos botões. */
   botao?: string;
   /** Cor do texto dos botões. */
   botaoTexto?: string;
+  /** Nicho do negócio — escolhe layout, textura e forma dos cartões. */
+  nicho?: NichoBio;
+  /** Cor de destaque: CTA cheio, filete dos cartões e anel da logo. */
+  destaque?: string;
 };
 
 export const TEMA_PADRAO: Required<TemaBio> = {
   fundo: "#0b0d12",
+  fundo2: "",
   texto: "#f5f6f8",
   botao: "#ff5a1f",
   botaoTexto: "#ffffff",
+  nicho: "classico",
+  destaque: "#ff5a1f",
 };
 
 export type LinkPage = {
@@ -38,6 +49,8 @@ export type LinkButton = {
   icon: string | null;
   position: number;
   active: boolean;
+  /** O botão principal da página — vira o CTA cheio no layout de nicho. */
+  destaque: boolean;
   starts_at: string | null;
   ends_at: string | null;
 };
@@ -47,6 +60,7 @@ export type BotaoPublico = {
   id: string;
   label: string;
   icon: string | null;
+  destaque: boolean;
 };
 
 export type PaginaPublica = {

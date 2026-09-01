@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BioRender } from "@/components/bio-render";
 import { botaoEstilo, campoEstilo } from "@/components/ui";
+import { NICHOS, NICHOS_LISTA, nichoDe, paletaDoNicho } from "@/lib/bio/nichos";
 import { URL_BIO } from "@/lib/bio/url";
 import {
   apagarBotao,
@@ -47,6 +48,27 @@ export function EditorBio({
   const [bio, setBio] = useState(pagina.bio ?? "");
   const [avatar, setAvatar] = useState(pagina.avatar_url ?? "");
   const [cores, setCores] = useState(tema);
+  const [nicho, setNicho] = useState(nichoDe(tema.nicho));
+  // O degradê é opcional: sem isto, `input[type=color]` sem valor viraria preto
+  // e toda página passaria a ter um gradiente que ninguém pediu.
+  const [gradiente, setGradiente] = useState(Boolean(tema.fundo2));
+
+  // Campos do formulário de novo botão — as sugestões do nicho preenchem eles.
+  const [novoIcone, setNovoIcone] = useState("");
+  const [novoRotulo, setNovoRotulo] = useState("");
+  const urlNovo = useRef<HTMLInputElement>(null);
+
+  function usarSugestao(icon: string, label: string) {
+    setNovoIcone(icon);
+    setNovoRotulo(label);
+    urlNovo.current?.focus();
+  }
+
+  function aplicarPaleta() {
+    const paleta = paletaDoNicho(nicho);
+    setCores(paleta);
+    setGradiente(Boolean(paleta.fundo2));
+  }
 
   const [ordem, setOrdem] = useState(botoes);
   const [arrastando, setArrastando] = useState<string | null>(null);
@@ -149,6 +171,38 @@ export function EditorBio({
                 />
               </div>
 
+              {/* O nicho escolhe o visual da página pública: layout de
+                  vitrine, textura de fundo e forma dos cartões. As cores dele
+                  são sugestão — só entram quando alguém pede. */}
+              <div>
+                <label className={rotulo} htmlFor="nicho">
+                  Nicho
+                </label>
+                <div className="mt-1 flex flex-wrap items-center gap-3">
+                  <select
+                    id="nicho"
+                    name="nicho"
+                    value={nicho}
+                    onChange={(e) => setNicho(nichoDe(e.target.value))}
+                    className={`${campoEstilo} sm:w-64`}
+                  >
+                    {NICHOS_LISTA.map((n) => (
+                      <option key={n} value={n}>
+                        {NICHOS[n].nome}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={aplicarPaleta}
+                    className="text-sm text-muted underline-offset-4 transition hover:text-foreground hover:underline"
+                  >
+                    Aplicar cores do nicho
+                  </button>
+                </div>
+                <p className="mt-1.5 text-xs text-dim">{NICHOS[nicho].descricao}</p>
+              </div>
+
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {(
                   [
@@ -174,7 +228,57 @@ export function EditorBio({
                     />
                   </div>
                 ))}
+
+                {nicho === "classico" ? null : (
+                  <div>
+                    <label className={rotulo} htmlFor="tema_destaque">
+                      Destaque
+                    </label>
+                    <input
+                      id="tema_destaque"
+                      name="tema_destaque"
+                      type="color"
+                      value={cores.destaque}
+                      onChange={(e) =>
+                        setCores({ ...cores, destaque: e.target.value })
+                      }
+                      className="mt-1 h-10 w-full cursor-pointer rounded-md border border-line-strong bg-surface-1"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className={rotulo} htmlFor="tema_fundo2">
+                    Fundo 2
+                  </label>
+                  <input
+                    id="tema_fundo2"
+                    name="tema_fundo2"
+                    type="color"
+                    disabled={!gradiente}
+                    value={cores.fundo2 || cores.fundo}
+                    onChange={(e) => setCores({ ...cores, fundo2: e.target.value })}
+                    className="mt-1 h-10 w-full cursor-pointer rounded-md border border-line-strong bg-surface-1 disabled:cursor-not-allowed disabled:opacity-40"
+                  />
+                </div>
               </div>
+
+              {/* Desmarcado, o campo vai desabilitado e não é enviado — o tema
+                  volta a ter fundo chapado sem precisar de valor nenhum. */}
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={gradiente}
+                  onChange={(e) => {
+                    setGradiente(e.target.checked);
+                    if (e.target.checked && !cores.fundo2) {
+                      setCores({ ...cores, fundo2: cores.fundo });
+                    }
+                  }}
+                  className="h-4 w-4 accent-brand"
+                />
+                Fundo em degradê (do Fundo até o Fundo 2)
+              </label>
 
               {/* Este interruptor é o que publica. Enquanto estiver desligado
                   o endereço público devolve 404, e o card de Bio no portal do
@@ -294,6 +398,18 @@ export function EditorBio({
                           />
                           Ativo
                         </label>
+                        <label
+                          className="flex items-center gap-2 text-sm"
+                          title="Vira o cartão cheio da cor de destaque na página"
+                        >
+                          <input
+                            type="checkbox"
+                            name="destaque"
+                            defaultChecked={b.destaque}
+                            className="h-4 w-4 accent-brand"
+                          />
+                          Destaque
+                        </label>
                         <button
                           type="submit"
                           className="text-sm text-muted transition hover:text-foreground"
@@ -319,33 +435,56 @@ export function EditorBio({
               ))}
             </div>
 
-            <form
-              action={criarBotao}
-              className="mt-5 flex flex-wrap gap-3 border-t border-line pt-5"
-            >
-              <input type="hidden" name="page_id" value={pagina.id} />
-              <input
-                name="icon"
-                placeholder="🍔"
-                aria-label="Ícone"
-                className={`${campoEstilo} w-16 text-center`}
-              />
-              <input
-                name="label"
-                required
-                placeholder="Texto do botão"
-                className={`${campoEstilo} sm:w-52`}
-              />
-              <input
-                name="url"
-                required
-                placeholder="https://..."
-                className={`${campoEstilo} sm:w-64`}
-              />
-              <button type="submit" className={`${botaoEstilo("primario")}`}>
-                Adicionar
-              </button>
-            </form>
+            <div className="mt-5 border-t border-line pt-5">
+              {/* As sugestões só preenchem o formulário. Criar o botão já
+                  pronto exigiria uma URL de mentira, e URL de mentira publica
+                  link quebrado. */}
+              {NICHOS[nicho].sugestoes.length > 0 ? (
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-muted">Sugestões do nicho:</span>
+                  {NICHOS[nicho].sugestoes.map((sg) => (
+                    <button
+                      key={sg.label}
+                      type="button"
+                      onClick={() => usarSugestao(sg.icon, sg.label)}
+                      className="rounded-full border border-line bg-surface-2 px-3 py-1 text-sm transition hover:border-line-strong hover:text-foreground"
+                    >
+                      <span aria-hidden>{sg.icon}</span> {sg.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              <form action={criarBotao} className="flex flex-wrap gap-3">
+                <input type="hidden" name="page_id" value={pagina.id} />
+                <input
+                  name="icon"
+                  value={novoIcone}
+                  onChange={(e) => setNovoIcone(e.target.value)}
+                  placeholder="🍔"
+                  aria-label="Ícone"
+                  className={`${campoEstilo} w-16 text-center`}
+                />
+                <input
+                  name="label"
+                  required
+                  value={novoRotulo}
+                  onChange={(e) => setNovoRotulo(e.target.value)}
+                  placeholder="Texto do botão"
+                  className={`${campoEstilo} sm:w-52`}
+                />
+                <input
+                  ref={urlNovo}
+                  name="url"
+                  required
+                  placeholder="https://..."
+                  className={`${campoEstilo} sm:w-64`}
+                />
+                <button type="submit" className={`${botaoEstilo("primario")}`}>
+                  Adicionar
+                </button>
+              </form>
+            </div>
           </section>
 
           {/* ---------------------------------------------------- Meta */}
@@ -425,18 +564,23 @@ export function EditorBio({
                   title: titulo,
                   bio: bio || null,
                   avatarUrl: avatar || null,
-                  tema: cores,
+                  tema: { ...cores, nicho, fundo2: gradiente ? cores.fundo2 : "" },
                   pixelId: pagina.pixel_id,
                   botoes: ordem
                     .filter((b) => botaoNoAr(b))
-                    .map((b) => ({ id: b.id, label: b.label, icon: b.icon })),
+                    .map((b) => ({
+                      id: b.id,
+                      label: b.label,
+                      icon: b.icon,
+                      destaque: b.destaque,
+                    })),
                 }}
               />
             </div>
           </div>
           <p className="mt-2 text-xs text-muted">
-            Título, descrição, foto e cores atualizam enquanto você digita. Os
-            botões atualizam ao salvar.
+            Título, descrição, foto, nicho e cores atualizam enquanto você
+            mexe. Os botões atualizam ao salvar.
           </p>
         </aside>
       </div>

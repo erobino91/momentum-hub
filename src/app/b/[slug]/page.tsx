@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { BeaconPageview, BioRender } from "@/components/bio-render";
 import { carregarPaginaPublica, snippetPixel } from "@/lib/bio/publico";
+import { temaCompleto } from "@/types/bio";
 
 /**
  * A página pública do bio — `bio.mmtdigital.com.br/<slug>`, reescrita para cá
@@ -33,6 +34,20 @@ export async function generateMetadata({
     },
     robots: { index: true, follow: true },
   };
+}
+
+/**
+ * A barra do navegador no celular acompanha o fundo da página. Fica em
+ * `generateViewport` e não em `generateMetadata`: no Next 14 `themeColor` saiu
+ * do metadata e lá vira aviso de build, sem efeito nenhum.
+ */
+export async function generateViewport({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Viewport> {
+  const pagina = await carregarPaginaPublica(params.slug);
+  return { themeColor: temaCompleto(pagina?.tema).fundo };
 }
 
 export default async function BioPage({ params }: { params: { slug: string } }) {

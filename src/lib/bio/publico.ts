@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { clienteSecreto } from "@/lib/supabase/secreto";
 import {
   botaoNoAr,
@@ -18,7 +20,12 @@ type LinhaPagina = Pick<
   "id" | "slug" | "title" | "bio" | "avatar_url" | "theme" | "pixel_id"
 >;
 
-export async function carregarPaginaPublica(
+/**
+ * Memoizada no `cache` do React porque a rota chama isto três vezes por
+ * requisição — `generateMetadata`, `generateViewport` e a própria página — e
+ * eram três idas ao banco para a mesma resposta.
+ */
+export const carregarPaginaPublica = cache(async function carregarPaginaPublica(
   slug: string,
 ): Promise<PaginaPublica | null> {
   const db = clienteSecreto();
@@ -34,11 +41,14 @@ export async function carregarPaginaPublica(
 
   const { data: botoes } = await db
     .from("link_buttons")
-    .select("id, label, icon, active, starts_at, ends_at")
+    .select("id, label, icon, destaque, active, starts_at, ends_at")
     .eq("page_id", pagina.id)
     .order("position")
     .returns<
-      (Pick<LinkButton, "id" | "label" | "icon" | "active" | "starts_at" | "ends_at">)[]
+      (Pick<
+        LinkButton,
+        "id" | "label" | "icon" | "destaque" | "active" | "starts_at" | "ends_at"
+      >)[]
     >();
 
   return {
@@ -52,9 +62,9 @@ export async function carregarPaginaPublica(
     // contado e virar evento de CAPI.
     botoes: (botoes ?? [])
       .filter((b) => botaoNoAr(b))
-      .map((b) => ({ id: b.id, label: b.label, icon: b.icon })),
+      .map((b) => ({ id: b.id, label: b.label, icon: b.icon, destaque: b.destaque })),
   };
-}
+});
 
 /** Snippet oficial do Pixel + o `event_id` que a CAPI vai repetir. */
 export function snippetPixel(pixelId: string): string {

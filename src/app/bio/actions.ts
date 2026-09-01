@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { clienteSecreto } from "@/lib/supabase/secreto";
+import { nichoDe } from "@/lib/bio/nichos";
 import type { TemaBio } from "@/types/bio";
 
 /**
@@ -80,11 +81,16 @@ export async function salvarPagina(formData: FormData) {
   const pageId = String(formData.get("page_id") ?? "");
   const { supabase, pagina } = await exigirPagina(pageId);
 
+  // `nichoDe` filtra o que vier fora da lista: o valor sai de um <select>, mas
+  // o formulário é HTML e qualquer string chegaria ao jsonb sem isso.
   const tema: TemaBio = {
     fundo: String(formData.get("tema_fundo") ?? "") || undefined,
+    fundo2: String(formData.get("tema_fundo2") ?? "") || undefined,
     texto: String(formData.get("tema_texto") ?? "") || undefined,
     botao: String(formData.get("tema_botao") ?? "") || undefined,
     botaoTexto: String(formData.get("tema_botao_texto") ?? "") || undefined,
+    destaque: String(formData.get("tema_destaque") ?? "") || undefined,
+    nicho: nichoDe(String(formData.get("nicho") ?? "")),
   };
 
   // `pixel_id` não entra aqui: mora no card da Meta, junto do token, e é salvo
@@ -171,6 +177,7 @@ export async function criarBotao(formData: FormData) {
     label,
     url,
     icon: String(formData.get("icon") ?? "").trim() || null,
+    destaque: formData.get("destaque") === "on",
     position: (ultimo?.position ?? -1) + 1,
   });
 
@@ -198,6 +205,7 @@ export async function salvarBotao(formData: FormData) {
       label: String(formData.get("label") ?? "").trim(),
       url,
       icon: String(formData.get("icon") ?? "").trim() || null,
+      destaque: formData.get("destaque") === "on",
       active: formData.get("active") === "on",
       starts_at: janela("starts_at"),
       ends_at: janela("ends_at"),
