@@ -90,6 +90,17 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   de `src/lib/bio/nichos.ts`. Nicho novo é uma entrada naquele objeto, não uma varredura pelo
   `src/`. Qual link é o CTA é a coluna `link_buttons.destaque`, não "o primeiro da lista":
   restaurante com duas unidades tem dois principais e eles não são vizinhos na ordem.
+- **O editor de bio é um construtor: estado local + um Salvar, e nenhuma action dele
+  redireciona.** A tela inteira (página + lista de botões) mora no navegador e o preview lê esse
+  estado, então tudo aparece na hora. Antes eram três formulários, cada um com `redirect()` no
+  fim — e enviar um derrubava o que estava aberto nos outros: escolher o nicho e adicionar um
+  botão em seguida devolvia a página ao visual padrão, porque o nicho nunca tinha chegado ao
+  banco. Quem grava é `salvarBio`, uma action só, com o payload em JSON num campo escondido
+  (`FormData` plano não expressa lista ordenada, e a ordem dos botões é dado). Id de botão novo
+  nasce no navegador; o `page_id` é sempre o do servidor. **Não revalidar `/bio/[id]`** ao
+  salvar: trocar as props por baixo é outro jeito de perder o que ainda não foi gravado.
+  O `verify:fase3` dispara essas actions sem JavaScript copiando **todos** os campos escondidos
+  do formulário — com `useFormState` não existe mais um `$ACTION_ID` sozinho.
 - **RLS em toda tabela nova**, filtrando por `current_org_id()`.
 - Migrations versionadas em `supabase/migrations/`, nunca DDL solto no painel.
 - Nunca imprimir chaves ou segredos na saída, nem dentro de comandos.

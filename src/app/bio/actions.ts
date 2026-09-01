@@ -15,7 +15,16 @@ import type { TemaBio } from "@/types/bio";
  * vez de erro cru — e, no caso do `capi_token`, porque a gravação precisa da
  * chave secreta (a tabela `link_secrets` é fechada até para `authenticated`),
  * então a posse tem que ser conferida antes, na mão.
+ *
+ * **Nenhuma action de editor redireciona.** O editor é um builder: a página
+ * inteira mora no estado do navegador e o preview lê esse estado. Redirecionar
+ * ao salvar (era o que `salvarPagina`, `criarBotao` e companhia faziam) troca a
+ * árvore por baixo e leva junto tudo que ainda não foi gravado — foi assim que
+ * escolher um nicho e adicionar um botão em seguida devolvia a página ao visual
+ * padrão. Quem redireciona é só `criarPagina`, que muda de tela de propósito.
  */
+
+export type ResultadoBio = { ok: true; em: number } | { erro: string } | null;
 
 function voltar(caminho: string, erro?: string): never {
   revalidatePath(caminho);
@@ -77,40 +86,158 @@ export async function criarPagina(formData: FormData) {
   voltar(`/bio/${data.id}`);
 }
 
-export async function salvarPagina(formData: FormData) {
+/* -------------------------------------------------------------------------- */
+/*  Salvar a bio inteira                                                       */
+/* -------------------------------------------------------------------------- */
+
+type BotaoEnviado = {
+  id: string;
+  label: string;
+  url: string;
+  icon: string;
+  destaque: boolean;
+  active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+};
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const COR = /^#[0-9a-f]{6}$/i;
+
+function comoTexto(v: unknown, limite = 400): string {
+  return typeof v === "string" ? v.trim().slice(0, limite) : "";
+}
+
+function comoCor(v: unknown): string | undefined {
+  const t = comoTexto(v, 7);
+  return COR.test(t) ? t : undefined;
+}
+
+/** `datetime-local` chega sem fuso; o `Date` do servidor completaria errado. */
+function comoInstante(v: unknown): string | null {
+  const t = comoTexto(v, 40);
+  if (!t) return null;
+  const d = new Date(t);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/**
+ * Salva página e botões numa tacada só.
+ *
+ * O payload chega em JSON num campo escondido porque `FormData` plano não
+ * expressa lista ordenada — e a ordem dos botões é dado, não enfeite. Como ele
+ * vem do navegador, nada aqui é aproveitado sem passar por validação: cor tem
+ * que casar `#rrggbb`, nicho tem que existir em `NICHOS`, id de botão tem que
+ * ser uuid, e `page_id` é sempre o do servidor, nunca o que veio no pacote.
+ */
+export async function salvarBio(
+  _anterior: ResultadoBio,
+  formData: FormData,
+): Promise<ResultadoBio> {
   const pageId = String(formData.get("page_id") ?? "");
   const { supabase, pagina } = await exigirPagina(pageId);
 
-  // `nichoDe` filtra o que vier fora da lista: o valor sai de um <select>, mas
-  // o formulário é HTML e qualquer string chegaria ao jsonb sem isso.
+  let bruto: Record<string, unknown>;
+  try {
+    const texto = String(formData.get("dados") ?? "");
+    const lido: unknown = JSON.parse(texto);
+    if (!lido || typeof lido !== "object") throw new Error("formato");
+    bruto = lido as Record<string, unknown>;
+  } catch {
+    return { erro: "Não deu para ler as alterações. Recarregue a página." };
+  }
+
+  const title = comoTexto(bruto.title, 120);
+  if (!title) return { erro: "O título não pode ficar vazio." };
+
+  const temaBruto = (bruto.theme ?? {}) as Record<string, unknown>;
   const tema: TemaBio = {
-    fundo: String(formData.get("tema_fundo") ?? "") || undefined,
-    fundo2: String(formData.get("tema_fundo2") ?? "") || undefined,
-    texto: String(formData.get("tema_texto") ?? "") || undefined,
-    botao: String(formData.get("tema_botao") ?? "") || undefined,
-    botaoTexto: String(formData.get("tema_botao_texto") ?? "") || undefined,
-    destaque: String(formData.get("tema_destaque") ?? "") || undefined,
-    nicho: nichoDe(String(formData.get("nicho") ?? "")),
+    fundo: comoCor(temaBruto.fundo),
+    fundo2: comoCor(temaBruto.fundo2),
+    texto: comoCor(temaBruto.texto),
+    botao: comoCor(temaBruto.botao),
+    botaoTexto: comoCor(temaBruto.botaoTexto),
+    destaque: comoCor(temaBruto.destaque),
+    nicho: nichoDe(comoTexto(temaBruto.nicho, 20)),
   };
+
+  const lista = Array.isArray(bruto.botoes) ? bruto.botoes : [];
+  const botoes: BotaoEnviado[] = [];
+
+  for (const item of lista) {
+    const b = (item ?? {}) as Record<string, unknown>;
+    const id = comoTexto(b.id, 40);
+    if (!UUID.test(id)) return { erro: "Um dos botões veio sem identificação." };
+
+    const label = comoTexto(b.label, 80);
+    if (!label) return { erro: "Todo botão precisa de um texto." };
+
+    let url = comoTexto(b.url, 800);
+    if (!url) return { erro: `Falta o link do botão “${label}”.` };
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+
+    botoes.push({
+      id,
+      label,
+      url,
+      icon: comoTexto(b.icon, 8),
+      destaque: b.destaque === true,
+      active: b.active !== false,
+      starts_at: comoInstante(b.starts_at),
+      ends_at: comoInstante(b.ends_at),
+    });
+  }
 
   // `pixel_id` não entra aqui: mora no card da Meta, junto do token, e é salvo
   // por `salvarMeta`. Incluí-lo neste update apagaria o pixel toda vez que a
-  // aparência fosse salva.
-  const { error } = await supabase
+  // página fosse salva.
+  const { error: erroPagina } = await supabase
     .from("link_pages")
     .update({
-      title: String(formData.get("title") ?? "").trim(),
-      bio: String(formData.get("bio") ?? "").trim() || null,
-      avatar_url: String(formData.get("avatar_url") ?? "").trim() || null,
-      active: formData.get("active") === "on",
+      title,
+      bio: comoTexto(bruto.bio, 500) || null,
+      avatar_url: comoTexto(bruto.avatar_url, 800) || null,
+      active: bruto.active === true,
       theme: tema,
     })
     .eq("id", pageId);
 
-  if (error) voltar(`/bio/${pageId}`, "Não foi possível salvar a página.");
+  if (erroPagina) return { erro: "Não foi possível salvar a página." };
+
+  if (botoes.length > 0) {
+    const { error } = await supabase.from("link_buttons").upsert(
+      botoes.map((b, i) => ({
+        ...b,
+        icon: b.icon || null,
+        // O vínculo é do servidor: id de botão vem do navegador, e sem esta
+        // linha um payload adulterado moveria botão de uma página para outra.
+        page_id: pageId,
+        position: i,
+      })),
+      { onConflict: "id" },
+    );
+    if (error) return { erro: "Não foi possível salvar os botões." };
+  }
+
+  // O que sumiu da lista sai do banco. Os cliques ficam: `link_clicks.button_id`
+  // é `on delete set null` e o `rotulo` gravado no clique sustenta o relatório.
+  let apagar = supabase.from("link_buttons").delete().eq("page_id", pageId);
+  if (botoes.length > 0) {
+    apagar = apagar.not("id", "in", `(${botoes.map((b) => b.id).join(",")})`);
+  }
+  await apagar;
+
   limparCachePublico(pagina.slug);
-  voltar(`/bio/${pageId}`);
+  // A lista de bios mostra título e se está no ar; o editor **não** é
+  // revalidado de propósito — trocar as props por baixo derrubaria o estado.
+  revalidatePath("/bio");
+
+  return { ok: true, em: Date.now() };
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Meta — Pixel e Conversions API                                             */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Os dois lados da Meta no mesmo lugar: o Pixel (que carrega no navegador) e o
@@ -122,7 +249,10 @@ export async function salvarPagina(formData: FormData) {
  * vazio significa "não mexer", não "apagar": quem apaga é `removerToken`, senão
  * salvar só o Pixel derrubaria a CAPI sem querer.
  */
-export async function salvarMeta(formData: FormData) {
+export async function salvarMeta(
+  _anterior: ResultadoBio,
+  formData: FormData,
+): Promise<ResultadoBio> {
   const pageId = String(formData.get("page_id") ?? "");
   const { supabase, pagina } = await exigirPagina(pageId);
 
@@ -132,119 +262,27 @@ export async function salvarMeta(formData: FormData) {
     .update({ pixel_id: pixel || null })
     .eq("id", pageId);
 
-  if (erroPixel) voltar(`/bio/${pageId}`, "Não foi possível salvar o Pixel.");
+  if (erroPixel) return { erro: "Não foi possível salvar o Pixel." };
 
   const token = String(formData.get("capi_token") ?? "").trim();
   if (token) {
     const { error } = await clienteSecreto()
       .from("link_secrets")
       .upsert({ page_id: pageId, capi_token: token }, { onConflict: "page_id" });
-    if (error) voltar(`/bio/${pageId}`, "Não foi possível salvar o token.");
+    if (error) return { erro: "Não foi possível salvar o token." };
   }
 
   limparCachePublico(pagina.slug);
-  voltar(`/bio/${pageId}`);
+  return { ok: true, em: Date.now() };
 }
 
-export async function removerToken(formData: FormData) {
+export async function removerToken(
+  _anterior: ResultadoBio,
+  formData: FormData,
+): Promise<ResultadoBio> {
   const pageId = String(formData.get("page_id") ?? "");
   await exigirPagina(pageId);
 
   await clienteSecreto().from("link_secrets").delete().eq("page_id", pageId);
-  voltar(`/bio/${pageId}`);
-}
-
-export async function criarBotao(formData: FormData) {
-  const pageId = String(formData.get("page_id") ?? "");
-  const { supabase, pagina } = await exigirPagina(pageId);
-
-  const label = String(formData.get("label") ?? "").trim();
-  let url = String(formData.get("url") ?? "").trim();
-  if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
-
-  if (!label || !url) voltar(`/bio/${pageId}`, "Texto e link são obrigatórios.");
-
-  const { data: ultimo } = await supabase
-    .from("link_buttons")
-    .select("position")
-    .eq("page_id", pageId)
-    .order("position", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ position: number }>();
-
-  const { error } = await supabase.from("link_buttons").insert({
-    page_id: pageId,
-    label,
-    url,
-    icon: String(formData.get("icon") ?? "").trim() || null,
-    destaque: formData.get("destaque") === "on",
-    position: (ultimo?.position ?? -1) + 1,
-  });
-
-  if (error) voltar(`/bio/${pageId}`, "Link inválido. Confira o endereço.");
-  limparCachePublico(pagina.slug);
-  voltar(`/bio/${pageId}`);
-}
-
-export async function salvarBotao(formData: FormData) {
-  const pageId = String(formData.get("page_id") ?? "");
-  const botaoId = String(formData.get("botao_id") ?? "");
-  const { supabase, pagina } = await exigirPagina(pageId);
-
-  let url = String(formData.get("url") ?? "").trim();
-  if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
-
-  const janela = (campo: string) => {
-    const v = String(formData.get(campo) ?? "").trim();
-    return v ? new Date(v).toISOString() : null;
-  };
-
-  const { error } = await supabase
-    .from("link_buttons")
-    .update({
-      label: String(formData.get("label") ?? "").trim(),
-      url,
-      icon: String(formData.get("icon") ?? "").trim() || null,
-      destaque: formData.get("destaque") === "on",
-      active: formData.get("active") === "on",
-      starts_at: janela("starts_at"),
-      ends_at: janela("ends_at"),
-    })
-    .eq("id", botaoId)
-    .eq("page_id", pageId);
-
-  if (error) voltar(`/bio/${pageId}`, "Não foi possível salvar o botão.");
-  limparCachePublico(pagina.slug);
-  voltar(`/bio/${pageId}`);
-}
-
-export async function apagarBotao(formData: FormData) {
-  const pageId = String(formData.get("page_id") ?? "");
-  const botaoId = String(formData.get("botao_id") ?? "");
-  const { supabase, pagina } = await exigirPagina(pageId);
-
-  // Os cliques ficam: `link_clicks.button_id` é `on delete set null` e o
-  // `rotulo` guardado no clique mantém o relatório inteiro.
-  await supabase.from("link_buttons").delete().eq("id", botaoId).eq("page_id", pageId);
-
-  limparCachePublico(pagina.slug);
-  voltar(`/bio/${pageId}`);
-}
-
-/** Recebe os ids na ordem nova; a posição é o índice. */
-export async function reordenarBotoes(pageId: string, ids: string[]) {
-  const { supabase, pagina } = await exigirPagina(pageId);
-
-  await Promise.all(
-    ids.map((id, i) =>
-      supabase
-        .from("link_buttons")
-        .update({ position: i })
-        .eq("id", id)
-        .eq("page_id", pageId),
-    ),
-  );
-
-  limparCachePublico(pagina.slug);
-  revalidatePath(`/bio/${pageId}`);
+  return { ok: true, em: Date.now() };
 }

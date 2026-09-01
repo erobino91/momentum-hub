@@ -9,13 +9,7 @@ export const metadata = { title: "Editor da bio" };
 
 export const dynamic = "force-dynamic";
 
-export default async function EditorPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams: { erro?: string };
-}) {
+export default async function EditorPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
   // A RLS filtra: página de outra org simplesmente não vem.
@@ -47,12 +41,5 @@ export default async function EditorPage({
     .eq("page_id", pagina.id)
     .maybeSingle<{ page_id: string }>();
 
-  return (
-    <EditorBio
-      pagina={pagina}
-      botoes={botoes ?? []}
-      temToken={!!segredo}
-      erro={searchParams.erro}
-    />
-  );
+  return <EditorBio pagina={pagina} botoes={botoes ?? []} temToken={!!segredo} />;
 }

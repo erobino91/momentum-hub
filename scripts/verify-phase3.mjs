@@ -199,18 +199,40 @@ function pegarComHost(caminho, host) {
   });
 }
 
+function decodificar(s) {
+  return s
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
+
 /**
- * Dispara uma Server Action pelo caminho sem JavaScript: o Next renderiza cada
- * `<form>` com um hidden `$ACTION_ID_<hash>`, e aceita o POST **em multipart** —
- * com `x-www-form-urlencoded` a requisição é tratada como navegação normal e a
- * action nunca roda (responde 200 em vez do 303 do redirect).
+ * Os campos escondidos do formulário que contém `marcador`.
+ *
+ * É por eles que uma Server Action é disparada sem JavaScript, e o formato
+ * mudou: com `<form action={action}>` bastava achar o `$ACTION_ID_<hash>`, mas
+ * o editor usa `useFormState` e aí o React emite `$ACTION_REF_n`, os argumentos
+ * ligados (`$ACTION_n:0`) e o `$ACTION_KEY`. Copiar o conjunto inteiro é o que
+ * um navegador sem JS enviaria — e não quebra de novo se o formato mudar.
+ *
+ * O POST vai **em multipart**: com `x-www-form-urlencoded` a requisição é
+ * tratada como navegação normal e a action nunca roda.
  */
-function acharActionId(html, marcador) {
+function camposDoFormulario(html, marcador) {
   for (const trecho of html.split("<form").slice(1)) {
     const corpo = trecho.split("</form>")[0];
     if (!corpo.includes(marcador)) continue;
-    const m = corpo.match(/\$ACTION_ID_([0-9a-f]+)/);
-    if (m) return `$ACTION_ID_${m[1]}`;
+
+    const campos = {};
+    for (const tag of corpo.match(/<input[^>]*>/g) ?? []) {
+      if (!/type="hidden"/.test(tag)) continue;
+      const nome = tag.match(/name="([^"]*)"/)?.[1];
+      if (nome) campos[decodificar(nome)] = decodificar(tag.match(/value="([^"]*)"/)?.[1] ?? "");
+    }
+    return campos;
   }
   return null;
 }
@@ -267,7 +289,7 @@ async function main() {
       ('${pagA}', 'Promo do mês', '${DESTINO}', 0, true,  null),
       ('${pagA}', 'Promo vencida', 'https://example.com/vencida', 1, true, now() - interval '1 day'),
       ('${pagA}', 'Desligado', 'https://example.com/off', 2, false, null)
-    returning id, label;
+    returning id, label, url;
   `);
   const idPor = (rotulo) => botoes.find((b) => b.label === rotulo).id;
 
@@ -550,7 +572,7 @@ async function main() {
     checar(
       painelCliente.status === 200 &&
         htmlCliente.includes("Links publicados") &&
-        !htmlCliente.includes("Salvar página"),
+        !htmlCliente.includes("Salvar alterações"),
       "cliente vê a bio em leitura, sem editor",
       `status ${painelCliente.status}`,
     );
@@ -561,7 +583,7 @@ async function main() {
     });
     const htmlAgencia = await painelAgencia.text();
     checar(
-      painelAgencia.status === 200 && htmlAgencia.includes("Salvar página"),
+      painelAgencia.status === 200 && htmlAgencia.includes("Salvar alterações"),
       "agência vê o editor completo",
       `status ${painelAgencia.status}`,
     );
@@ -569,8 +591,10 @@ async function main() {
     // O Pixel mora no card da Meta e o token só é tocado quando vem preenchido.
     // Salvar a aparência não pode encostar em nenhum dos dois — foi o risco que
     // apareceu ao juntar os dois campos num card só.
-    const idAparencia = acharActionId(htmlAgencia, 'name="title"');
-    const idMeta = acharActionId(htmlAgencia, 'name="pixel_id"');
+    // O editor virou um construtor: página e botões saem num payload só, num
+    // campo escondido, e é por ele que o formulário é reconhecido aqui.
+    const formAparencia = camposDoFormulario(htmlAgencia, 'name="dados"');
+    const formMeta = camposDoFormulario(htmlAgencia, 'name="pixel_id"');
 
     const estadoMeta = async () => {
       const p = (
@@ -582,17 +606,36 @@ async function main() {
       return { pixel: p.pixel_id, titulo: p.title, token: s[0]?.capi_token ?? null };
     };
 
+    // Uma escrita só carrega a página e a lista inteira de botões. Os três
+    // botões vão junto de propósito: quem some da lista é apagado, então mandar
+    // a lista vazia aqui esconderia a metade mais perigosa da action.
     await dispararAction(`/bio/${pagA}`, cookieAg, {
-      [idAparencia]: "",
+      ...formAparencia,
       page_id: pagA,
-      title: "Bio renomeada",
-      bio: "",
-      avatar_url: "",
-      tema_fundo: "#0b0d12",
-      tema_texto: "#f5f6f8",
-      tema_botao: "#ff5a1f",
-      tema_botao_texto: "#ffffff",
-      active: "on",
+      dados: JSON.stringify({
+        title: "Bio renomeada",
+        bio: "",
+        avatar_url: "",
+        active: true,
+        theme: {
+          fundo: "#0b0d12",
+          texto: "#f5f6f8",
+          botao: "#ff5a1f",
+          botaoTexto: "#ffffff",
+          destaque: "#ff5a1f",
+          nicho: "burguer",
+        },
+        botoes: botoes.map((b, i) => ({
+          id: b.id,
+          label: b.label,
+          url: b.url,
+          icon: "",
+          destaque: i === 0,
+          active: true,
+          starts_at: null,
+          ends_at: null,
+        })),
+      }),
     });
     let meta = await estadoMeta();
     checar(meta.titulo === "Bio renomeada", "a action de aparência roda de fato");
@@ -602,8 +645,53 @@ async function main() {
       `pixel=${meta.pixel}, token ${meta.token ? "presente" : "SUMIU"}`,
     );
 
+    const salvos = await sql(
+      `select id, destaque, position from public.link_buttons
+        where page_id='${pagA}' order by position;`,
+    );
+    checar(
+      salvos.length === 3 && salvos[0].destaque === true,
+      "salvar guarda a lista de botões inteira, com o destaque",
+      `${salvos.length} botão(ões), destaque no primeiro: ${salvos[0]?.destaque}`,
+    );
+
+    const idNovo = "11111111-2222-4333-8444-555555555555";
     await dispararAction(`/bio/${pagA}`, cookieAg, {
-      [idMeta]: "",
+      ...formAparencia,
+      page_id: pagA,
+      dados: JSON.stringify({
+        title: "Bio renomeada",
+        bio: "",
+        avatar_url: "",
+        active: true,
+        theme: { nicho: "burguer" },
+        botoes: [
+          {
+            id: idNovo,
+            label: "Só este sobra",
+            url: "exemplo.com/sem-esquema",
+            icon: "🍔",
+            destaque: true,
+            active: true,
+            starts_at: null,
+            ends_at: null,
+          },
+        ],
+      }),
+    });
+    const sobrou = await sql(
+      `select id, url from public.link_buttons where page_id='${pagA}';`,
+    );
+    checar(
+      sobrou.length === 1 &&
+        sobrou[0].id === idNovo &&
+        sobrou[0].url === "https://exemplo.com/sem-esquema",
+      "botão novo entra com id do navegador, o que sumiu da lista é apagado e a URL ganha esquema",
+      `${sobrou.length} linha(s), url=${sobrou[0]?.url ?? "-"}`,
+    );
+
+    await dispararAction(`/bio/${pagA}`, cookieAg, {
+      ...formMeta,
       page_id: pagA,
       pixel_id: "999988887777666",
       capi_token: "",

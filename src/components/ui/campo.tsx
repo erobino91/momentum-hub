@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import type {
   InputHTMLAttributes,
   SelectHTMLAttributes,
@@ -60,19 +61,24 @@ export function Campo({
   );
 }
 
-export function Entrada({
-  className = "",
-  invalido,
-  ...resto
-}: InputHTMLAttributes<HTMLInputElement> & { invalido?: boolean }) {
+/**
+ * `forwardRef` porque quem chama às vezes precisa mandar o foco para cá — o
+ * construtor da bio cria uma linha de botão e leva o cursor direto para o campo
+ * que falta preencher.
+ */
+export const Entrada = forwardRef<
+  HTMLInputElement,
+  InputHTMLAttributes<HTMLInputElement> & { invalido?: boolean }
+>(function Entrada({ className = "", invalido, ...resto }, ref) {
   return (
     <input
+      ref={ref}
       aria-invalid={invalido || undefined}
       className={`${campoEstilo} ${invalido ? "border-danger" : ""} ${className}`}
       {...resto}
     />
   );
-}
+});
 
 export function Selecao({
   className = "",
