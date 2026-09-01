@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { MODULE_KEYS, type ModuleKey } from "@/lib/modules";
+import { MODULE_KEYS, moduloPronto, type ModuleKey } from "@/lib/modules";
 import type { MembershipRole, ModulosConfigurados, Org } from "@/types/db";
 
 export type ModuloDoCliente = {
@@ -69,7 +69,7 @@ export async function carregarSessao(): Promise<Sessao | null> {
 
   const modulos = MODULE_KEYS.map((chave) => ({
     chave,
-    configurado: prontos[chave as keyof ModulosConfigurados] ?? false,
+    configurado: moduloPronto(chave, prontos),
   }));
 
   return {

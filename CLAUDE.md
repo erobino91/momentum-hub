@@ -73,6 +73,13 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   `module_config` só guarda configuração. Se aparecer a vontade de "desligar só para este
   cliente", é a ideia errada voltando: o caminho é não configurar ainda, e o cliente vê
   **"em configuração"**.
+- **Módulo que a agência não configura acende sempre** — hoje só o CMV, pela flag
+  `semConfiguracao` de `src/lib/modules.ts`, lida por `moduloPronto()` no portal e no painel.
+  A regra acima continua valendo para os outros três; a diferença é que no CMV quem preenche
+  insumo, receita e produto é o **cliente**. Acender só depois de existir dado trancaria do
+  lado de fora justamente quem tem de criar o primeiro insumo — por isso a exceção mora em
+  `modules.ts` e não vira uma coluna sempre `true` no banco. No CMV o dado é por empresa
+  (`orgId`), e a agência lê o de qualquer cliente sem escrever em nenhum.
 - **Recurso existir não é recurso funcionar.** `link_pages.active` nasce `false` e
   `criarPagina` não mexe nele, então toda página de bio nasce rascunho — e a página pública
   é lida com `.eq("active", true)`. Enquanto a regra foi "existe linha", a BB Onça teve o

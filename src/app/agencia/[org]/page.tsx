@@ -92,7 +92,7 @@ export default async function EmpresaPage({
         />
       </div>
 
-      <div className="mt-5 grid gap-3 lg:grid-cols-3">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Cartao
           titulo={MODULES.dashboard.label}
           descricao={
@@ -189,11 +189,27 @@ export default async function EmpresaPage({
             </form>
           )}
         </Cartao>
+        <Cartao
+          titulo={MODULES.cmv.label}
+          descricao="Quem preenche insumo, receita e produto é o cliente — não há o que configurar aqui."
+          acao={<Selo tom="pronto">no ar</Selo>}
+        >
+          {/* O link carrega a empresa: no CMV a agência lê o dado do cliente,
+              e escrever é recusado enquanto ela estiver vendo outra empresa. */}
+          <a
+            href={`${MODULES.cmv.href}/ver-empresa?org=${empresa.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className={botaoEstilo("secundario", "sm")}
+          >
+            Abrir o CMV
+          </a>
+        </Cartao>
       </div>
 
       <p className="mt-5 text-xs text-dim">
         Todo cliente tem os quatro módulos — o que muda é o módulo já estar
-        configurado. {MODULES.cmv.label} chega depois.
+        configurado.
       </p>
     </AgenciaShell>
   );

@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { MODULES, MODULE_KEYS, type ModuleKey } from "@/lib/modules";
+import {
+  MODULES,
+  MODULE_KEYS,
+  moduloPronto,
+  type ModuleKey,
+} from "@/lib/modules";
 import {
   Selo,
   Tabela,
@@ -82,11 +87,7 @@ function CartaoEmpresa({ empresa: e }: { empresa: EmpresaPainel }) {
 
         <div className="mt-3 flex items-center gap-1.5">
           {MODULE_KEYS.map((chave) => (
-            <Modulo
-              key={chave}
-              chave={chave}
-              pronto={chave === "cmv" ? false : e[chave]}
-            />
+            <Modulo key={chave} chave={chave} pronto={moduloPronto(chave, e)} />
           ))}
           <span className="ml-auto text-xs tabular">
             <span className={atrasado ? "font-semibold text-warn" : "text-dim"}>
@@ -131,12 +132,7 @@ function LinhaEmpresa({ empresa: e }: { empresa: EmpresaPainel }) {
       <td className={tdEstilo}>
         <div className="flex gap-1.5">
           {MODULE_KEYS.map((chave) => (
-            <Modulo
-              key={chave}
-              chave={chave}
-              // O CMV ainda não existe para ninguém.
-              pronto={chave === "cmv" ? false : e[chave]}
-            />
+            <Modulo key={chave} chave={chave} pronto={moduloPronto(chave, e)} />
           ))}
         </div>
       </td>
@@ -182,7 +178,11 @@ function LinhaEmpresa({ empresa: e }: { empresa: EmpresaPainel }) {
  */
 function Modulo({ chave, pronto }: { chave: ModuleKey; pronto: boolean }) {
   const rotulo = `${MODULES[chave].label}: ${
-    chave === "cmv" ? "em breve" : pronto ? "pronto" : "em configuração"
+    MODULES[chave].semConfiguracao
+      ? "no ar"
+      : pronto
+        ? "pronto"
+        : "em configuração"
   }`;
   return (
     <span
