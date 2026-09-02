@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Dashboard do cliente — Momentum Hub em Flare</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62.5..125,100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="app.css">
+<style>
+  /* Os três números do topo são o resumo do mês: fundo elevado e número
+     grande no condensado, que é exatamente o que a fonte foi feita para fazer. */
+  .kpi { background: var(--app-raised); border: 1px solid var(--app-line); border-radius: var(--fx-radius-sm); padding: var(--fx-spacing-xl); }
+  .kpi-roas { background-image: var(--fx-gradient-radial-purple); border-color: var(--fx-color-light-purple); }
+  .canal { display: flex; flex-direction: column; gap: var(--fx-spacing-lg); }
+  .canal-linha { align-items: baseline; display: flex; justify-content: space-between; }
+  .funil-linha { display: grid; gap: var(--fx-spacing-md); grid-template-columns: 132px 1fr 90px; align-items: center; }
+  .mes {
+    align-items: center; background: rgba(255,255,255,.07); border: 1px solid var(--app-line-strong);
+    border-radius: var(--fx-radius-xl); display: inline-flex; font-weight: 600; gap: 10px; padding: 9px 16px;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="row" style="gap:var(--fx-spacing-xl)">
+    <span class="brandmark"><span class="dot"></span>Momentum</span>
+    <span class="t-dim">/</span>
+    <span style="font-weight:500">Burger da Praça</span>
+  </div>
+  <div class="row" style="gap:var(--fx-spacing-lg)">
+    <span class="t-muted" style="font-size:13px">contato@burgerdapraca.com.br</span>
+    <a class="btn btn-ghost btn-sm">Sair</a>
+  </div>
+</header>
+
+<div class="glow">
+  <div class="wrap">
+
+    <div class="row between">
+      <div>
+        <p class="t-dim" style="font-size:12px">Portal <span style="opacity:.5">›</span> Dashboard</p>
+        <h1 class="t-page mt-md">Dashboard</h1>
+      </div>
+      <div class="row" style="gap:var(--fx-spacing-md)">
+        <span class="mes">Agosto de 2026 <span class="t-dim">▾</span></span>
+        <a class="btn btn-secondary">Baixar PDF</a>
+      </div>
+    </div>
+
+    <!-- Resumo do mês -->
+    <div class="grid-3 mt-2xl">
+      <div class="kpi">
+        <p class="t-label">Valor investido</p>
+        <p class="t-metric mt-md">R$ 4.820</p>
+        <p class="mt-md" style="font-size:13px"><span class="delta-up">↑ 12,4 %</span> <span class="t-dim">vs. julho</span></p>
+      </div>
+      <div class="kpi">
+        <p class="t-label">Valor em vendas</p>
+        <p class="t-metric mt-md">R$ 71.340</p>
+        <p class="mt-md" style="font-size:13px"><span class="delta-up">↑ 18,9 %</span> <span class="t-dim">vs. julho</span></p>
+      </div>
+      <div class="kpi kpi-roas">
+        <p class="t-label" style="color:var(--fx-color-soft-purple-4)">ROAS</p>
+        <p class="t-metric mt-md">14,8×</p>
+        <p class="mt-md" style="font-size:13px"><span class="delta-up">↑ 5,8 %</span> <span class="t-dim">vs. julho</span></p>
+      </div>
+    </div>
+
+    <!-- Canais -->
+    <h2 class="t-section mt-2xl">Por canal</h2>
+    <div class="grid-3 mt-lg">
+
+      <div class="card canal">
+        <div class="row between">
+          <span class="t-card">Mesa &amp; Salão</span>
+          <span class="pill">62 % do total</span>
+        </div>
+        <div class="canal-linha">
+          <span class="t-muted">Faturamento</span>
+          <span class="t-metric-sm">R$ 44.210</span>
+        </div>
+        <div class="canal-linha">
+          <span class="t-muted">Pedidos</span>
+          <span class="num" style="font-weight:600;font-size:16px">1.284</span>
+        </div>
+        <div class="canal-linha">
+          <span class="t-muted">Ticket médio</span>
+          <span class="num" style="font-weight:600;font-size:16px">R$ 34,43</span>
+        </div>
+      </div>
+
+      <div class="card canal">
+        <div class="row between">
+          <span class="t-card">Delivery Próprio</span>
+          <span class="pill">21 % do total</span>
+        </div>
+        <div class="canal-linha">
+          <span class="t-muted">Faturamento</span>
+          <span class="t-metric-sm">R$ 15.080</span>
+        </div>
+        <div class="canal-linha">
+          <span class="t-muted">Pedidos</span>
+          <span class="num" style="font-weight:600;font-size:16px">402</span>
+        </div>
+        <div class="canal-linha">
+          <span class="t-muted">Ticket médio</span>
+          <span class="num" style="font-weight:600;font-size:16px">R$ 37,51</span>
+        </div>
+      </div>
+
+      <div class="card canal">
+        <div class="row between">
+          <span class="t-card">iFood</span>
+          <span class="pill">17 % do total</span>
+        </div>
+        <div class="canal-linha">
+          <span class="t-muted">Faturamento</span>
+          <span class="t-metric-sm">R$ 12.050</span>
+        </div>
+        <div class="canal-linha">
+          <span class="t-muted">Pedidos</span>
+          <span class="num" style="font-weight:600;font-size:16px">338</span>
+        </div>
+        <div class="canal-linha">
+          <span class="t-muted">Ticket médio</span>
+          <span class="num" style="font-weight:600;font-size:16px">R$ 35,65</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Funil + Meta Ads -->
+    <div class="grid-2 mt-2xl" style="grid-template-columns: 1.35fr 1fr">
+
+      <div class="card card-lg">
+        <div class="row between">
+          <span class="t-card">Funil — Cardápio Próprio</span>
+          <span class="pill pill-neutro">Próprio</span>
+        </div>
+
+        <div class="col mt-xl" style="gap:var(--fx-spacing-lg)">
+          <div class="funil-linha">
+            <span class="t-muted">Visitas</span>
+            <span class="barra"><i style="width:100%"></i></span>
+            <span class="num" style="text-align:end;font-weight:600">8.412</span>
+          </div>
+          <div class="funil-linha">
+            <span class="t-muted">Visualizações</span>
+            <span class="barra"><i style="width:71%"></i></span>
+            <span class="num" style="text-align:end;font-weight:600">5.974</span>
+          </div>
+          <div class="funil-linha">
+            <span class="t-muted">Sacola</span>
+            <span class="barra"><i style="width:24%"></i></span>
+            <span class="num" style="text-align:end;font-weight:600">2.018</span>
+          </div>
+          <div class="funil-linha">
+            <span class="t-muted">Revisão</span>
+            <span class="barra"><i style="width:9%"></i></span>
+            <span class="num" style="text-align:end;font-weight:600">757</span>
+          </div>
+          <div class="funil-linha">
+            <span class="t-muted">Concluídos</span>
+            <span class="barra"><i style="width:5%"></i></span>
+            <span class="num" style="text-align:end;font-weight:600">402</span>
+          </div>
+        </div>
+
+        <p class="t-dim mt-xl" style="font-size:12px">
+          Conversão de visita a pedido: <span class="t-brand" style="font-weight:600">4,8 %</span>
+        </p>
+      </div>
+
+      <div class="col" style="gap:var(--fx-spacing-lg)">
+        <div class="card">
+          <div class="row between">
+            <span class="t-card">Meta Ads</span>
+            <span class="pill">Meta</span>
+          </div>
+          <div class="grid-2 mt-lg" style="gap:var(--fx-spacing-md)">
+            <div><p class="t-label">Alcance</p><p class="t-metric-sm mt-sm">148 mil</p></div>
+            <div><p class="t-label">Cliques</p><p class="t-metric-sm mt-sm">6.902</p></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row between">
+            <span class="t-card">CRM — Disparos</span>
+            <span class="pill pill-atencao">CRM</span>
+          </div>
+          <div class="grid-2 mt-lg" style="gap:var(--fx-spacing-md)">
+            <div><p class="t-label">Enviados</p><p class="t-metric-sm mt-sm">3.140</p></div>
+            <div><p class="t-label">Retorno</p><p class="t-metric-sm mt-sm">R$ 8.9k</p></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="t-dim mt-xl" style="font-size:11px">Dados de exemplo — mockup de design, não é resultado de cliente.</p>
+
+  </div>
+</div>
+
+</body>
+</html>

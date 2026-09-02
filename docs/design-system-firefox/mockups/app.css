@@ -1,0 +1,288 @@
+/* ==========================================================================
+   Momentum Hub vestido com o design system Flare (Firefox).
+   Camada de aplicação: só componentes de app. Nenhuma cor escrita à mão —
+   tudo sai de ../tokens.css.
+
+   Superfícies: uma página de marketing tem uma superfície só; um portal
+   precisa de três (fundo / cartão / elevado). Elas são derivadas da escala
+   roxa do Flare, não inventadas.
+   ========================================================================== */
+
+:root {
+  --app-canvas: var(--fx-color-dark-purple-2);   /* #150226 — fundo da tela */
+  --app-surface: var(--fx-color-dark-purple);    /* #210340 — cartão, barra */
+  --app-raised: var(--fx-color-purple);          /* #3a0f6e — elevado, hover */
+  --app-line: var(--fx-color-light-purple-20);
+  --app-line-strong: var(--fx-color-medium-purple);
+  --app-text: var(--fx-color-white);
+  --app-muted: rgba(255, 255, 255, 0.66);
+  --app-dim: rgba(255, 255, 255, 0.44);
+  --app-brand-ink: var(--fx-color-soft-purple-4); /* #c7a8ff — roxo como texto */
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--app-canvas);
+  color: var(--app-text);
+  font-family: var(--fx-font-family-text);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  min-block-size: 100vh;
+}
+
+/* O brilho desfocado do Flare, preso ao topo em vez do rodapé:
+   num app ele funciona como iluminação da barra, não como fecho de página. */
+.glow { position: relative; overflow: clip; }
+.glow::before {
+  background-image: var(--fx-gradient-blurred-bg);
+  block-size: 70vh;
+  content: "";
+  filter: blur(40px);
+  inset: -55vh -25vw auto;
+  opacity: .72;
+  position: absolute;
+  z-index: 0;
+}
+.glow > * { position: relative; z-index: 1; }
+
+/* --- Tipografia ---------------------------------------------------------- */
+
+h1, h2, h3 { font-family: var(--fx-font-family-headline); font-weight: 600; }
+
+.t-page {
+  font-family: var(--fx-font-family-headline);
+  font-size: 3rem;
+  font-variation-settings: "wght" 600, "wdth" var(--fx-font-condensed-width);
+  line-height: .9;
+}
+.t-section {
+  font-family: var(--fx-font-family-headline);
+  font-size: 1.5rem;
+  font-variation-settings: "wght" 600, "wdth" var(--fx-font-condensed-width);
+  line-height: .9;
+}
+.t-card { font-size: 1.0625rem; font-weight: 600; letter-spacing: -.01em; }
+
+/* Número grande — o condensado do Flare é feito para isto. */
+.t-metric {
+  font-family: var(--fx-font-family-headline);
+  font-size: 2.75rem;
+  font-variation-settings: "wght" 600, "wdth" var(--fx-font-condensed-width);
+  font-variant-numeric: tabular-nums;
+  line-height: .9;
+}
+.t-metric-sm {
+  font-family: var(--fx-font-family-headline);
+  font-size: 1.75rem;
+  font-variation-settings: "wght" 600, "wdth" var(--fx-font-condensed-width);
+  font-variant-numeric: tabular-nums;
+  line-height: .95;
+}
+
+.t-label {
+  color: var(--app-muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.t-muted { color: var(--app-muted); }
+.t-dim { color: var(--app-dim); }
+.t-brand { color: var(--app-brand-ink); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* --- Botão (o mesmo do Flare) -------------------------------------------- */
+
+.btn {
+  align-items: center;
+  background-color: var(--fx-button-bg-color);
+  background-image: var(--fx-button-bg-image, none);
+  border: 2px solid var(--fx-button-border-color);
+  border-radius: var(--fx-radius-xl);
+  color: var(--fx-button-text-color);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--fx-font-family-text);
+  font-size: 14px;
+  font-weight: 600;
+  gap: var(--fx-spacing-sm);
+  justify-content: center;
+  line-height: 1;
+  padding: var(--fx-spacing-md) var(--fx-spacing-xl);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn-sm { font-size: 13px; padding: var(--fx-spacing-sm) var(--fx-spacing-lg); }
+.btn-secondary {
+  --fx-button-bg-color: transparent;
+  --fx-button-border-color: var(--fx-color-light-purple);
+  --fx-button-text-color: var(--app-text);
+}
+.btn-ghost {
+  --fx-button-bg-color: transparent;
+  --fx-button-text-color: var(--app-text);
+  --fx-button-border-color: var(--app-line-strong);
+  border-width: 1px;
+}
+.btn-gold {
+  --fx-button-bg-color: transparent;
+  --fx-button-text-color: var(--fx-color-black-4);
+  --fx-button-border-color: transparent;
+  --fx-button-bg-image: var(--fx-gradient-gold-button);
+  background-position: top -2px left;
+  background-size: calc(100% + 24px) calc(100% + 24px);
+}
+
+/* --- Selo / pílula -------------------------------------------------------- */
+
+.pill {
+  align-items: center;
+  background: var(--fx-color-light-purple-20);
+  border-radius: var(--fx-radius-xl);
+  color: var(--app-brand-ink);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 600;
+  gap: 6px;
+  line-height: 1;
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+.pill-atencao { background: rgba(255, 109, 0, .16); color: #ffb066; }
+.pill-ok { background: rgba(20, 74, 39, .5); color: #8ce8a6; }
+.pill-vivo { background: rgba(255, 69, 63, .18); color: #ff8b86; }
+.pill-neutro { background: rgba(255, 255, 255, .08); color: var(--app-muted); }
+.pill-dot { block-size: 6px; border-radius: 50%; inline-size: 6px; background: currentColor; }
+
+/* --- Cartão (o outline do Flare, raio 24) --------------------------------- */
+
+.card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-line);
+  border-radius: var(--fx-radius-sm);
+  padding: var(--fx-spacing-xl);
+}
+.card-lg { padding: var(--fx-spacing-2xl); }
+
+/* --- Barra do topo (portal do cliente) ------------------------------------ */
+
+.topbar {
+  align-items: center;
+  background: var(--app-surface);
+  border-block-end: 1px solid var(--app-line);
+  display: flex;
+  gap: var(--fx-spacing-xl);
+  justify-content: space-between;
+  padding: var(--fx-spacing-lg) var(--fx-spacing-2xl);
+}
+.brandmark {
+  align-items: center;
+  display: flex;
+  font-family: var(--fx-font-family-headline);
+  font-size: 19px;
+  font-variation-settings: "wght" 700, "wdth" var(--fx-font-condensed-width);
+  gap: 10px;
+  letter-spacing: -.01em;
+}
+.brandmark .dot {
+  background: var(--fx-color-light-purple);
+  block-size: 22px;
+  border-radius: 7px;
+  display: inline-block;
+  inline-size: 22px;
+}
+
+/* --- Menu lateral (painel da agência) ------------------------------------- */
+
+.sidebar {
+  background: var(--app-surface);
+  border-inline-end: 1px solid var(--app-line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fx-spacing-xl);
+  inline-size: 248px;
+  padding: var(--fx-spacing-xl) var(--fx-spacing-lg);
+}
+.navitem {
+  align-items: center;
+  border-radius: var(--fx-radius-xl);
+  color: var(--app-muted);
+  display: flex;
+  font-size: 14px;
+  font-weight: 500;
+  gap: 10px;
+  padding: 10px 14px;
+  text-decoration: none;
+}
+.navitem .ico { block-size: 16px; flex: none; inline-size: 16px; opacity: .8; }
+.navitem-ativo {
+  background: var(--fx-color-light-purple);
+  color: var(--fx-color-white);
+  font-weight: 600;
+}
+.navitem .contador { margin-inline-start: auto; }
+
+/* --- Tabela --------------------------------------------------------------- */
+
+.tabela { border-collapse: collapse; inline-size: 100%; }
+.tabela th {
+  border-block-end: 1px solid var(--app-line);
+  color: var(--app-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  padding: 0 var(--fx-spacing-lg) var(--fx-spacing-md);
+  text-align: start;
+  text-transform: uppercase;
+}
+.tabela td {
+  border-block-end: 1px solid var(--app-line);
+  padding: var(--fx-spacing-lg);
+  vertical-align: middle;
+}
+.tabela tr:last-child td { border-block-end: none; }
+.num-col, .tabela th.num-col { text-align: end; }
+
+/* --- Campo de formulário --------------------------------------------------- */
+
+.campo { display: flex; flex-direction: column; gap: 6px; }
+.campo label { font-size: 13px; font-weight: 500; }
+.campo input {
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid var(--app-line-strong);
+  border-radius: var(--fx-radius-xs);
+  color: var(--app-text);
+  font: inherit;
+  font-size: 16px;
+  padding: 12px 14px;
+}
+.campo input::placeholder { color: var(--app-dim); }
+
+/* --- Barra de progresso do funil ------------------------------------------ */
+
+.barra {
+  background: rgba(255, 255, 255, .07);
+  block-size: 8px;
+  border-radius: var(--fx-radius-xl);
+  overflow: hidden;
+}
+.barra > i { background: var(--fx-color-light-purple); display: block; block-size: 100%; }
+
+.delta-up { color: #8ce8a6; }
+.delta-down { color: #ff8b86; }
+
+/* --- Utilitários de layout ------------------------------------------------- */
+
+.row { align-items: center; display: flex; gap: var(--fx-spacing-lg); }
+.col { display: flex; flex-direction: column; }
+.between { justify-content: space-between; }
+.grow { flex: 1; }
+.wrap { margin: 0 auto; max-inline-size: 1180px; padding: var(--fx-spacing-2xl); }
+.grid-2 { display: grid; gap: var(--fx-spacing-lg); grid-template-columns: 1fr 1fr; }
+.grid-3 { display: grid; gap: var(--fx-spacing-lg); grid-template-columns: repeat(3, 1fr); }
+.mt-sm { margin-block-start: var(--fx-spacing-sm); }
+.mt-md { margin-block-start: var(--fx-spacing-md); }
+.mt-lg { margin-block-start: var(--fx-spacing-lg); }
+.mt-xl { margin-block-start: var(--fx-spacing-xl); }
+.mt-2xl { margin-block-start: var(--fx-spacing-2xl); }

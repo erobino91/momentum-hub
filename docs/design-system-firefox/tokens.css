@@ -1,0 +1,468 @@
+/* ==========================================================================
+   Design System Firefox "Flare" — tokens
+   Extraído de firefox.com em 2026-09-01 (bundle flare.291dd4638f30.css).
+   Todos os nomes originais (--token-*, --fl-theme-*) foram reescritos com
+   prefixo --fx- para não colidir com nada nosso.
+
+   Uso: <link rel="stylesheet" href="tokens.css"> antes do seu CSS.
+   ========================================================================== */
+
+:root {
+  /* ---------------------------------------------------------------
+     1. CORES PRIMITIVAS
+     Camada crua. Nunca use direto no componente — use os semânticos
+     da seção 6, senão o tema escuro não funciona.
+     --------------------------------------------------------------- */
+
+  /* Roxo — o eixo do sistema inteiro */
+  --fx-color-light-purple: #7543e3;   /* ação primária, foco, links no claro */
+  --fx-color-link-purple: #6132bc;    /* hover da ação, cor de link */
+  --fx-color-medium-purple: #4c2489;  /* superfície roxa no escuro */
+  --fx-color-purple: #3a0f6e;         /* estado :active da ação */
+  --fx-color-dark-purple: #210340;    /* fundo escuro da página e rodapé */
+  --fx-color-dark-purple-2: #150226;
+  --fx-color-dark-purple-3: #0c0117;  /* fundo escuro mais fundo (blog) */
+
+  /* Roxo com alfa — bordas, sombras, realces */
+  --fx-color-light-purple-20: rgba(117, 67, 227, 0.2);
+  --fx-color-light-purple-40: rgba(117, 67, 227, 0.4);
+  --fx-color-light-purple-60: rgba(117, 67, 227, 0.6);
+  --fx-color-light-purple-80: rgba(117, 67, 227, 0.8);
+  --fx-color-dark-purple-22: rgba(33, 3, 64, 0.22);
+  --fx-color-dark-purple-30: rgba(33, 3, 64, 0.3);
+  --fx-color-dark-purple-50: rgba(33, 3, 64, 0.4);
+  --fx-color-dark-purple-2-40: rgba(20, 2, 38, 0.4);
+
+  /* Roxo claro — superfícies e bordas no tema claro, texto no escuro */
+  --fx-color-soft-purple: #f1e7f8;    /* superfície clara, divisor */
+  --fx-color-soft-purple-2: #e4d8fc;  /* fundo de código, botão desabilitado */
+  --fx-color-soft-purple-3: #dfc9ff;
+  --fx-color-soft-purple-4: #c7a8ff;  /* texto de marca / link no escuro */
+  --fx-color-soft-purple-5: #ae8aff;  /* texto desabilitado no escuro */
+  --fx-color-soft-purple-6: #9468ff;
+  --fx-color-soft-purple-40: rgba(241, 231, 248, 0.4);
+  --fx-color-soft-purple-64: rgba(241, 231, 248, 0.64);
+  --fx-color-nav-icon-purple: #ae89ff;
+
+  /* Neutros */
+  --fx-color-white: #fff;
+  --fx-color-white-90: hsla(0, 0%, 100%, 0.9);
+  --fx-color-grey-1: #f9f9fb;
+  --fx-color-grey-2: #e8e8e8;         /* borda sutil no claro */
+  --fx-color-grey-3: #7b7a82;
+  --fx-color-grey-4: #7b7a82;
+  --fx-color-black-1: #42414d;
+  --fx-color-black-2: #23222b;
+  --fx-color-black-3: #1c1b22;
+  --fx-color-black-4: #15141a;        /* texto padrão no claro */
+  --fx-color-black: #000;
+  --fx-color-black-16: rgba(0, 0, 0, 0.16);
+  --fx-color-black-45: rgba(0, 0, 0, 0.45);
+  --fx-color-black-4-16: rgba(21, 20, 26, 0.16);
+  --fx-color-black-4-72: rgba(21, 20, 26, 0.72);
+  --fx-color-black-4-90: rgba(21, 20, 26, 0.9);
+
+  /* Quentes e semânticas */
+  --fx-color-cream: #fcf5f0;
+  --fx-color-soft-yellow: #fcf5f0;
+  --fx-color-soft-green: #deffd6;
+  --fx-color-soft-orange: #fff2e5;
+  --fx-color-soft-red: #ffeae9;
+  --fx-color-soft-magenta: #ffeafe;
+  --fx-color-soft-magenta-20: rgba(255, 234, 254, 0.2);
+  --fx-color-secondary-green: #144a27;
+  --fx-color-secondary-green-3: #031c00;
+  --fx-color-secondary-orange: #ff6d00;
+  --fx-color-secondary-orange-2: #661c19;
+  --fx-color-secondary-orange-3: #330505;
+  --fx-color-secondary-red: #ff453f;
+  --fx-color-secondary-red-2: #55031c;
+  --fx-color-secondary-red-3: #31000e;
+  --fx-color-error-red: #b40600;
+  --fx-color-error-red-2: #ff7671;
+
+  /* ---------------------------------------------------------------
+     2. GRADIENTES
+     --------------------------------------------------------------- */
+
+  /* Marca Firefox — usar só como destaque, nunca como cor de UI */
+  --fx-gradient-firefox: linear-gradient(90deg, #ffeb49, #f60 50%, #fb2872);
+  --fx-gradient-gold: linear-gradient(180deg, #ffe500, #ff980e);
+  --fx-gradient-gold-button: linear-gradient(180deg, #ffeb49 0.09%, #f60 120%);
+
+  /* Superfícies roxas */
+  --fx-gradient-purple: radial-gradient(122.66% 137.66% at 50% 0%, #ae49ec 0%, #210340 100%);
+  --fx-gradient-radial-purple: radial-gradient(74.06% 118.24% at 50% -18.24%, var(--fx-color-light-purple) 0%, var(--fx-color-dark-purple) 100%);
+  --fx-gradient-privacy: linear-gradient(90deg, #ae49ec 0%, var(--fx-color-dark-purple) 100%);
+  --fx-gradient-world: linear-gradient(90deg, #e752ff, #271aff);
+  --fx-gradient-dark-purple: linear-gradient(to bottom, var(--fx-color-dark-purple-50) 0%, var(--fx-color-dark-purple-22) 100%);
+  --fx-gradient-soft-purple: linear-gradient(180deg, var(--fx-color-soft-purple-64) 0%, var(--fx-color-white) 100%);
+  --fx-gradient-light: linear-gradient(180deg, var(--fx-color-white-90) 0%, var(--fx-color-white) 100%);
+  --fx-gradient-dark: linear-gradient(180deg, var(--fx-color-black-4-72) 0%, var(--fx-color-black-4-90) 100%);
+  --fx-gradient-subnav-light: linear-gradient(0deg, var(--fx-color-white) 0%, var(--fx-color-grey-2) 100%);
+  --fx-gradient-subnav-dark: linear-gradient(0deg, var(--fx-color-dark-purple) 0%, #3a0f6e 100%);
+
+  /* O brilho roxo desfocado que fica atrás da página no tema escuro.
+     Escrito em oklch para a transição não sujar no meio. */
+  --fx-gradient-blurred-bg: radial-gradient(
+    oklch(53.618% 0.2266 291.092deg) 0%,
+    oklch(50.1% 0.214 292deg) 8%,
+    oklch(44.8% 0.196 293.7deg) 18%,
+    oklch(37.5% 0.17 295.5deg) 30%,
+    oklch(30% 0.143 297.1deg) 42%,
+    oklch(24.2% 0.122 298.3deg) 54%,
+    oklch(21.9% 0.112 299deg) 68%,
+    oklch(21.3% 0.107 299.3deg) 82%,
+    oklch(21.027% 0.105 299.458deg) 100%
+  );
+
+  /* ---------------------------------------------------------------
+     3. TIPOGRAFIA (primitivos)
+     Fontes originais são de marca da Mozilla — ver README.
+     Aqui já vão as substitutas livres.
+     --------------------------------------------------------------- */
+  --fx-font-family-headline: "Archivo", "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --fx-font-family-text: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --fx-font-size-xs: 12px;
+  --fx-font-size-sm: 14px;
+  --fx-font-size-md: 16px;
+  --fx-font-size-lg: 18px;
+  --fx-font-size-xl: 24px;
+
+  --fx-font-weight-regular: 400;
+  --fx-font-weight-medium: 500;
+  --fx-font-weight-semibold: 600;
+  --fx-font-weight-bold: 700;
+
+  /* Eixo de largura da fonte variável. 75 = condensado dos títulos. */
+  --fx-font-condensed-width: 75;
+
+  /* ---------------------------------------------------------------
+     4. ESPAÇAMENTO, RAIO, LARGURA, TRANSIÇÃO
+     spacing = dentro do componente; layout = entre blocos da página.
+     --------------------------------------------------------------- */
+  --fx-spacing-2xs: 2px;
+  --fx-spacing-xs: 4px;
+  --fx-spacing-sm: 8px;
+  --fx-spacing-md: 12px;
+  --fx-spacing-lg: 16px;
+  --fx-spacing-xl: 24px;
+  --fx-spacing-2xl: 32px;
+  --fx-spacing-3xl: 40px;
+
+  --fx-layout-3xs: 24px;
+  --fx-layout-2xs: 32px;
+  --fx-layout-xs: 48px;
+  --fx-layout-sm: 64px;
+  --fx-layout-md: 80px;
+  --fx-layout-md-half: 40px;
+  --fx-layout-lg: 128px;
+  --fx-layout-lg-half: 64px;
+  --fx-layout-xl: 160px;
+  --fx-layout-2xl: 200px;
+
+  --fx-radius-3xs: 4px;
+  --fx-radius-2xs: 8px;
+  --fx-radius-xs: 12px;
+  --fx-radius-sm: 24px;
+  --fx-radius-md: 48px;
+  --fx-radius-lg: 80px;
+  --fx-radius-xl-half: 64px;
+  --fx-radius-xl: 128px;               /* raio de pílula dos botões */
+
+  --fx-width-desktop-content-sm: 696px;
+  --fx-width-desktop-content: 725px;
+  --fx-width-desktop-content-lg: 934px;
+  --fx-width-desktop-wide-banner: 1170px;
+  --fx-width-desktop-layout: 1440px;
+  --fx-width-mobile-layout: 393px;
+
+  --fx-transition-fast: 0.15s ease;
+  --fx-transition-base: 0.2s ease;
+  --fx-transition-slow: 0.3s ease;
+
+  /* ---------------------------------------------------------------
+     5. ESCALA TIPOGRÁFICA — valores de mobile.
+     Cresce nos breakpoints 600px e 900px lá embaixo.
+     --------------------------------------------------------------- */
+  --fx-font-size-heading-3xl: 5rem;
+  --fx-font-size-heading-2xl: 4rem;
+  --fx-font-size-heading-xl: 3rem;
+  --fx-font-size-heading-lg: 2.5rem;
+  --fx-font-size-heading-md: 2rem;
+  --fx-font-size-heading-sm: 1.5rem;
+  --fx-font-size-heading-xs: 1.125rem;
+  --fx-font-size-heading-2xs: 1rem;
+
+  --fx-font-size-body-lg: 1.25rem;
+  --fx-font-size-body-md: 1.125rem;
+  --fx-font-size-body-sm: 1rem;
+  --fx-font-size-body-xs: 0.875rem;
+  --fx-font-size-body-2xs: 0.75rem;
+
+  --fx-font-size-subheading-md: 1rem;
+  --fx-font-size-subheading-sm: 0.875rem;
+  --fx-font-size-subheading-xs: 0.75rem;
+
+  --fx-label-md: 1rem;
+  --fx-label-sm: 0.875rem;
+  --fx-label-xs: 0.75rem;
+
+  --fx-line-height-base: 1.2;
+  --fx-font-weight-body: var(--fx-font-weight-regular);
+  --fx-font-weight-headline: var(--fx-font-weight-semibold);
+
+  /* ---------------------------------------------------------------
+     6. TOKENS SEMÂNTICOS — TEMA CLARO
+     É esta camada que o componente consome. O tema escuro só reescreve
+     estes nomes; nenhum componente muda.
+     --------------------------------------------------------------- */
+  --fx-theme-background: var(--fx-color-white);
+  --fx-theme-body-background: var(--fx-color-dark-purple);
+  --fx-theme-blog-body-background: var(--fx-color-white);
+
+  --fx-theme-color-text: var(--fx-color-black-4);
+  --fx-theme-color-text-inverse: var(--fx-color-white);
+  --fx-theme-color-brand-text: var(--fx-color-link-purple);
+
+  --fx-theme-color-link: var(--fx-color-link-purple);
+  --fx-theme-color-link-hover: var(--fx-color-link-purple);
+  --fx-theme-color-link-alt-hover: var(--fx-color-black-4);
+  --fx-theme-color-link-fade: var(--fx-color-grey-4);
+  --fx-theme-accent-color: var(--fx-theme-color-link);
+
+  --fx-theme-divider-color: var(--fx-color-soft-purple);
+  --fx-theme-divider: 1px solid var(--fx-theme-divider-color);
+  --fx-subtle-border-color: var(--fx-color-grey-2);
+
+  --fx-theme-code-background: var(--fx-color-soft-purple-2);
+  --fx-theme-color-icon-wrap: var(--fx-color-purple);
+  --fx-theme-illustration-icon-bg: var(--fx-color-soft-purple);
+
+  --fx-theme-surface-card-gradient: var(--fx-gradient-light);
+  --fx-theme-default-card-bg: var(--fx-theme-surface-card-gradient);
+  --fx-theme-shadow-card: 0 32px 72px var(--fx-color-black-4-16);
+  --fx-card-filled-border-color: var(--fx-color-soft-purple);
+  --fx-card-border-color: var(--fx-color-soft-purple);
+  --fx-theme-card-superheading-color: var(--fx-color-soft-purple-4);
+  --fx-theme-card-outline-superheading-color: var(--fx-color-grey-4);
+
+  --fx-step-card-bg: var(--fx-color-cream);
+  --fx-step-card-index-bg: var(--fx-color-white);
+
+  --fx-theme-pill-bg-color-primary: var(--fx-color-soft-purple-2);
+  --fx-theme-pill-bg-color-hover: var(--fx-color-light-purple);
+
+  --fx-theme-form-field-background: hsla(0, 0%, 100%, 0.92);
+  --fx-theme-form-field-border-color: var(--fx-color-black-1);
+  --fx-theme-form-field-border-color-focus: var(--fx-color-black-2);
+  --fx-theme-label-color: var(--fx-color-black-1);
+
+  --fx-theme-color-banner-text: var(--fx-theme-color-text);
+  --fx-theme-main-border-radius: var(--fx-layout-xs);
+  --fx-theme-layout-direction: column;
+  --fx-theme-default-justify-content: center;
+  --fx-theme-default-text-align: center;
+
+  --fx-color-error-text-color: var(--fx-color-secondary-red);
+
+  /* Ativa só no escuro: usado como `content:` para ligar/desligar o
+     pseudo-elemento do brilho de fundo sem duplicar regra. */
+  --fx-content-dark-mode-only: unset;
+
+  /* ---------------------------------------------------------------
+     7. BOTÃO — variante primária é o valor padrão destas variáveis.
+     Cada variante só reescreve as que precisa (ver seção 8).
+     --------------------------------------------------------------- */
+  --fx-button-bg-color: var(--fx-color-light-purple);
+  --fx-button-bg-color-hover: var(--fx-color-link-purple);
+  --fx-button-bg-color-active: var(--fx-color-purple);
+  --fx-button-bg-color-disabled: var(--fx-color-soft-purple-2);
+  --fx-button-border-color: transparent;
+  --fx-button-border-color-disabled: var(--fx-button-bg-color-disabled);
+  --fx-button-text-color: var(--fx-color-white);
+  --fx-button-text-color-hover: var(--fx-button-text-color);
+  --fx-button-text-color-disabled: var(--fx-color-link-purple);
+  --fx-button-color-focus-outline: var(--fx-color-light-purple);
+  --fx-button-font-size: var(--fx-font-size-body-sm);
+  --fx-button-icon-size: var(--fx-spacing-lg);
+
+  /* Ghost e secundário mudam de cor com o tema — por isso saem de token
+     próprio em vez de ficarem escritos na variante. */
+  --fx-button-ghost-text: var(--fx-color-black-4);
+  --fx-button-ghost-text-hover: var(--fx-color-white);
+  --fx-button-ghost-bg-active: var(--fx-color-black-2);
+  --fx-button-ghost-bg-disabled: var(--fx-color-grey-3);
+  --fx-button-ghost-border-disabled: var(--fx-color-grey-3);
+  --fx-button-ghost-text-disabled: var(--fx-color-white);
+
+  --fx-button-secondary-border-disabled: var(--fx-color-soft-purple);
+  --fx-button-secondary-text-disabled: var(--fx-theme-color-text);
+
+  /* Seções e cards */
+  --fx-section-v-padding: calc(var(--fx-layout-lg) / 4);
+  --fx-section-h-padding: var(--fx-layout-3xs);
+  --fx-section-heading-margin-bottom: var(--fx-spacing-xl);
+  --fx-section-hgroup-gap: var(--fx-spacing-lg);
+  --fx-section-hgroup-padding-bottom: var(--fx-layout-2xs);
+  --fx-card-grid-gap: var(--fx-spacing-3xl) var(--fx-spacing-lg);
+  --fx-card-grid-columns: minmax(0, 1fr);
+  --fx-card-pictogram-size: 120px;
+}
+
+/* ==========================================================================
+   TEMA ESCURO
+   Só troca os semânticos. Repare que nenhum token primitivo muda.
+   O seletor [data-theme] existe para permitir alternador manual.
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fx-theme-background: var(--fx-color-dark-purple);
+    --fx-theme-blog-body-background: var(--fx-color-dark-purple-3);
+
+    --fx-theme-color-text: var(--fx-color-white);
+    --fx-theme-color-text-inverse: var(--fx-color-dark-purple);
+    --fx-theme-color-brand-text: var(--fx-color-soft-purple-4);
+
+    --fx-theme-color-link: var(--fx-color-soft-purple-4);
+    --fx-theme-color-link-hover: var(--fx-color-white);
+    --fx-theme-color-link-fade: var(--fx-color-grey-1);
+
+    --fx-theme-divider-color: var(--fx-color-light-purple);
+    --fx-subtle-border-color: var(--fx-color-purple);
+
+    --fx-theme-code-background: var(--fx-color-link-purple);
+    --fx-theme-color-icon-wrap: var(--fx-color-soft-purple-3);
+    --fx-theme-illustration-icon-bg: var(--fx-color-medium-purple);
+
+    --fx-theme-surface-card-gradient: var(--fx-gradient-light);
+    --fx-theme-default-card-bg: transparent;
+    --fx-card-filled-border-color: transparent;
+    --fx-card-border-color: var(--fx-color-light-purple);
+    --fx-theme-card-superheading-color: var(--fx-color-soft-purple-4);
+    --fx-theme-card-outline-superheading-color: var(--fx-color-soft-purple-4);
+
+    --fx-step-card-bg: var(--fx-color-medium-purple);
+    --fx-step-card-index-bg: var(--fx-color-dark-purple);
+
+    --fx-theme-form-field-border-color: hsla(0, 0%, 100%, 0.35);
+    --fx-theme-form-field-border-color-focus: hsla(0, 0%, 100%, 0.8);
+
+    --fx-color-error-text-color: var(--fx-color-soft-magenta);
+
+    --fx-content-dark-mode-only: "";
+
+    --fx-button-bg-color-disabled: var(--fx-color-purple);
+    --fx-button-border-color-disabled: var(--fx-button-bg-color-disabled);
+    --fx-button-text-color-disabled: var(--fx-color-soft-purple-5);
+
+    --fx-button-ghost-text: var(--fx-color-white);
+    --fx-button-ghost-text-hover: var(--fx-color-dark-purple);
+    --fx-button-ghost-bg-active: var(--fx-color-grey-2);
+    --fx-button-ghost-bg-disabled: transparent;
+    --fx-button-ghost-border-disabled: var(--fx-color-light-purple);
+    --fx-button-ghost-text-disabled: var(--fx-color-soft-purple-5);
+
+    --fx-button-secondary-border-disabled: var(--fx-color-light-purple);
+    --fx-button-secondary-text-disabled: var(--fx-color-soft-purple-5);
+  }
+}
+
+:root[data-theme="dark"] {
+  --fx-theme-background: var(--fx-color-dark-purple);
+  --fx-theme-blog-body-background: var(--fx-color-dark-purple-3);
+
+  --fx-theme-color-text: var(--fx-color-white);
+  --fx-theme-color-text-inverse: var(--fx-color-dark-purple);
+  --fx-theme-color-brand-text: var(--fx-color-soft-purple-4);
+
+  --fx-theme-color-link: var(--fx-color-soft-purple-4);
+  --fx-theme-color-link-hover: var(--fx-color-white);
+  --fx-theme-color-link-fade: var(--fx-color-grey-1);
+
+  --fx-theme-divider-color: var(--fx-color-light-purple);
+  --fx-subtle-border-color: var(--fx-color-purple);
+
+  --fx-theme-code-background: var(--fx-color-link-purple);
+  --fx-theme-color-icon-wrap: var(--fx-color-soft-purple-3);
+  --fx-theme-illustration-icon-bg: var(--fx-color-medium-purple);
+
+  --fx-theme-surface-card-gradient: var(--fx-gradient-light);
+  --fx-theme-default-card-bg: transparent;
+  --fx-card-filled-border-color: transparent;
+  --fx-card-border-color: var(--fx-color-light-purple);
+  --fx-theme-card-superheading-color: var(--fx-color-soft-purple-4);
+  --fx-theme-card-outline-superheading-color: var(--fx-color-soft-purple-4);
+
+  --fx-step-card-bg: var(--fx-color-medium-purple);
+  --fx-step-card-index-bg: var(--fx-color-dark-purple);
+
+  --fx-theme-form-field-border-color: hsla(0, 0%, 100%, 0.35);
+  --fx-theme-form-field-border-color-focus: hsla(0, 0%, 100%, 0.8);
+
+  --fx-color-error-text-color: var(--fx-color-soft-magenta);
+
+  --fx-content-dark-mode-only: "";
+
+  --fx-button-bg-color-disabled: var(--fx-color-purple);
+  --fx-button-border-color-disabled: var(--fx-button-bg-color-disabled);
+  --fx-button-text-color-disabled: var(--fx-color-soft-purple-5);
+
+    --fx-button-ghost-text: var(--fx-color-white);
+    --fx-button-ghost-text-hover: var(--fx-color-dark-purple);
+    --fx-button-ghost-bg-active: var(--fx-color-grey-2);
+    --fx-button-ghost-bg-disabled: transparent;
+    --fx-button-ghost-border-disabled: var(--fx-color-light-purple);
+    --fx-button-ghost-text-disabled: var(--fx-color-soft-purple-5);
+
+    --fx-button-secondary-border-disabled: var(--fx-color-light-purple);
+    --fx-button-secondary-text-disabled: var(--fx-color-soft-purple-5);
+}
+
+/* ==========================================================================
+   ESCALA FLUIDA
+   Mesmo nome de token, 3 valores. Nenhum clamp(), nenhuma unidade vw:
+   três degraus e pronto.
+   ========================================================================== */
+
+@media (min-width: 600px) {
+  :root {
+    --fx-font-size-heading-3xl: 8rem;
+    --fx-font-size-heading-2xl: 5rem;
+    --fx-font-size-heading-xl: 4rem;
+    --fx-font-size-heading-lg: 2.5rem;
+    --fx-font-size-heading-md: 2rem;
+    --fx-font-size-heading-sm: 1.5rem;
+    --fx-font-size-heading-xs: 1.125rem;
+    --fx-font-size-body-lg: 1.5rem;
+    --fx-font-size-body-md: 1.25rem;
+
+    --fx-theme-layout-direction: row;
+    --fx-theme-default-justify-content: flex-start;
+    --fx-theme-default-text-align: left;
+
+    --fx-section-v-padding: calc(var(--fx-layout-lg) / 2);
+    --fx-section-hgroup-padding-bottom: var(--fx-layout-sm);
+    --fx-section-hgroup-gap: var(--fx-spacing-xl);
+  }
+}
+
+@media (min-width: 900px) {
+  :root {
+    --fx-font-size-heading-3xl: 10rem;
+    --fx-font-size-heading-2xl: 8rem;
+    --fx-font-size-heading-xl: 5rem;
+    --fx-font-size-heading-lg: 4rem;
+    --fx-font-size-heading-md: 3rem;
+    --fx-font-size-heading-sm: 2rem;
+    --fx-font-size-heading-xs: 1.5rem;
+    --fx-font-size-body-lg: 2rem;
+    --fx-font-size-body-md: 1.5rem;
+
+    --fx-section-v-padding: var(--fx-layout-lg-half);
+    --fx-section-heading-margin-bottom: var(--fx-layout-sm);
+    --fx-theme-main-border-radius: var(--fx-layout-lg);
+  }
+}

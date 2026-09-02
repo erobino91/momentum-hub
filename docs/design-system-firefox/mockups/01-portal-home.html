@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Portal do cliente — Momentum Hub em Flare</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62.5..125,100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="app.css">
+<style>
+  .modulos { display: grid; gap: var(--fx-spacing-lg); grid-template-columns: 1fr 1fr; }
+  .modulo {
+    background: var(--app-surface);
+    border: 1px solid var(--app-line);
+    border-radius: var(--fx-radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: var(--fx-spacing-xl);
+    text-decoration: none;
+    color: inherit;
+    min-block-size: 128px;
+  }
+  .modulo .seta { color: var(--app-dim); font-size: 18px; }
+  .modulo-off { opacity: .62; }
+  .cta {
+    background-image: var(--fx-gradient-purple);
+    /* O CTA do Flare usa raio 128 px, mas naquela largura (1170 px). Num
+       bloco mais estreito o mesmo raio vira pastilha — aqui desce um degrau
+       da escala, para 80 px, e o gesto continua o mesmo. */
+    border-radius: var(--fx-radius-lg);
+    padding: var(--fx-layout-sm) var(--fx-layout-xs);
+    text-align: center;
+  }
+  .modulo-icone {
+    align-items: center;
+    background: var(--fx-color-light-purple-20);
+    block-size: 34px;
+    border-radius: 11px;
+    color: var(--app-brand-ink);
+    display: flex;
+    inline-size: 34px;
+    justify-content: center;
+    margin-block-end: 6px;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="row" style="gap:var(--fx-spacing-xl)">
+    <span class="brandmark"><span class="dot"></span>Momentum</span>
+    <span class="t-dim">/</span>
+    <span style="font-weight:500">Burger da Praça</span>
+  </div>
+  <div class="row" style="gap:var(--fx-spacing-lg)">
+    <span class="t-muted" style="font-size:13px">contato@burgerdapraca.com.br</span>
+    <a class="btn btn-ghost btn-sm">Sair</a>
+  </div>
+</header>
+
+<div class="glow">
+  <div class="wrap" style="max-inline-size:980px">
+
+    <p class="t-label" style="color:var(--app-brand-ink)">Portal do cliente</p>
+    <h1 class="t-page mt-md">Burger da Praça</h1>
+    <p class="t-muted mt-lg" style="font-size:16px;max-inline-size:52ch">
+      Seus quatro módulos ficam aqui. O que não estiver pronto aparece marcado — nunca leva
+      a uma tela dizendo que você não tem acesso.
+    </p>
+
+    <div class="modulos mt-2xl">
+
+      <a class="modulo">
+        <div class="modulo-icone">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 19V10M10 19V5M16 19v-6M22 19H2"/></svg>
+        </div>
+        <div class="row between">
+          <span class="t-card">Dashboard</span>
+          <span class="seta">→</span>
+        </div>
+        <p class="t-muted">Resultados de vendas, pedidos e ticket médio.</p>
+      </a>
+
+      <a class="modulo">
+        <div class="modulo-icone">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+        </div>
+        <div class="row between">
+          <span class="t-card">Bio</span>
+          <span class="seta">→</span>
+        </div>
+        <p class="t-muted">Sua página de links, com rastreamento de cliques.</p>
+      </a>
+
+      <a class="modulo">
+        <div class="modulo-icone">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </div>
+        <div class="row between">
+          <span class="t-card">Fila de Espera</span>
+          <span class="seta">→</span>
+        </div>
+        <p class="t-muted">Lista de espera do salão, em tempo real.</p>
+      </a>
+
+      <div class="modulo modulo-off">
+        <div class="modulo-icone">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 3h14v18l-7-4-7 4z"/><path d="M9 9h6"/></svg>
+        </div>
+        <div class="row between">
+          <span class="t-card">CMV</span>
+          <span class="pill pill-atencao">Em configuração</span>
+        </div>
+        <p class="t-muted">Custo de mercadoria vendida e ficha técnica.</p>
+      </div>
+
+    </div>
+
+    <!-- O banner de CTA do Flare: raio 128 px, gradiente roxo radial.
+         Um por tela, no fim. -->
+    <div class="cta mt-2xl">
+      <p class="t-label" style="color:var(--fx-color-soft-purple-4)">Precisa de ajuda?</p>
+      <h2 class="t-section mt-md" style="font-size:2rem">Seu gestor responde no mesmo dia.</h2>
+      <p class="t-muted mt-md" style="max-inline-size:44ch;margin-inline:auto">
+        Dúvida sobre um número, pedido de ajuste na campanha ou material novo.
+      </p>
+      <div class="row mt-xl" style="justify-content:center">
+        <a class="btn btn-gold">Falar com a Momentum</a>
+        <a class="btn btn-secondary">Ver relatório do mês</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Login — Momentum Hub em Flare</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62.5..125,100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="app.css">
+<style>
+  /* Tela dividida: formulário à esquerda, o gesto do Flare à direita.
+     O painel da direita é o gradiente roxo radial com o raio de 128 px
+     puxado só para o lado de dentro. */
+  .split { display: grid; grid-template-columns: 1fr 1fr; min-block-size: 100vh; }
+
+  .lado-form { align-items: center; display: flex; justify-content: center; padding: var(--fx-layout-xs); }
+  .form-box { inline-size: 100%; max-inline-size: 380px; }
+
+  .lado-arte {
+    align-items: center;
+    background-image: var(--fx-gradient-purple);
+    border-start-start-radius: var(--fx-radius-xl);
+    border-end-start-radius: var(--fx-radius-xl);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--fx-layout-md);
+    text-align: center;
+  }
+
+  .modulo-mini {
+    align-items: center;
+    background: rgba(255, 255, 255, .1);
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: var(--fx-radius-xs);
+    display: flex;
+    font-size: 13px;
+    font-weight: 500;
+    gap: 9px;
+    padding: 11px 16px;
+    text-align: start;
+  }
+  .modulo-mini svg { flex: none; opacity: .85; }
+  .lista-mini { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; inline-size: 100%; max-inline-size: 400px; }
+
+  .esqueci { color: var(--app-brand-ink); font-size: 13px; text-decoration: none; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="split">
+
+  <section class="lado-form glow">
+    <div class="form-box">
+      <span class="brandmark" style="font-size:22px"><span class="dot"></span>Momentum</span>
+
+      <h1 class="t-page mt-2xl" style="font-size:2.5rem">Entrar no portal</h1>
+      <p class="t-muted mt-md">Use o e-mail que a agência cadastrou para você.</p>
+
+      <div class="col mt-2xl" style="gap:var(--fx-spacing-lg)">
+        <div class="campo">
+          <label>E-mail</label>
+          <input type="email" placeholder="voce@suaempresa.com.br">
+        </div>
+        <div class="campo">
+          <label>Senha</label>
+          <input type="password" value="••••••••••">
+        </div>
+      </div>
+
+      <div class="row between mt-xl">
+        <a class="btn" style="flex:1">Entrar</a>
+      </div>
+
+      <div class="row between mt-lg">
+        <a class="esqueci">Esqueci minha senha</a>
+        <span class="t-dim" style="font-size:12px">portal.mmtdigital.com.br</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="lado-arte">
+    <p class="t-label" style="color:var(--fx-color-soft-purple-4)">Momentum Hub</p>
+    <h2 class="t-page mt-lg" style="font-size:3.25rem;max-inline-size:14ch">Tudo do seu negócio, num lugar só.</h2>
+    <p class="mt-lg" style="color:rgba(255,255,255,.8);max-inline-size:38ch">
+      Resultado, cardápio, fila e custo. Quatro módulos, um login.
+    </p>
+
+    <div class="lista-mini mt-2xl">
+      <span class="modulo-mini">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 19V10M10 19V5M16 19v-6M22 19H2"/></svg>
+        Dashboard
+      </span>
+      <span class="modulo-mini">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+        Bio
+      </span>
+      <span class="modulo-mini">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Fila de Espera
+      </span>
+      <span class="modulo-mini">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 3h14v18l-7-4-7 4z"/><path d="M9 9h6"/></svg>
+        CMV
+      </span>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>

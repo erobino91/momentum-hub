@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Painel da agência — Momentum Hub em Flare</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62.5..125,100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="app.css">
+<style>
+  .layout { display: flex; min-block-size: 100vh; }
+  .conteudo { flex: 1; min-inline-size: 0; }
+  .busca {
+    align-items: center; background: rgba(255,255,255,.06); border: 1px solid var(--app-line-strong);
+    border-radius: var(--fx-radius-xl); display: flex; gap: 10px; padding: 10px 18px; inline-size: 320px;
+  }
+  .busca input { background: none; border: none; color: var(--app-text); font: inherit; outline: none; inline-size: 100%; }
+  .busca input::placeholder { color: var(--app-dim); }
+  .filtros { display: flex; gap: var(--fx-spacing-sm); }
+  .chip {
+    background: transparent; border: 1px solid var(--app-line-strong); border-radius: var(--fx-radius-xl);
+    color: var(--app-muted); font-size: 13px; font-weight: 500; padding: 8px 16px; white-space: nowrap;
+  }
+  .chip-ativo { background: var(--fx-color-light-purple); border-color: var(--fx-color-light-purple); color: #fff; font-weight: 600; }
+  .modulos-ponto { display: flex; gap: 5px; }
+  .ponto { block-size: 8px; border-radius: 50%; inline-size: 8px; background: var(--fx-color-light-purple); }
+  .ponto-off { background: rgba(255,255,255,.16); }
+  .empresa-nome { font-weight: 600; font-size: 15px; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <span class="brandmark"><span class="dot"></span>Momentum</span>
+
+    <nav class="col" style="gap:2px">
+      <a class="navitem navitem-ativo">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 21V8l7-5 7 5v13"/><path d="M9 21v-6h4v6"/></svg>
+        Empresas
+        <span class="pill contador" style="background:rgba(255,255,255,.22);color:#fff">10</span>
+      </a>
+      <a class="navitem">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20"/><path d="M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Financeiro
+      </a>
+      <a class="navitem">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 8a5 5 0 0 1 0 8"/><path d="M18 5a9 9 0 0 1 0 14"/><path d="M4 9h4l4-3v12l-4-3H4z"/></svg>
+        Lives
+        <span class="pill pill-vivo contador"><span class="pill-dot"></span>1</span>
+      </a>
+      <a class="navitem">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+        Páginas de bio
+      </a>
+
+      <p class="t-label mt-xl" style="padding:0 14px 8px;font-size:10px">Atalhos</p>
+      <a class="navitem">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/></svg>
+        Portal do cliente
+      </a>
+      <a class="navitem">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Fila de Espera
+        <span class="t-dim" style="margin-inline-start:auto;font-size:12px">↗</span>
+      </a>
+    </nav>
+
+    <div class="mt-auto" style="margin-block-start:auto">
+      <div class="card" style="padding:var(--fx-spacing-md) var(--fx-spacing-lg);border-radius:var(--fx-radius-xs);background:rgba(255,255,255,.05)">
+        <p style="font-size:12px;font-weight:600">Luis Fossalussa</p>
+        <p class="t-dim" style="font-size:11px">Agência</p>
+      </div>
+    </div>
+  </aside>
+
+  <main class="conteudo glow">
+    <div class="wrap" style="max-inline-size:none">
+
+      <div class="row between">
+        <div>
+          <p class="t-label" style="color:var(--app-brand-ink)">Painel da agência</p>
+          <h1 class="t-page mt-md">Empresas</h1>
+        </div>
+        <a class="btn">+ Nova empresa</a>
+      </div>
+
+      <div class="row between mt-2xl">
+        <div class="busca">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="opacity:.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input placeholder="Buscar empresa" value="">
+        </div>
+        <div class="filtros">
+          <span class="chip chip-ativo">Todas · 10</span>
+          <span class="chip">Mês em aberto · 3</span>
+          <span class="chip">Em configuração · 2</span>
+        </div>
+      </div>
+
+      <div class="card mt-lg" style="padding:var(--fx-spacing-xl) var(--fx-spacing-md)">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Módulos</th>
+              <th>Acessos</th>
+              <th class="num-col">Último mês</th>
+              <th class="num-col">Faturamento</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="empresa-nome">Burger da Praça</span></td>
+              <td><span class="modulos-ponto"><i class="ponto"></i><i class="ponto"></i><i class="ponto"></i><i class="ponto ponto-off"></i></span></td>
+              <td class="t-muted">3</td>
+              <td class="num-col t-muted num">ago/26</td>
+              <td class="num-col num" style="font-weight:600">R$ 71.340</td>
+              <td class="num-col"><a class="btn btn-ghost btn-sm">Resultados</a></td>
+            </tr>
+            <tr>
+              <td><span class="empresa-nome">Cantina Bela Vista</span></td>
+              <td><span class="modulos-ponto"><i class="ponto"></i><i class="ponto"></i><i class="ponto"></i><i class="ponto"></i></span></td>
+              <td class="t-muted">2</td>
+              <td class="num-col t-muted num">ago/26</td>
+              <td class="num-col num" style="font-weight:600">R$ 58.910</td>
+              <td class="num-col"><a class="btn btn-ghost btn-sm">Resultados</a></td>
+            </tr>
+            <tr>
+              <td><span class="empresa-nome">Pizzaria Il Forno</span></td>
+              <td><span class="modulos-ponto"><i class="ponto"></i><i class="ponto"></i><i class="ponto ponto-off"></i><i class="ponto ponto-off"></i></span></td>
+              <td class="t-muted">1</td>
+              <td class="num-col"><span class="pill pill-atencao">Em aberto</span></td>
+              <td class="num-col t-dim">—</td>
+              <td class="num-col"><a class="btn btn-ghost btn-sm">Fechar mês</a></td>
+            </tr>
+            <tr>
+              <td><span class="empresa-nome">Doceria Aurora</span></td>
+              <td><span class="modulos-ponto"><i class="ponto"></i><i class="ponto"></i><i class="ponto"></i><i class="ponto ponto-off"></i></span></td>
+              <td class="t-muted">2</td>
+              <td class="num-col t-muted num">ago/26</td>
+              <td class="num-col num" style="font-weight:600">R$ 33.470</td>
+              <td class="num-col"><a class="btn btn-ghost btn-sm">Resultados</a></td>
+            </tr>
+            <tr>
+              <td><span class="empresa-nome">Espeto do Norte</span></td>
+              <td><span class="modulos-ponto"><i class="ponto"></i><i class="ponto ponto-off"></i><i class="ponto ponto-off"></i><i class="ponto ponto-off"></i></span></td>
+              <td class="t-muted">1</td>
+              <td class="num-col"><span class="pill pill-neutro">Sem mês</span></td>
+              <td class="num-col t-dim">—</td>
+              <td class="num-col"><a class="btn btn-sm">Configurar</a></td>
+            </tr>
+            <tr>
+              <td><span class="empresa-nome">Sushi Kaiten</span></td>
+              <td><span class="modulos-ponto"><i class="ponto"></i><i class="ponto"></i><i class="ponto"></i><i class="ponto ponto-off"></i></span></td>
+              <td class="t-muted">2</td>
+              <td class="num-col t-muted num">ago/26</td>
+              <td class="num-col num" style="font-weight:600">R$ 47.880</td>
+              <td class="num-col"><a class="btn btn-ghost btn-sm">Resultados</a></td>
+            </tr>
+            <tr>
+              <td><span class="empresa-nome">Açaí do Centro</span></td>
+              <td><span class="modulos-ponto"><i class="ponto"></i><i class="ponto ponto-off"></i><i class="ponto ponto-off"></i><i class="ponto ponto-off"></i></span></td>
+              <td class="t-muted">1</td>
+              <td class="num-col"><span class="pill pill-neutro">Sem mês</span></td>
+              <td class="num-col t-dim">—</td>
+              <td class="num-col"><a class="btn btn-sm">Configurar</a></td>
+            </tr>
+            <tr>
+              <td><span class="empresa-nome">Marmitaria Dona Rosa</span></td>
+              <td><span class="modulos-ponto"><i class="ponto"></i><i class="ponto"></i><i class="ponto ponto-off"></i><i class="ponto ponto-off"></i></span></td>
+              <td class="t-muted">2</td>
+              <td class="num-col"><span class="pill pill-atencao">Em aberto</span></td>
+              <td class="num-col t-dim">—</td>
+              <td class="num-col"><a class="btn btn-ghost btn-sm">Fechar mês</a></td>
+            </tr>
+            <tr>
+              <td><span class="empresa-nome">Hamburgueria Nove</span></td>
+              <td><span class="modulos-ponto"><i class="ponto"></i><i class="ponto"></i><i class="ponto"></i><i class="ponto"></i></span></td>
+              <td class="t-muted">3</td>
+              <td class="num-col t-muted num">ago/26</td>
+              <td class="num-col num" style="font-weight:600">R$ 62.140</td>
+              <td class="num-col"><a class="btn btn-ghost btn-sm">Resultados</a></td>
+            </tr>
+            <tr>
+              <td><span class="empresa-nome">Padaria Sete Estrelas</span></td>
+              <td><span class="modulos-ponto"><i class="ponto"></i><i class="ponto"></i><i class="ponto"></i><i class="ponto"></i></span></td>
+              <td class="t-muted">4</td>
+              <td class="num-col t-muted num">ago/26</td>
+              <td class="num-col num" style="font-weight:600">R$ 96.220</td>
+              <td class="num-col"><a class="btn btn-ghost btn-sm">Resultados</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="t-dim mt-lg" style="font-size:11px">Dados de exemplo — mockup de design, não é resultado de cliente.</p>
+
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

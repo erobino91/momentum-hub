@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design System Firefox (Flare) — demonstração</title>
+
+<!-- Substitutas livres das fontes de marca da Mozilla.
+     Archivo tem eixo de largura (wdth), que é o que reproduz o título condensado. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62.5..125,100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="tokens.css">
+
+<style>
+/* ==========================================================================
+   Componentes do Flare reconstruídos sobre os tokens.
+   Nenhuma cor escrita à mão: tudo sai de tokens.css.
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: var(--fx-font-size-body-sm); }
+
+body {
+  background: var(--fx-theme-body-background);
+  color: var(--fx-theme-color-text);
+  font-family: var(--fx-font-family-text);
+  font-weight: var(--fx-font-weight-body);
+  min-block-size: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--fx-font-family-headline);
+  font-weight: var(--fx-font-weight-headline);
+  line-height: 1.2;
+  margin-block-end: var(--fx-spacing-lg);
+  text-wrap: balance;
+}
+
+p { line-height: 1.4; margin: 0 0 var(--fx-spacing-lg); }
+
+a:link, a:visited { color: var(--fx-theme-color-link); text-decoration: underline; transition: color var(--fx-transition-fast); }
+a:hover, a:focus, a:active { color: var(--fx-theme-color-link-hover); text-decoration: none; }
+
+code {
+  background: var(--fx-theme-code-background);
+  color: var(--fx-theme-color-text);
+  border-radius: var(--fx-radius-3xs);
+  font-size: .875em;
+  padding: 2px 6px;
+}
+
+/* --- Casca da página ------------------------------------------------------
+   .fx-main é o cartão branco/escuro com raio inferior gigante,
+   e o brilho roxo desfocado mora no ::before de .has-gradient-bottom. */
+
+.fx-main {
+  background: var(--fx-theme-background);
+  border-end-end-radius: var(--fx-theme-main-border-radius);
+  border-end-start-radius: var(--fx-theme-main-border-radius);
+  margin: 0 auto;
+  padding-block: 0 var(--fx-theme-main-border-radius);
+}
+
+.has-gradient-bottom { contain: paint; position: relative; z-index: 0; }
+.has-gradient-bottom > * { position: relative; z-index: 1; }
+.has-gradient-bottom::before {
+  --gradient-height: 60vh;
+  background-image: var(--fx-gradient-blurred-bg);
+  block-size: var(--gradient-height);
+  content: var(--fx-content-dark-mode-only); /* só existe no tema escuro */
+  inset: auto -40vw calc(var(--gradient-height) / -2);
+  position: absolute;
+  z-index: 0;
+}
+
+/* --- Cabeçalho ----------------------------------------------------------- */
+
+.fx-header {
+  background-color: var(--fx-theme-background);
+  color: var(--fx-theme-color-text);
+  padding: var(--fx-spacing-md) var(--fx-spacing-xl);
+}
+.fx-header-inner {
+  align-items: center;
+  display: flex;
+  gap: var(--fx-spacing-lg);
+  justify-content: space-between;
+  margin: 0 auto;
+  max-inline-size: var(--fx-width-desktop-layout);
+}
+.fx-wordmark {
+  font-family: var(--fx-font-family-headline);
+  font-size: 1.5rem;
+  font-variation-settings: "wght" 700, "wdth" var(--fx-font-condensed-width);
+  letter-spacing: -.01em;
+}
+
+/* --- Seção --------------------------------------------------------------- */
+
+.fx-section { margin: 0; padding: var(--fx-section-v-padding) var(--fx-section-h-padding); z-index: 1; }
+.fx-section-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fx-section-v-padding);
+  margin: 0 auto;
+  max-inline-size: var(--fx-width-desktop-layout);
+}
+.fx-section-container.is-narrow { max-inline-size: var(--fx-width-desktop-content-lg); }
+
+/* --- Grupo de título ----------------------------------------------------- */
+
+.fx-heading-group { margin-block-end: var(--fx-section-heading-margin-bottom); }
+.fx-superheading {
+  color: var(--fx-theme-color-brand-text);
+  display: block;
+  font-size: var(--fx-font-size-body-2xs);
+  font-weight: var(--fx-font-weight-medium);
+  letter-spacing: .02em;
+  margin-block-end: var(--fx-spacing-md);
+  text-transform: uppercase;
+}
+
+/* O gesto assinatura: peso 600 + largura 75 + entrelinha 0.9 */
+.fx-heading-condensed,
+.fx-heading-3xl, .fx-heading-2xl, .fx-heading-xl, .fx-heading-lg, .fx-heading-md {
+  font-variation-settings: "wght" var(--fx-font-weight-semibold), "wdth" var(--fx-font-condensed-width);
+  line-height: .9;
+}
+
+.fx-heading-3xl { font-size: var(--fx-font-size-heading-3xl); }
+.fx-heading-2xl { font-size: var(--fx-font-size-heading-2xl); }
+.fx-heading-xl  { font-size: var(--fx-font-size-heading-xl); }
+.fx-heading-lg  { font-size: var(--fx-font-size-heading-lg); }
+.fx-heading-md  { font-size: var(--fx-font-size-heading-md); }
+.fx-heading-sm  { font-size: var(--fx-font-size-heading-sm); font-variation-settings: unset; }
+.fx-heading-xs  { font-size: var(--fx-font-size-heading-xs); font-variation-settings: unset; }
+
+.fx-body-lg { font-size: var(--fx-font-size-body-lg); }
+.fx-body-md { font-size: var(--fx-font-size-body-md); }
+.fx-body-sm { font-size: var(--fx-font-size-body-sm); }
+.fx-body-xs { font-size: var(--fx-font-size-body-xs); }
+
+/* --- Botão ---------------------------------------------------------------
+   Um componente só. As variantes trocam variáveis, não propriedades. */
+
+.fx-button {
+  align-items: center;
+  background-color: var(--fx-button-bg-color);
+  background-image: var(--fx-button-bg-image, none);
+  border: 2px solid var(--fx-button-border-color);
+  border-radius: var(--fx-radius-xl);
+  color: var(--fx-button-text-color);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--fx-font-family-text);
+  font-size: var(--fx-button-font-size);
+  font-weight: 600;
+  gap: var(--fx-spacing-md);
+  justify-content: center;
+  line-height: 1;
+  min-inline-size: fit-content;
+  padding: var(--fx-spacing-md) var(--fx-spacing-xl);
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background-color var(--fx-transition-fast),
+    color var(--fx-transition-fast),
+    border-color var(--fx-transition-fast),
+    background-position var(--fx-transition-fast);
+}
+.fx-button:not(:disabled):hover  { background-color: var(--fx-button-bg-color-hover); color: var(--fx-button-text-color-hover); text-decoration: none; }
+.fx-button:not(:disabled):active { background-color: var(--fx-button-bg-color-active); border-color: var(--fx-button-bg-color-active); outline: none; }
+.fx-button:focus-visible { outline: 2px solid var(--fx-button-color-focus-outline); outline-offset: 2px; }
+.fx-button:disabled {
+  background-color: var(--fx-button-bg-color-disabled);
+  border-color: var(--fx-button-border-color-disabled);
+  color: var(--fx-button-text-color-disabled);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.fx-button.is-secondary {
+  --fx-button-bg-color: transparent;
+  --fx-button-border-color: var(--fx-color-light-purple);
+  --fx-button-text-color: var(--fx-theme-color-text);
+  --fx-button-bg-color-hover: var(--fx-color-light-purple);
+  --fx-button-text-color-hover: var(--fx-color-white);
+  --fx-button-bg-color-active: var(--fx-color-link-purple);
+  --fx-button-bg-color-disabled: transparent;
+  --fx-button-border-color-disabled: var(--fx-button-secondary-border-disabled);
+  --fx-button-text-color-disabled: var(--fx-button-secondary-text-disabled);
+}
+
+/* Ghost é a única variante cujo texto inverte com o tema — preto no claro,
+   branco no escuro. Por isso puxa de token, não de cor fixa. */
+.fx-button.is-ghost {
+  --fx-button-bg-color: transparent;
+  --fx-button-text-color: var(--fx-button-ghost-text);
+  --fx-button-border-color: var(--fx-button-text-color);
+  --fx-button-bg-color-hover: var(--fx-button-text-color);
+  --fx-button-text-color-hover: var(--fx-button-ghost-text-hover);
+  --fx-button-bg-color-active: var(--fx-button-ghost-bg-active);
+  --fx-button-bg-color-disabled: var(--fx-button-ghost-bg-disabled);
+  --fx-button-border-color-disabled: var(--fx-button-ghost-border-disabled);
+  --fx-button-text-color-disabled: var(--fx-button-ghost-text-disabled);
+  border-width: 1px;
+}
+
+.fx-button.is-link {
+  --fx-button-bg-color: transparent;
+  --fx-button-text-color: var(--fx-theme-color-link);
+  --fx-button-border-color: transparent;
+  --fx-button-bg-color-hover: transparent;
+  --fx-button-text-color-hover: var(--fx-theme-color-link-hover);
+  --fx-button-bg-color-active: transparent;
+  --fx-button-bg-color-disabled: transparent;
+  --fx-button-border-color-disabled: transparent;
+  --fx-button-text-color-disabled: var(--fx-theme-color-link);
+  font-weight: var(--fx-font-weight-regular);
+  padding-block: var(--fx-spacing-xs);
+  padding-inline: 0;
+  text-decoration: underline;
+}
+.fx-button.is-link:hover { text-decoration: none; }
+
+/* Gradiente dourado: o hover desliza o fundo em vez de trocar a cor. */
+.fx-button.is-gold {
+  --fx-button-bg-color: transparent;
+  --fx-button-text-color: var(--fx-color-black-4);
+  --fx-button-border-color: transparent;
+  --fx-button-bg-color-hover: transparent;
+  --fx-button-text-color-hover: var(--fx-color-black-4);
+  --fx-button-bg-color-active: transparent;
+  --fx-button-bg-image: var(--fx-gradient-gold-button);
+  background-position: top -2px left;
+  background-size: calc(100% + 24px) calc(100% + 24px);
+}
+.fx-button.is-gold:hover, .fx-button.is-gold:focus { background-position: top -10px left; }
+.fx-button.is-gold:active { background-position: top -18px left; }
+
+.fx-button.is-small  { padding: var(--fx-spacing-sm) var(--fx-spacing-xl); }
+.fx-button.is-medium { padding: var(--fx-spacing-md) var(--fx-spacing-xl); }
+.fx-button.is-large  { --fx-button-font-size: var(--fx-font-size-body-md); padding: var(--fx-spacing-lg) var(--fx-spacing-xl); }
+
+.fx-buttons { align-items: start; display: flex; flex-wrap: wrap; gap: var(--fx-spacing-md); }
+.fx-buttons.is-center { justify-content: center; }
+
+/* --- Cartões -------------------------------------------------------------- */
+
+.fx-card-grid {
+  display: grid;
+  gap: var(--fx-card-grid-gap);
+  grid-template-columns: var(--fx-card-grid-columns);
+  justify-content: center;
+  margin-inline: auto;
+  max-inline-size: var(--fx-width-desktop-content-lg);
+}
+@media (min-width: 600px) { .fx-card-grid { --fx-card-grid-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .fx-card-grid { --fx-card-grid-columns: repeat(3, minmax(0, 1fr)); } }
+
+.fx-card { contain: paint; display: flex; flex-direction: column; position: relative; }
+.fx-card .fx-card-content { display: flex; flex-direction: column; flex-grow: 1; gap: var(--fx-spacing-lg); }
+.fx-card h3 { font-size: var(--fx-font-size-heading-xs); font-variation-settings: unset; line-height: 1.1; margin: 0; }
+.fx-card p { margin: 0; }
+
+.fx-card.is-outline {
+  background: var(--fx-theme-default-card-bg);
+  border: 1px solid var(--fx-card-border-color);
+  border-radius: var(--fx-radius-sm);
+  box-shadow: var(--fx-theme-shadow-card);
+  color: var(--fx-theme-color-text);
+  gap: var(--fx-spacing-md);
+  padding: var(--fx-spacing-2xl);
+  transition: transform var(--fx-transition-base);
+}
+
+.fx-card.is-filled {
+  background: var(--fx-theme-surface-card-gradient);
+  border: 1px solid var(--fx-card-filled-border-color);
+  border-radius: var(--fx-radius-md);
+  box-shadow: var(--fx-theme-shadow-card);
+  color: var(--fx-color-black-4);
+  min-block-size: 316px;
+  padding: var(--fx-spacing-3xl) var(--fx-spacing-xl);
+  transition: transform var(--fx-transition-base);
+}
+.fx-card.is-filled .fx-superheading { color: var(--fx-color-light-purple); }
+
+/* A sombra do hover entra por opacidade, não por troca de box-shadow —
+   assim a transição não pula. */
+.fx-card.is-outline::after, .fx-card.is-filled::after {
+  border-radius: inherit;
+  box-shadow: 0 40px 96px var(--fx-color-dark-purple-22);
+  content: "";
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity var(--fx-transition-base);
+}
+.fx-card.is-outline:hover, .fx-card.is-filled:hover { transform: translateY(-2px); }
+.fx-card.is-outline:hover::after, .fx-card.is-filled:hover::after { opacity: 1; }
+
+/* --- Banner --------------------------------------------------------------- */
+
+.fx-banner-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fx-spacing-3xl);
+  inline-size: 100%;
+  margin: 0 auto;
+  max-inline-size: var(--fx-width-desktop-layout);
+  padding: var(--fx-spacing-xl);
+}
+.fx-banner {
+  --fx-banner-padding: var(--fx-layout-3xs);
+  --fx-banner-border-radius: var(--fx-radius-md);
+  align-items: center;
+  border-radius: var(--fx-banner-border-radius);
+  contain: paint;
+  display: flex;
+  justify-content: center;
+  min-block-size: 260px;
+  padding: var(--fx-banner-padding);
+  position: relative;
+  text-align: center;
+}
+.fx-banner-layout {
+  align-items: center;
+  display: grid;
+  gap: var(--fx-layout-xs);
+  grid-template-columns: 1fr;
+  inline-size: 100%;
+  margin-inline: auto;
+  max-inline-size: var(--fx-width-desktop-wide-banner);
+  position: relative;
+  z-index: 2;
+}
+.fx-banner.is-bottom-cta {
+  --fx-banner-border-radius: var(--fx-radius-xl);
+  --fx-banner-padding: var(--fx-layout-lg);
+  background-image: var(--fx-gradient-purple);
+  color: var(--fx-color-white);
+}
+.fx-banner.is-bottom-cta .fx-superheading { color: var(--fx-color-soft-purple-4); }
+.fx-banner.is-outlined {
+  --fx-banner-border-radius: var(--fx-radius-sm);
+  border: 1px solid var(--fx-color-grey-3);
+  color: var(--fx-theme-color-text);
+}
+
+/* --- Notificação ---------------------------------------------------------- */
+
+.fx-notification {
+  align-items: center;
+  background: var(--fx-notification-bg, var(--fx-color-soft-purple));
+  border: 1px solid var(--fx-notification-border-color, var(--fx-color-soft-purple-2));
+  border-radius: var(--fx-spacing-sm);
+  box-shadow: 0 0 24px 2px rgba(214, 197, 246, .4);
+  color: var(--fx-notification-color, var(--fx-color-black-1));
+  display: flex;
+  gap: var(--fx-spacing-lg);
+  /* inline-size explícito: margem auto no eixo cruzado cancela o stretch
+     do flex e o bloco encolheria para o tamanho do conteúdo. */
+  inline-size: 100%;
+  margin-inline: auto;
+  max-inline-size: var(--fx-width-desktop-content-lg);
+  min-block-size: 48px;
+  padding: var(--fx-spacing-xl);
+  position: relative;
+}
+.fx-notification-heading {
+  font-family: var(--fx-font-family-headline);
+  font-size: var(--fx-font-size-body-sm);
+  font-weight: var(--fx-font-weight-semibold);
+  line-height: 1.1;
+}
+.fx-notification-content { flex: 1; font-size: var(--fx-font-size-body-xs); line-height: 1.4; }
+.fx-notification.is-purple {
+  --fx-notification-bg: var(--fx-color-light-purple);
+  --fx-notification-color: var(--fx-color-white);
+  --fx-notification-border-color: var(--fx-color-grey-2);
+}
+.fx-notification.is-red    { --fx-notification-bg: var(--fx-color-soft-red);    --fx-notification-color: var(--fx-color-black-4); --fx-notification-border-color: var(--fx-color-secondary-red); }
+.fx-notification.is-green  { --fx-notification-bg: var(--fx-color-soft-green);  --fx-notification-color: var(--fx-color-black-4); --fx-notification-border-color: var(--fx-color-secondary-green); }
+.fx-notification.is-orange { --fx-notification-bg: var(--fx-color-soft-orange); --fx-notification-color: var(--fx-color-black-4); --fx-notification-border-color: var(--fx-color-secondary-orange); }
+
+/* --- Rodapé --------------------------------------------------------------- */
+
+.fx-footer {
+  background-color: var(--fx-color-dark-purple);
+  color: var(--fx-color-white);
+  inline-size: 100%;
+  padding: var(--fx-layout-md) var(--fx-spacing-xl);
+}
+.fx-footer-inner { margin: 0 auto; max-inline-size: var(--fx-width-desktop-layout); }
+.fx-footer a:link, .fx-footer a:visited { color: var(--fx-color-white); text-decoration: none; }
+.fx-footer a:hover { text-decoration: underline; }
+
+/* ==========================================================================
+   Andaimes só da demonstração (não fazem parte do Flare)
+   ========================================================================== */
+
+.demo-label {
+  color: var(--fx-theme-color-link-fade);
+  font-family: var(--fx-font-family-text);
+  font-size: var(--fx-font-size-body-2xs);
+  font-weight: var(--fx-font-weight-medium);
+  letter-spacing: .06em;
+  margin-block-end: var(--fx-spacing-lg);
+  text-transform: uppercase;
+}
+
+.demo-swatches { display: grid; gap: var(--fx-spacing-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 600px) { .demo-swatches { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.demo-swatch {
+  border: 1px solid var(--fx-subtle-border-color);
+  border-radius: var(--fx-radius-xs);
+  overflow: hidden;
+}
+.demo-swatch-chip { block-size: 72px; }
+.demo-swatch-meta { font-size: var(--fx-font-size-body-2xs); line-height: 1.4; padding: var(--fx-spacing-md); }
+.demo-swatch-meta b { display: block; font-weight: var(--fx-font-weight-semibold); }
+.demo-swatch-meta code { background: none; padding: 0; }
+.demo-swatch-meta span { color: var(--fx-theme-color-link-fade); display: block; }
+
+.demo-scale-row { align-items: baseline; border-block-end: var(--fx-theme-divider); display: flex; flex-wrap: wrap; gap: var(--fx-spacing-lg); padding-block: var(--fx-spacing-md); }
+.demo-scale-row > code { flex: 0 0 auto; min-inline-size: 130px; }
+
+.demo-grid-2 { display: grid; gap: var(--fx-spacing-2xl); grid-template-columns: 1fr; }
+@media (min-width: 900px) { .demo-grid-2 { grid-template-columns: 1fr 1fr; } }
+
+.demo-stack { display: flex; flex-direction: column; gap: var(--fx-spacing-2xl); }
+
+.demo-divider { border: none; border-block-start: var(--fx-theme-divider); margin-block: var(--fx-layout-md-half); }
+
+.demo-note {
+  background: var(--fx-theme-code-background);
+  border-radius: var(--fx-radius-2xs);
+  font-size: var(--fx-font-size-body-xs);
+  padding: var(--fx-spacing-lg);
+}
+.demo-note p:last-child { margin-block-end: 0; }
+
+.demo-theme-toggle {
+  --fx-button-bg-color: transparent;
+  --fx-button-border-color: var(--fx-color-light-purple);
+  --fx-button-text-color: var(--fx-theme-color-text);
+  --fx-button-bg-color-hover: var(--fx-color-light-purple);
+  --fx-button-text-color-hover: var(--fx-color-white);
+}
+</style>
+</head>
+
+<body>
+
+<header class="fx-header">
+  <div class="fx-header-inner">
+    <span class="fx-wordmark">Flare</span>
+    <button type="button" class="fx-button is-small demo-theme-toggle" id="theme-toggle" aria-live="polite">
+      Tema: escuro
+    </button>
+  </div>
+</header>
+
+<main class="fx-main has-gradient-bottom">
+
+  <!-- ================= NOTIFICAÇÃO ================= -->
+  <section class="fx-section">
+    <div class="fx-section-container is-narrow">
+      <div class="fx-notification is-purple">
+        <div class="fx-notification-content">
+          <div class="fx-notification-heading">Design system extraído do firefox.com</div>
+          <p style="margin:0">Bundle <code>flare.291dd4638f30.css</code> · extração em 01/09/2026 · fontes trocadas por substitutas livres.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= HERO ================= -->
+  <section class="fx-section">
+    <div class="fx-section-container is-narrow">
+      <div class="fx-heading-group">
+        <p class="fx-superheading">Design system Firefox</p>
+        <h1 class="fx-heading-xl">Roxo, títulos condensados e um raio de 128&nbsp;px.</h1>
+      </div>
+      <p class="fx-body-md">
+        O sistema inteiro se apoia em duas camadas de token: primitivos crus
+        (<code>--fx-color-*</code>) e semânticos (<code>--fx-theme-*</code>). O componente só
+        conhece a segunda camada — por isso o tema escuro troca a página inteira sem
+        tocar em uma linha de componente.
+      </p>
+      <div class="fx-buttons">
+        <a href="#botoes" class="fx-button">Ver os botões</a>
+        <a href="#cores" class="fx-button is-secondary">Ver a paleta</a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="demo-divider">
+
+  <!-- ================= CORES ================= -->
+  <section class="fx-section" id="cores">
+    <div class="fx-section-container is-narrow demo-stack">
+      <div>
+        <h2 class="fx-heading-lg">Cores</h2>
+        <p class="fx-body-sm">Roxo é o eixo. Toda ação, todo link, todo estado de foco sai desta escala.</p>
+      </div>
+
+      <div>
+        <p class="demo-label">Roxo — ação e superfície</p>
+        <div class="demo-swatches">
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#7543e3"></div><div class="demo-swatch-meta"><b>light-purple</b><code>#7543e3</code><span>ação primária, foco</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#6132bc"></div><div class="demo-swatch-meta"><b>link-purple</b><code>#6132bc</code><span>hover, cor de link</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#4c2489"></div><div class="demo-swatch-meta"><b>medium-purple</b><code>#4c2489</code><span>superfície no escuro</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#3a0f6e"></div><div class="demo-swatch-meta"><b>purple</b><code>#3a0f6e</code><span>estado :active</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#210340"></div><div class="demo-swatch-meta"><b>dark-purple</b><code>#210340</code><span>fundo escuro, rodapé</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#0c0117"></div><div class="demo-swatch-meta"><b>dark-purple-3</b><code>#0c0117</code><span>fundo mais fundo</span></div></div>
+        </div>
+      </div>
+
+      <div>
+        <p class="demo-label">Roxo claro — superfície e texto no escuro</p>
+        <div class="demo-swatches">
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#f1e7f8"></div><div class="demo-swatch-meta"><b>soft-purple</b><code>#f1e7f8</code><span>superfície, divisor</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#e4d8fc"></div><div class="demo-swatch-meta"><b>soft-purple-2</b><code>#e4d8fc</code><span>código, desabilitado</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#dfc9ff"></div><div class="demo-swatch-meta"><b>soft-purple-3</b><code>#dfc9ff</code><span>fundo de ícone</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#c7a8ff"></div><div class="demo-swatch-meta"><b>soft-purple-4</b><code>#c7a8ff</code><span>link/marca no escuro</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#ae8aff"></div><div class="demo-swatch-meta"><b>soft-purple-5</b><code>#ae8aff</code><span>desabilitado no escuro</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#ae89ff"></div><div class="demo-swatch-meta"><b>nav-icon-purple</b><code>#ae89ff</code><span>ícone de navegação</span></div></div>
+        </div>
+      </div>
+
+      <div>
+        <p class="demo-label">Neutros</p>
+        <div class="demo-swatches">
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#15141a"></div><div class="demo-swatch-meta"><b>black-4</b><code>#15141a</code><span>texto no claro</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#23222b"></div><div class="demo-swatch-meta"><b>black-2</b><code>#23222b</code><span>ghost :active</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#42414d"></div><div class="demo-swatch-meta"><b>black-1</b><code>#42414d</code><span>texto de rótulo</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#7b7a82"></div><div class="demo-swatch-meta"><b>grey-3</b><code>#7b7a82</code><span>texto apagado, borda</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#e8e8e8"></div><div class="demo-swatch-meta"><b>grey-2</b><code>#e8e8e8</code><span>borda sutil no claro</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#f9f9fb"></div><div class="demo-swatch-meta"><b>grey-1</b><code>#f9f9fb</code><span>superfície neutra</span></div></div>
+        </div>
+      </div>
+
+      <div>
+        <p class="demo-label">Quentes e semânticas</p>
+        <div class="demo-swatches">
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#fcf5f0"></div><div class="demo-swatch-meta"><b>cream</b><code>#fcf5f0</code><span>card de passo</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#deffd6"></div><div class="demo-swatch-meta"><b>soft-green</b><code>#deffd6</code><span>notificação sucesso</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#fff2e5"></div><div class="demo-swatch-meta"><b>soft-orange</b><code>#fff2e5</code><span>notificação aviso</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#ffeae9"></div><div class="demo-swatch-meta"><b>soft-red</b><code>#ffeae9</code><span>notificação erro</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#b40600"></div><div class="demo-swatch-meta"><b>error-red</b><code>#b40600</code><span>erro no claro</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:#ff453f"></div><div class="demo-swatch-meta"><b>secondary-red</b><code>#ff453f</code><span>erro no escuro</span></div></div>
+        </div>
+      </div>
+
+      <div>
+        <p class="demo-label">Gradientes</p>
+        <div class="demo-swatches">
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:linear-gradient(90deg,#ffeb49,#f60 50%,#fb2872)"></div><div class="demo-swatch-meta"><b>gradient-firefox</b><span>marca — só destaque</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:linear-gradient(180deg,#ffeb49 .09%,#f60 120%)"></div><div class="demo-swatch-meta"><b>gradient-gold-button</b><span>botão dourado</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:radial-gradient(122.66% 137.66% at 50% 0%,#ae49ec 0%,#210340 100%)"></div><div class="demo-swatch-meta"><b>gradient-purple</b><span>banner de CTA</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:radial-gradient(74.06% 118.24% at 50% -18.24%,#7543e3 0%,#210340 100%)"></div><div class="demo-swatch-meta"><b>gradient-radial-purple</b><span>banner invertido</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:var(--fx-gradient-blurred-bg)"></div><div class="demo-swatch-meta"><b>gradient-blurred-bg</b><span>brilho de fundo (oklch)</span></div></div>
+          <div class="demo-swatch"><div class="demo-swatch-chip" style="background:linear-gradient(90deg,#e752ff,#271aff)"></div><div class="demo-swatch-meta"><b>gradient-world</b><span>destaque alternativo</span></div></div>
+        </div>
+      </div>
+
+      <div class="demo-note">
+        <p><b>Regra de aplicação.</b> Roxo médio preenchido = ação primária. Roxo escuro = superfície
+        escura e rodapé. Soft purple = superfície clara e borda. O gradiente dourado/laranja é
+        <i>marca Firefox</i>: aparece em um botão de destaque por página e nunca como cor de estado.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="demo-divider">
+
+  <!-- ================= TIPOGRAFIA ================= -->
+  <section class="fx-section" id="tipografia">
+    <div class="fx-section-container is-narrow demo-stack">
+      <div>
+        <h2 class="fx-heading-lg">Tipografia</h2>
+        <p class="fx-body-sm">
+          Duas famílias. Títulos usam o eixo de largura da fonte variável em
+          <code>wdth 75</code> com <code>line-height .9</code> — é isso que dá o aperto
+          característico. Redimensione a janela: a escala tem três degraus (mobile, 600&nbsp;px, 900&nbsp;px).
+        </p>
+      </div>
+
+      <div>
+        <div class="demo-scale-row"><code>heading-2xl</code><span class="fx-heading-2xl fx-heading-condensed">Aa</span></div>
+        <div class="demo-scale-row"><code>heading-xl</code><span class="fx-heading-xl fx-heading-condensed">Título grande</span></div>
+        <div class="demo-scale-row"><code>heading-lg</code><span class="fx-heading-lg fx-heading-condensed">Título de seção</span></div>
+        <div class="demo-scale-row"><code>heading-md</code><span class="fx-heading-md fx-heading-condensed">Subtítulo</span></div>
+        <div class="demo-scale-row"><code>heading-sm</code><span class="fx-heading-sm">Título de cartão</span></div>
+        <div class="demo-scale-row"><code>heading-xs</code><span class="fx-heading-xs">Título menor</span></div>
+        <div class="demo-scale-row"><code>body-lg</code><span class="fx-body-lg">Corpo destacado</span></div>
+        <div class="demo-scale-row"><code>body-md</code><span class="fx-body-md">Corpo padrão de página</span></div>
+        <div class="demo-scale-row"><code>body-sm</code><span class="fx-body-sm">Corpo pequeno (base do html)</span></div>
+        <div class="demo-scale-row"><code>body-xs</code><span class="fx-body-xs">Texto auxiliar</span></div>
+        <div class="demo-scale-row"><code>superheading</code><span class="fx-superheading" style="margin:0">Rótulo acima do título</span></div>
+      </div>
+
+      <div class="demo-grid-2">
+        <div class="demo-note">
+          <p><b>Original.</b> Mozilla Headline VF (títulos) e Mozilla Text VF (corpo), ambas
+          variáveis, pesos 100–900, eixo <code>wdth 75%–125%</code>. São fontes de marca da
+          Mozilla — não usar em material MMT.</p>
+        </div>
+        <div class="demo-note">
+          <p><b>Nesta página.</b> Archivo no lugar da Headline (tem eixo <code>wdth</code>, é o que
+          permite o condensado) e Inter no lugar da Text — que já é a fonte da marca MMT.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="demo-divider">
+
+  <!-- ================= BOTÕES ================= -->
+  <section class="fx-section" id="botoes">
+    <div class="fx-section-container is-narrow demo-stack">
+      <div>
+        <h2 class="fx-heading-lg">Botões</h2>
+        <p class="fx-body-sm">
+          Um componente só, dirigido por variáveis <code>--fx-button-*</code>. Cada variante
+          reescreve variáveis, não propriedades. Raio 128&nbsp;px (pílula), borda de 2&nbsp;px sempre
+          presente — transparente no primário, para que a troca de variante não mexa no tamanho.
+        </p>
+      </div>
+
+      <div>
+        <p class="demo-label">Variantes</p>
+        <div class="fx-buttons">
+          <button type="button" class="fx-button">Primário</button>
+          <button type="button" class="fx-button is-secondary">Secundário</button>
+          <button type="button" class="fx-button is-ghost">Ghost</button>
+          <button type="button" class="fx-button is-gold">Dourado</button>
+          <button type="button" class="fx-button is-link">Link</button>
+        </div>
+      </div>
+
+      <div>
+        <p class="demo-label">Tamanhos — small / medium / large</p>
+        <div class="fx-buttons" style="align-items:center">
+          <button type="button" class="fx-button is-small">Small</button>
+          <button type="button" class="fx-button is-medium">Medium</button>
+          <button type="button" class="fx-button is-large">Large</button>
+        </div>
+      </div>
+
+      <div>
+        <p class="demo-label">Estados — passe o mouse, segure, dê Tab</p>
+        <div class="fx-buttons">
+          <button type="button" class="fx-button">Normal</button>
+          <button type="button" class="fx-button" disabled>Desabilitado</button>
+          <button type="button" class="fx-button is-secondary">Normal</button>
+          <button type="button" class="fx-button is-secondary" disabled>Desabilitado</button>
+          <button type="button" class="fx-button is-ghost">Normal</button>
+          <button type="button" class="fx-button is-ghost" disabled>Desabilitado</button>
+        </div>
+      </div>
+
+      <div class="demo-note">
+        <p><b>Foco.</b> <code>outline: 2px solid</code> na cor da ação com
+        <code>outline-offset: 2px</code> — fora da borda, então funciona igual em qualquer variante.
+        O dourado não muda de cor no hover: ele <i>desliza</i> o gradiente para cima
+        (<code>background-position</code> de −2&nbsp;px para −10&nbsp;px).</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="demo-divider">
+
+  <!-- ================= CARTÕES ================= -->
+  <section class="fx-section" id="cartoes">
+    <div class="fx-section-container is-narrow demo-stack">
+      <div>
+        <h2 class="fx-heading-lg">Cartões</h2>
+        <p class="fx-body-sm">
+          Grade de 1 → 2 → 3 colunas nos mesmos breakpoints da tipografia. No hover o cartão sobe
+          2&nbsp;px e a sombra entra por opacidade.
+        </p>
+      </div>
+
+      <div>
+        <p class="demo-label">Outline — raio 24 px, borda 1 px</p>
+        <div class="fx-card-grid">
+          <article class="fx-card is-outline">
+            <div class="fx-card-content">
+              <p class="fx-superheading" style="margin:0">Privacidade</p>
+              <h3>Privativo por padrão</h3>
+              <p class="fx-body-xs">Bloqueia rastreadores conhecidos automaticamente, sem precisar ajustar configuração.</p>
+            </div>
+          </article>
+          <article class="fx-card is-outline">
+            <div class="fx-card-content">
+              <p class="fx-superheading" style="margin:0">Controle</p>
+              <h3>Do seu jeito</h3>
+              <p class="fx-body-xs">Escolha o mecanismo de busca e ajuste a privacidade como quiser.</p>
+            </div>
+          </article>
+          <article class="fx-card is-outline">
+            <div class="fx-card-content">
+              <p class="fx-superheading" style="margin:0">Foco</p>
+              <h3>Mantenha o ritmo</h3>
+              <p class="fx-body-xs">Modo leitor elimina distração e o Picture-in-Picture mantém o vídeo visível.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div>
+        <p class="demo-label">Filled — raio 48 px, altura mínima 316 px, fundo sempre claro</p>
+        <div class="fx-card-grid">
+          <article class="fx-card is-filled">
+            <div class="fx-card-content">
+              <p class="fx-superheading" style="margin:0">Recurso</p>
+              <h3>Barra vertical de abas</h3>
+              <p class="fx-body-xs">O cartão preenchido mantém fundo claro nos dois temas — é uma superfície fixa, não um card de tema.</p>
+            </div>
+          </article>
+          <article class="fx-card is-filled">
+            <div class="fx-card-content">
+              <p class="fx-superheading" style="margin:0">Recurso</p>
+              <h3>Grupos de abas</h3>
+              <p class="fx-body-xs">Por isso o texto dele é preso em <code>black-4</code> e não no token de tema.</p>
+            </div>
+          </article>
+          <article class="fx-card is-filled">
+            <div class="fx-card-content">
+              <p class="fx-superheading" style="margin:0">Recurso</p>
+              <h3>Perfis separados</h3>
+              <p class="fx-body-xs">No escuro só a borda some; o gradiente de fundo continua o mesmo.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="demo-divider">
+
+  <!-- ================= NOTIFICAÇÕES ================= -->
+  <section class="fx-section" id="notificacoes">
+    <div class="fx-section-container is-narrow demo-stack">
+      <div>
+        <h2 class="fx-heading-lg">Notificações</h2>
+        <p class="fx-body-sm">Mesma estrutura, cor por classe. Raio 8&nbsp;px — bem menor que o resto do sistema, de propósito.</p>
+      </div>
+      <div class="demo-stack" style="gap:var(--fx-spacing-lg)">
+        <div class="fx-notification is-purple"><div class="fx-notification-content"><div class="fx-notification-heading">Roxo</div><p style="margin:0">Informação de produto, atualização.</p></div></div>
+        <div class="fx-notification is-green"><div class="fx-notification-content"><div class="fx-notification-heading">Verde</div><p style="margin:0">Sucesso, confirmação.</p></div></div>
+        <div class="fx-notification is-orange"><div class="fx-notification-content"><div class="fx-notification-heading">Laranja</div><p style="margin:0">Aviso, atenção necessária.</p></div></div>
+        <div class="fx-notification is-red"><div class="fx-notification-content"><div class="fx-notification-heading">Vermelho</div><p style="margin:0">Erro, falha de operação.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="demo-divider">
+
+  <!-- ================= BANNERS ================= -->
+  <section class="fx-section" id="banners">
+    <div class="fx-section-container is-narrow">
+      <h2 class="fx-heading-lg">Banners</h2>
+      <p class="fx-body-sm">O CTA de fundo de página é o gesto mais forte do sistema: raio 128&nbsp;px, respiro interno de 128&nbsp;px e gradiente roxo radial.</p>
+    </div>
+  </section>
+
+  <div class="fx-banner-container">
+    <div class="fx-banner is-bottom-cta">
+      <div class="fx-banner-layout">
+        <div>
+          <p class="fx-superheading">Banner de CTA</p>
+          <h2 class="fx-heading-md fx-heading-condensed" style="margin-block-end:var(--fx-spacing-xl)">Um gesto por página, no fim de tudo.</h2>
+          <div class="fx-buttons is-center">
+            <button type="button" class="fx-button is-gold is-large">Ação principal</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fx-banner-container">
+    <div class="fx-banner is-outlined">
+      <div class="fx-banner-layout">
+        <div>
+          <p class="fx-superheading">Banner contornado</p>
+          <h2 class="fx-heading-md fx-heading-condensed" style="margin-block-end:var(--fx-spacing-xl)">Variante discreta, raio 24 px.</h2>
+          <div class="fx-buttons is-center">
+            <button type="button" class="fx-button is-secondary">Ação secundária</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="fx-footer">
+  <div class="fx-footer-inner">
+    <p class="fx-body-xs" style="margin-block-end:var(--fx-spacing-sm)">
+      Design system Flare — extraído de <a href="https://www.firefox.com/pt-BR/whatsnew/general/">firefox.com</a> em 01/09/2026.
+    </p>
+    <p class="fx-body-xs" style="color:var(--fx-color-soft-purple-4);margin:0">
+      Material de referência interno. Marca, fontes e ilustrações são da Mozilla.
+    </p>
+  </div>
+</footer>
+
+<script>
+// Alternador de tema — prova que a troca acontece só na camada semântica.
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() {
+    btn.textContent = 'Tema: ' + (root.dataset.theme === 'dark' ? 'escuro' : 'claro');
+  }
+  btn.addEventListener('click', function () {
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    label();
+  });
+  label();
+})();
+</script>
+
+</body>
+</html>
