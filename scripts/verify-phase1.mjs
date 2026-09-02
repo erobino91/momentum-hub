@@ -290,8 +290,8 @@ async function main() {
   // Desde a Fase 6, "dashboard configurado" é ter mês publicado. Antes era ter
   // o slug do projeto antigo preenchido, e o slug não aponta mais para nada.
   await sql(`
-    insert into public.dashboard_periods (org_id, period_date, fat_total)
-    values ('${orgA}'::uuid, date '2026-01-01', 1000);
+    insert into public.dashboard_periods (org_id, period_date, fat_total, publicado)
+    values ('${orgA}'::uuid, date '2026-01-01', 1000, true);
   `);
   const proprios = await A(`rpc/modulos_configurados`, {
     method: "POST",
