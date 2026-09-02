@@ -172,6 +172,19 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
   salão + delivery + iFood e grava o resultado em `fat_total`, para a coluna deixar de
   discordar do que o dashboard mostra. Ticket é faturamento ÷ pedidos e nem existe como
   coluna.
+- **Mês publicado é a coluna `publicado`, não "a linha existe".** O sincronizador do Meta
+  cria o mês no dia 1 para ter onde gravar `meta_invest`; com a regra antiga o cliente
+  veria, até alguém fechar, um mês com "R$ 0,00" e "↓ -100,0 %" — porque `n()` do
+  dashboard lê nulo como zero. É a mesma lição do bio (`link_pages.active`): o recurso
+  precisa existir **para valer**. Três coisas seguram isso: **ninguém liga a chave à mão**
+  (`salvarPeriodo` grava `publicado: true` sempre — chave separada é como um mês fechado
+  ficaria invisível sem ninguém notar); **quem esconde o rascunho é a RLS**, não o
+  `.eq("publicado", true)` de `carregarDashboard` — enquanto foi só o app, a regra morava
+  numa linha de um arquivo e a próxima consulta a perderia calada; e **o rascunho nasce
+  com tudo em branco**, com as 19 colunas `default 0` enviadas explicitamente como `null`,
+  senão o formulário de fechamento se pré-preencheria com zeros que ninguém apurou. Quem
+  conta mês para "atrasado" e para o card (`agencia_empresas`, `modulos_configurados`) só
+  conta publicado.
 - **Empresa com `orgs.meta_ad_account_id` não digita Meta.** Os dois campos viram
   `Calculado` no fechamento do mês, e `salvarPeriodo` relê a coluna no banco antes de
   decidir — a marca `origem: "meta"` de `src/lib/periodos.ts` sozinha seria só a tela. A

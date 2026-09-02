@@ -242,10 +242,15 @@ checar(
 console.log("\nIsolamento");
 
 // Empresa com período publicado, para o cliente de teste ter o que ver.
+// `meses` conta só o publicado: rascunho existe na tabela e o cliente **não**
+// pode lê-lo — é o que a checagem logo abaixo afirma.
 const alvo = (await sql(`
-  select o.id, o.name, count(dp.id) as meses
+  select o.id, o.name,
+         count(*) filter (where dp.publicado) as meses,
+         count(*) filter (where not dp.publicado) as rascunhos
   from orgs o join dashboard_periods dp on dp.org_id = o.id
-  group by o.id, o.name order by count(dp.id) desc limit 1;
+  group by o.id, o.name
+  order by count(*) filter (where dp.publicado) desc limit 1;
 `))[0];
 
 const idCliente = await cadastrar(emailCliente);
@@ -263,6 +268,19 @@ try {
   checar(Array.isArray(todos.corpo) && todos.corpo.length === Number(alvo.meses),
     "cliente não vê período de outra empresa",
     `leu ${Array.isArray(todos.corpo) ? todos.corpo.length : todos.status} de ${hub.periodos}`);
+
+  // O sincronizador do Meta cria o mês como rascunho para ter onde gravar. A
+  // policy é que o esconde — enquanto isso dependeu do `.eq("publicado", true)`
+  // de `carregarDashboard`, a próxima consulta escrita por aí perderia a regra
+  // sem dar erro.
+  const rascunhos = await comoCliente(
+    `dashboard_periods?select=id&org_id=eq.${alvo.id}&publicado=is.false`,
+  );
+  checar(Array.isArray(rascunhos.corpo) && rascunhos.corpo.length === 0,
+    "cliente lê 0 rascunhos (mês que a agência ainda não fechou)",
+    `${alvo.rascunhos} rascunho(s) na tabela, cliente leu ${
+      Array.isArray(rascunhos.corpo) ? rascunhos.corpo.length : rascunhos.status
+    }`);
 
   const precos = await comoCliente("pricing_products?select=id");
   checar(Array.isArray(precos.corpo) && precos.corpo.length === 0,
