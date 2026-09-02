@@ -1,9 +1,9 @@
 # Lives Worker
 
 Programa que faz a transmissão de verdade. Roda na máquina sempre-ligada, separado do painel.
-Fala com o Supabase (mesmo banco do dashboard) e sobe um `ffmpeg` por live ativa.
+Fala com o Supabase do hub (mesmo banco do portal) e sobe um `ffmpeg` por live ativa.
 
-> Visão geral do módulo inteiro: ver `../LIVES.md`.
+> Visão geral do módulo inteiro: ver `LIVES.md`, aqui nesta pasta.
 
 ## Pré-requisitos
 - Node.js
