@@ -4,11 +4,19 @@ import { createClient } from "@/lib/supabase/server";
 import { MODULES } from "@/lib/modules";
 import { URL_BIO } from "@/lib/bio/url";
 import { criarPagina } from "@/app/bio/actions";
-import { prepararFila } from "../actions";
+import { prepararFila, salvarContaMeta } from "../actions";
 import { AgenciaShell } from "@/components/shell";
 import { AbasEmpresa } from "@/components/agencia/abas";
 import { Numero } from "@/components/agencia/numero";
-import { BotaoEnviar, Cartao, Selo, botaoEstilo } from "@/components/ui";
+import {
+  Aviso,
+  BotaoEnviar,
+  Campo,
+  Cartao,
+  Entrada,
+  Selo,
+  botaoEstilo,
+} from "@/components/ui";
 import {
   carregarEmpresas,
   mesAtrasado,
@@ -16,6 +24,7 @@ import {
   reaisCurtos,
 } from "@/lib/agencia";
 import type { LinkPage } from "@/types/bio";
+import type { Org } from "@/types/db";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Empresa" };
@@ -29,8 +38,10 @@ export const metadata = { title: "Empresa" };
  */
 export default async function EmpresaPage({
   params,
+  searchParams,
 }: {
   params: { org: string };
+  searchParams: { erro?: string; ok?: string };
 }) {
   const supabase = createClient();
   const { data: ehAgencia } = await supabase.rpc("is_agency");
@@ -45,6 +56,15 @@ export default async function EmpresaPage({
     .select("id, slug, active")
     .eq("org_id", empresa.id)
     .maybeSingle<Pick<LinkPage, "id" | "slug" | "active">>();
+
+  // Fora de `agencia_empresas()`: a RPC monta a lista geral, e uma coluna que
+  // só esta tela usa não tem por que atravessar todas as empresas.
+  const { data: conta } = await supabase
+    .from("orgs")
+    .select("meta_ad_account_id")
+    .eq("id", empresa.id)
+    .maybeSingle<Pick<Org, "meta_ad_account_id">>();
+  const contaMeta = conta?.meta_ad_account_id ?? "";
 
   const atrasado = mesAtrasado(empresa.ultimo_mes);
   const tudoPronto = empresa.dashboard && empresa.bio && empresa.fila;
@@ -76,6 +96,17 @@ export default async function EmpresaPage({
       }
     >
       <AbasEmpresa orgId={empresa.id} ativa="geral" />
+
+      {searchParams.erro ? (
+        <div className="mb-5">
+          <Aviso tom="erro">{searchParams.erro}</Aviso>
+        </div>
+      ) : null}
+      {searchParams.ok ? (
+        <div className="mb-5">
+          <Aviso tom="ok">Salvo.</Aviso>
+        </div>
+      ) : null}
 
       <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         <Numero
@@ -204,6 +235,50 @@ export default async function EmpresaPage({
           >
             Abrir o CMV
           </a>
+        </Cartao>
+      </div>
+
+      <div className="mt-5">
+        <Cartao
+          titulo="Conta de anúncio do Meta"
+          descricao={
+            contaMeta
+              ? "Investimento e vendas do bloco Meta Ads vêm da API — no fechamento do mês os dois campos ficam só de leitura."
+              : "Sem conta vinculada, os dois campos de Meta continuam sendo digitados no fechamento do mês."
+          }
+          acao={
+            <Selo tom={contaMeta ? "pronto" : "atencao"}>
+              {contaMeta ? "sincronizado" : "manual"}
+            </Selo>
+          }
+        >
+          <form action={salvarContaMeta} className="flex flex-wrap items-end gap-3">
+            <input type="hidden" name="org_id" value={empresa.id} />
+            <input
+              type="hidden"
+              name="destino"
+              value={`/agencia/${empresa.id}`}
+            />
+            <Campo
+              rotulo="Conta de anúncio"
+              ajuda="Só números. Pode colar com o act_ na frente; ele sai sozinho."
+              className="w-full sm:w-72"
+            >
+              <Entrada
+                name="meta_ad_account_id"
+                defaultValue={contaMeta}
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="act_2716559871841971"
+                className="tabular"
+              />
+            </Campo>
+            <div className="pb-6">
+              <BotaoEnviar variante="secundario" tamanho="sm" pendente="Salvando…">
+                Salvar
+              </BotaoEnviar>
+            </div>
+          </form>
         </Cartao>
       </div>
 

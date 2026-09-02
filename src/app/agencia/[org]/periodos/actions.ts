@@ -35,9 +35,43 @@ export async function salvarPeriodo(formData: FormData) {
   const mes = primeiroDiaDoMes(String(formData.get("period_date") ?? ""));
   if (!mes) voltar(orgId, "Mês inválido.");
 
-  const linha: Record<string, unknown> = { org_id: orgId, period_date: mes };
+  // Quem manda nos campos de Meta é o banco, não o formulário: a tela some com
+  // os dois quando a empresa tem conta vinculada. Reler aqui é o que impede um
+  // envio montado à mão de zerar o que a API preencheu.
+  const { data: org } = await supabase
+    .from("orgs")
+    .select("meta_ad_account_id")
+    .eq("id", orgId)
+    .maybeSingle<{ meta_ad_account_id: string | null }>();
+  const metaSincronizado = Boolean(org?.meta_ad_account_id);
+
+  // Mês que ainda não existe entra pelo `insert` do upsert, e ali coluna
+  // omitida não fica em branco: pega o `default 0` da tabela, e o cliente veria
+  // "R$ 0,00 investido" até alguém rodar o sincronizador. Por isso o valor
+  // atual é lido e reenviado — `null` quando não há mês, o que é o mesmo que a
+  // tela mostrava antes de existir integração.
+  const { data: existente } = metaSincronizado
+    ? await supabase
+        .from("dashboard_periods")
+        .select("meta_invest,meta_vendas")
+        .eq("org_id", orgId)
+        .eq("period_date", mes)
+        .maybeSingle<Record<string, number | null>>()
+    : { data: null };
+
+  // Publicar é o próprio ato de salvar o fechamento — não existe chave separada
+  // para alguém esquecer de virar. Rascunho é só o que o sincronizador criou e
+  // ninguém fechou ainda.
+  const linha: Record<string, unknown> = {
+    org_id: orgId,
+    period_date: mes,
+    publicado: true,
+  };
   for (const campo of CAMPOS_PERIODO) {
-    linha[campo.coluna] = numero(formData.get(campo.coluna));
+    linha[campo.coluna] =
+      campo.origem === "meta" && metaSincronizado
+        ? (existente?.[campo.coluna] ?? null)
+        : numero(formData.get(campo.coluna));
   }
   linha.obs_raw = String(formData.get("obs_raw") ?? "").trim() || null;
   linha.obs_polished = String(formData.get("obs_polished") ?? "").trim() || null;

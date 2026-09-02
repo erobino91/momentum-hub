@@ -8,6 +8,8 @@ export type Org = {
   slug: string;
   logo_url: string | null;
   primary_color: string | null;
+  /** Conta de anúncio do Meta, **sem** o `act_`. Vazio = Meta digitado à mão. */
+  meta_ad_account_id: string | null;
   created_at: string;
 };
 
@@ -47,6 +49,11 @@ export type DashboardPeriod = {
   id: string;
   org_id: string;
   period_date: string;
+  /**
+   * O cliente vê este mês. Nasce `false` na linha criada pelo sincronizador do
+   * Meta e vira `true` ao salvar o fechamento — não há chave para ligar à mão.
+   */
+  publicado: boolean;
   fat_total: number | null;
   fat_proprio: number | null;
   fat_ifood: number | null;

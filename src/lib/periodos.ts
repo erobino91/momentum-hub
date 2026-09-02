@@ -12,6 +12,12 @@ export type CampoPeriodo = {
   coluna: string;
   rotulo: string;
   tipo: TipoCampo;
+  /**
+   * De onde o número vem quando a empresa está vinculada a uma conta de
+   * anúncio. Campo com `origem` não é digitado nem gravado pelo formulário —
+   * quem escreve é o sincronizador.
+   */
+  origem?: "meta";
 };
 
 export type GrupoPeriodo = {
@@ -79,8 +85,12 @@ export const GRUPOS_PERIODO: GrupoPeriodo[] = [
   {
     titulo: "Meta Ads",
     campos: [
-      dinheiro("meta_invest", "Investimento"),
-      dinheiro("meta_vendas", "Vendas"),
+      // Empresa com conta de anúncio vinculada não digita estes dois: eles vêm
+      // da Graph API. A marca importa porque a action grava **todas** as
+      // colunas desta lista e campo em branco vira `null` — publicar o mês com
+      // os campos vazios apagaria o que o sincronizador escreveu, sem avisar.
+      { ...dinheiro("meta_invest", "Investimento"), origem: "meta" },
+      { ...dinheiro("meta_vendas", "Vendas"), origem: "meta" },
     ],
   },
   {

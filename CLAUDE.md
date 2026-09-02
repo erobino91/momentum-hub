@@ -172,6 +172,16 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
   salão + delivery + iFood e grava o resultado em `fat_total`, para a coluna deixar de
   discordar do que o dashboard mostra. Ticket é faturamento ÷ pedidos e nem existe como
   coluna.
+- **Empresa com `orgs.meta_ad_account_id` não digita Meta.** Os dois campos viram
+  `Calculado` no fechamento do mês, e `salvarPeriodo` relê a coluna no banco antes de
+  decidir — a marca `origem: "meta"` de `src/lib/periodos.ts` sozinha seria só a tela. A
+  trava existe porque a action grava **todas** as colunas de `CAMPOS_PERIODO` e campo em
+  branco vira `null`: publicar o mês depois de sincronizar apagaria o Meta em silêncio.
+  E, no mês que ainda não existe, o valor atual é relido e reenviado em vez de omitido —
+  coluna omitida num `insert` não fica em branco, pega o `default 0` da tabela, e o
+  cliente veria "R$ 0,00 investido" até alguém rodar o sincronizador. Quem escreve é o
+  `sync-meta.mjs` da integração; para voltar a digitar, é remover a conta na tela da
+  empresa.
 - **`fat_proprio` ("Cardápio próprio") não é lido por tela nenhuma** — nem no dashboard do
   cliente, nem no painel. Continua sendo coletado; se um dia ninguém sentir falta, é
   candidato a sair.

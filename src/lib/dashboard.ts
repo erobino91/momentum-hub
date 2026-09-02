@@ -124,10 +124,14 @@ export async function carregarDashboard(
 
   // A RLS de `dashboard_periods` já barra org alheia — o `.eq` é para a agência,
   // que enxerga todas e precisa escolher uma.
+  // `publicado` é o que separa o mês fechado do rascunho que o sincronizador do
+  // Meta cria no dia 1: sem este filtro o cliente veria o mês em construção com
+  // faturamento R$ 0,00 e queda de 100%, porque `n()` lê nulo como zero.
   const { data: linhas, error } = await supabase
     .from("dashboard_periods")
     .select(COLUNAS)
     .eq("org_id", orgId)
+    .eq("publicado", true)
     .order("period_date")
     .returns<Record<string, unknown>[]>();
   if (error) return { ok: false, motivo: "erro" };

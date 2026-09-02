@@ -100,6 +100,40 @@ export async function salvarSlugDashboard(formData: FormData) {
 }
 
 /**
+ * Vincula a empresa a uma conta de anúncio do Meta.
+ *
+ * É coluna em `orgs`, não chave em `module_config.config`: quem lê isto não é
+ * só a tela do dashboard — é o `sync-meta.mjs` da integração, que varre as
+ * empresas todas e precisa perguntar "quais têm Meta" numa consulta só.
+ *
+ * Guarda o id **sem** `act_`, mas aceita colar com. O Gerenciador de Anúncios
+ * mostra `act_123…` na URL e `123…` na lista de contas; exigir uma das duas
+ * formas seria transformar um copiar-colar em erro de digitação.
+ *
+ * Campo vazio desvincula, e desvincular devolve os dois campos de Meta ao
+ * fechamento manual do mês.
+ */
+export async function salvarContaMeta(formData: FormData) {
+  const supabase = await exigirAgencia();
+  const orgId = String(formData.get("org_id") ?? "");
+  const destino = String(formData.get("destino") ?? "/agencia");
+  if (!orgId) voltar("Empresa inválida.", destino);
+
+  const digitado = String(formData.get("meta_ad_account_id") ?? "").trim();
+  const conta = digitado.replace(/^act_/i, "");
+  if (conta && !/^\d{5,}$/.test(conta))
+    voltar("A conta de anúncio é só números (com ou sem act_).", destino);
+
+  const { error } = await supabase
+    .from("orgs")
+    .update({ meta_ad_account_id: conta || null })
+    .eq("id", orgId);
+
+  if (error) voltar("Não foi possível salvar a conta de anúncio.", destino);
+  voltar(undefined, destino);
+}
+
+/**
  * Prepara a Fila de Espera de um cliente: cria o restaurante e dá acesso ao
  * dono no portal.
  *

@@ -42,6 +42,7 @@ export function FormularioPeriodo({
   editando,
   obsRaw,
   obsPolished,
+  metaSincronizado,
   cancelar,
 }: {
   orgId: string;
@@ -56,6 +57,8 @@ export function FormularioPeriodo({
   editando: string | null;
   obsRaw: string;
   obsPolished: string;
+  /** A empresa tem conta de anúncio vinculada: o Meta não se digita. */
+  metaSincronizado: boolean;
   cancelar: React.ReactNode;
 }) {
   const [valores, setValores] = useState<Record<string, string>>(valoresIniciais);
@@ -79,14 +82,20 @@ export function FormularioPeriodo({
     return cima / baixo;
   };
 
+  // Campo que a empresa não digita não entra na conta de "quantos faltam" —
+  // nem o total de faturamento, nem o Meta de quem tem conta vinculada.
+  const digitavel = (campo: CampoPeriodo) =>
+    campo.coluna !== "fat_total" && !(campo.origem === "meta" && metaSincronizado);
+
   const preenchidos = useMemo(
     () =>
       CAMPOS_PERIODO.filter(
-        (c) => c.coluna !== "fat_total" && paraNumero(valores[c.coluna] ?? "") !== null,
+        (c) => digitavel(c) && paraNumero(valores[c.coluna] ?? "") !== null,
       ).length,
-    [valores],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [valores, metaSincronizado],
   );
-  const total = CAMPOS_PERIODO.length - 1; // o total de faturamento é calculado
+  const total = CAMPOS_PERIODO.filter(digitavel).length;
 
   const [abertos, setAbertos] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
@@ -133,7 +142,8 @@ export function FormularioPeriodo({
       <div className="space-y-2.5 pb-2">
         {GRUPOS_PERIODO.map((grupo) => {
           const campos = grupo.campos.filter((c) => c.coluna !== "fat_total");
-          const comValor = campos.filter(
+          const aDigitar = campos.filter(digitavel);
+          const comValor = aDigitar.filter(
             (c) => paraNumero(valores[c.coluna] ?? "") !== null,
           ).length;
           const aberto = abertos[grupo.titulo];
@@ -159,7 +169,9 @@ export function FormularioPeriodo({
                 </span>
                 <span className="text-sm font-semibold">{grupo.titulo}</span>
                 <span className="ml-auto text-xs tabular text-dim">
-                  {comValor} de {campos.length}
+                  {aDigitar.length === 0
+                    ? "vem do Meta"
+                    : `${comValor} de ${aDigitar.length}`}
                 </span>
               </summary>
 
@@ -167,23 +179,43 @@ export function FormularioPeriodo({
                 {grupo.ajuda ? (
                   <p className="mb-3 text-xs text-dim">{grupo.ajuda}</p>
                 ) : null}
+                {aDigitar.length === 0 ? (
+                  <p className="mb-3 text-xs text-dim">
+                    Vem da conta de anúncio vinculada. Para voltar a digitar,
+                    remova a conta na aba Geral.
+                  </p>
+                ) : null}
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {campos.map((campo) => (
                     <Fragment key={campo.coluna}>
-                      <CampoNumero
-                        campo={campo}
-                        valor={valores[campo.coluna] ?? ""}
-                        sugestao={
-                          anterior && mesAnterior
-                            ? anterior[campo.coluna] || null
-                            : null
-                        }
-                        mesAnterior={mesAnterior}
-                        aoMudar={(v) =>
-                          setValores((atual) => ({ ...atual, [campo.coluna]: v }))
-                        }
-                      />
+                      {digitavel(campo) ? (
+                        <CampoNumero
+                          campo={campo}
+                          valor={valores[campo.coluna] ?? ""}
+                          sugestao={
+                            anterior && mesAnterior
+                              ? anterior[campo.coluna] || null
+                              : null
+                          }
+                          mesAnterior={mesAnterior}
+                          aoMudar={(v) =>
+                            setValores((atual) => ({ ...atual, [campo.coluna]: v }))
+                          }
+                        />
+                      ) : (
+                        // Mesmo tratamento do faturamento total e do ticket
+                        // médio: o que não se digita não vira campo de texto.
+                        <Calculado
+                          rotulo={campo.rotulo}
+                          valor={
+                            valoresIniciais[campo.coluna]
+                              ? `R$ ${valoresIniciais[campo.coluna]}`
+                              : "—"
+                          }
+                          ajuda="Vem do Meta."
+                        />
+                      )}
                       {/* O total entra logo depois das três partes que ele soma. */}
                       {campo.coluna === "fat_ifood" ? (
                         <Calculado

@@ -51,9 +51,9 @@ export default async function PeriodosPage({
 
   const { data: org } = await supabase
     .from("orgs")
-    .select("id,name,slug")
+    .select("id,name,slug,meta_ad_account_id")
     .eq("id", params.org)
-    .maybeSingle<Pick<Org, "id" | "name" | "slug">>();
+    .maybeSingle<Pick<Org, "id" | "name" | "slug" | "meta_ad_account_id">>();
   if (!org) redirect("/agencia");
 
   const { data: periodos } = await supabase
@@ -64,23 +64,35 @@ export default async function PeriodosPage({
     .returns<DashboardPeriod[]>();
 
   const lista = periodos ?? [];
+  const publicados = lista.filter((p) => p.publicado);
+  // Rascunhos são os meses que o sincronizador do Meta criou e ninguém fechou.
+  // Do mais antigo para o mais novo: quem está esperando há mais tempo primeiro.
+  const rascunhos = lista
+    .filter((p) => !p.publicado)
+    .sort((a, b) => a.period_date.localeCompare(b.period_date));
+
   const mesEditado = searchParams.mes ? primeiroDiaDoMes(searchParams.mes) : null;
+  // Sem mês na URL, a tela abre no rascunho mais antigo: é o mês que já tem o
+  // Meta dentro e só espera o faturamento. Deixar a tela em branco enquanto um
+  // rascunho existe é como ele ficaria esquecido.
   const emEdicao = mesEditado
     ? (lista.find((p) => p.period_date === mesEditado) ?? null)
-    : null;
+    : (rascunhos[0] ?? null);
 
-  // Mês novo sugerido: o seguinte ao último fechado, ou o mês corrente.
+  // Mês novo sugerido: o seguinte ao último **fechado**, ou o mês corrente.
   const proximo = (() => {
-    if (!lista.length) return new Date().toISOString().slice(0, 7);
-    const [ano, mes] = lista[0].period_date.split("-").map(Number);
+    if (!publicados.length) return new Date().toISOString().slice(0, 7);
+    const [ano, mes] = publicados[0].period_date.split("-").map(Number);
     return new Date(Date.UTC(ano, mes, 1)).toISOString().slice(0, 7);
   })();
 
   // O mês imediatamente anterior ao que está sendo mexido — só para sugerir
   // valor embaixo de cada campo.
+  // Sugestão embaixo do campo: só mês fechado serve de referência — rascunho
+  // tem faturamento vazio e sugeriria em branco.
   const anterior = emEdicao
-    ? (lista.find((p) => p.period_date < emEdicao.period_date) ?? null)
-    : (lista[0] ?? null);
+    ? (publicados.find((p) => p.period_date < emEdicao.period_date) ?? null)
+    : (publicados[0] ?? null);
 
   const totalDe = (p: DashboardPeriod) =>
     Number(p.fat_mesa ?? 0) + Number(p.fat_delivery ?? 0) + Number(p.fat_ifood ?? 0);
@@ -94,7 +106,11 @@ export default async function PeriodosPage({
         { rotulo: "Resultados" },
       ]}
       titulo={
-        emEdicao ? `Editando ${nomeDoMes(emEdicao.period_date)}` : "Fechamento do mês"
+        !emEdicao
+          ? "Fechamento do mês"
+          : emEdicao.publicado
+            ? `Editando ${nomeDoMes(emEdicao.period_date)}`
+            : `Fechando ${nomeDoMes(emEdicao.period_date)}`
       }
       acoes={
         <Link
@@ -130,6 +146,7 @@ export default async function PeriodosPage({
             editando={emEdicao?.period_date ?? null}
             obsRaw={emEdicao?.obs_raw ?? ""}
             obsPolished={emEdicao?.obs_polished ?? ""}
+            metaSincronizado={Boolean(org.meta_ad_account_id)}
             cancelar={
               emEdicao ? (
                 <Link
@@ -145,9 +162,23 @@ export default async function PeriodosPage({
 
         {/* ── Meses já publicados ─────────────────────────────────────── */}
         <aside className="lg:order-2">
+          {rascunhos.length ? (
+            <div className="mb-3">
+              <Aviso tom="atencao">
+                {rascunhos.length === 1
+                  ? `${nomeDoMes(rascunhos[0].period_date)} já está com o Meta preenchido e espera o faturamento.`
+                  : `${rascunhos.length} meses já estão com o Meta preenchido e esperam o faturamento.`}
+              </Aviso>
+            </div>
+          ) : null}
+
           <Cartao
             titulo="Meses publicados"
-            acao={<Selo tom={lista.length ? "pronto" : "atencao"}>{lista.length}</Selo>}
+            acao={
+              <Selo tom={publicados.length ? "pronto" : "atencao"}>
+                {publicados.length}
+              </Selo>
+            }
           >
             {lista.length === 0 ? (
               <Vazio
@@ -172,8 +203,12 @@ export default async function PeriodosPage({
                         <span className="block text-sm font-medium">
                           {nomeDoMes(p.period_date)}
                         </span>
+                        {/* Rascunho não mostra faturamento: mostraria R$ 0,00,
+                            que é justamente o número que ainda não existe. */}
                         <span className="block text-xs tabular text-dim">
-                          R$ {formatarDinheiro(totalDe(p))}
+                          {p.publicado
+                            ? `R$ ${formatarDinheiro(totalDe(p))}`
+                            : "aguardando fechamento"}
                         </span>
                       </Link>
                       <ConfirmarAcao
