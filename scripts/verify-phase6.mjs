@@ -37,7 +37,12 @@ const ANON = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const TOKEN_GESTAO = readFileSync(join(raiz, ".supabase-token.txt"), "utf8").trim();
 const REF = new globalThis.URL(URL_BASE).hostname.split(".")[0];
 
-// Projeto antigo: a chave está no .env do worker das lives.
+// Projeto antigo: a chave ficava no `.env.projeto-antigo` do worker das lives, em
+// `dashboard-agencia/lives-worker/`. O worker virou `momentum-hub/worker/` na limpeza de
+// set/26 e esse arquivo não veio junto — a credencial do projeto antigo não existe mais em
+// disco. O caminho continua aqui porque a leitura é `try`/`catch`: some ele, e a comparação
+// com o projeto antigo passa a ser `pulado` para sempre, que é o fim de linha previsto logo
+// abaixo ("projeto apagado — nada com que comparar"). Para reativar, é repor o arquivo.
 const ENV_WORKER = join(raiz, "..", "dashboard-agencia", "lives-worker", ".env.projeto-antigo");
 const antigo = (() => {
   try {

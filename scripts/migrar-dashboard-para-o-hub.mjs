@@ -18,6 +18,12 @@
  *
  * Credenciais saem de disco — `dashboard-agencia/lives-worker/.env` (origem) e
  * `momentum-hub/.env.local` (destino). Nada é impresso.
+ *
+ * **Gasto: não roda mais.** A Fase 6 já copiou tudo. O `.env` de origem morava no worker
+ * das lives, que virou `momentum-hub/worker/` na limpeza de set/26 — e mesmo antes disso ele
+ * já tinha sido repontado para o projeto do hub, então `origem` e `destino` seriam o mesmo
+ * lugar. Fica no repo como registro de o que foi copiado e sob que regra; para rodar de novo
+ * seria preciso repor a credencial do projeto antigo, que não está em disco em lugar nenhum.
  */
 
 import { readFileSync } from "node:fs";

@@ -57,7 +57,7 @@ O cookie de sessão viaja sozinho. Zero rota de handoff, zero JWT customizado.
 - O **CMV NÃO precisa migrar de banco** — ele só usa o Supabase para saber *quem é* o usuário; os
   dados continuam no Neon.
 - **Vercel resolve toda a hospedagem. O hub não precisa de VPS.** VPS só entra (opcional, à parte)
-  para o `lives-worker`.
+  para o worker das lives (`worker/`).
 
 ---
 
@@ -429,7 +429,8 @@ de morrer no meio: o que ele tem de mais importante — RLS, isolamento, bucket 
 dessa parte.
 
 ### Fase 7 — VPS das Lives (separado, NÃO bloqueia o hub)
-O hub não precisa de VPS. O que precisa de máquina 24/7 é o `lives-worker` (ffmpeg RTMPS), hoje refém
+O hub não precisa de VPS. O que precisa de máquina 24/7 é o worker das lives — `worker/` neste repo
+desde set/26, antes `dashboard-agencia/lives-worker/` — (ffmpeg RTMPS), hoje refém
 da máquina do Luis estar ligada — mesmo problema que o `oracle-sniper` tentou e falhou (514 tentativas,
 sem capacidade, encerrado 17/07). Recomendação: alugar VPS barato (Hetzner CX22 ~€4/mês ou Contabo),
 subir com `pm2` + systemd. Bônus (já previsto em `dashboard-agencia/LIVES.md`): IP dedicado em vez de

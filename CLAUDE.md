@@ -51,7 +51,7 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   `pricing_config`, `live_materials` e `live_sessions` têm policy `is_agency()` sem ramo de
   org: nenhuma tela de cliente lê essas tabelas. `live_sessions.stream_key` é a chave da
   transmissão do Instagram do cliente — não entra em `select` de página nenhuma; quem
-  precisa dela é o `lives-worker`, que lê com a chave secreta.
+  precisa dela é o worker (`worker/` neste repo desde set/26), que lê com a chave secreta.
 - **Bucket `materials` é privado e a coluna guarda caminho, não URL.** No projeto antigo ele
   era público e o mp4 de qualquer cliente abria por link direto. `source_url`/`file_url` de
   `live_materials` guardam `<org>/raw/arquivo.mp4`; worker e painel assinam a URL na hora.

@@ -4,7 +4,7 @@ Portal único do cliente da Momentum Digital — `portal.mmtdigital.com.br`.
 O cliente loga uma vez e vê só os módulos liberados para ele: dashboard, bio/linktree,
 fila de espera e CMV.
 
-Plano completo (8 fases, uma por vez): `../MOMENTUM-HUB-PLANO.md`.
+Plano completo (8 fases, uma por vez): `MOMENTUM-HUB-PLANO.md`, na raiz deste repo.
 
 ## Stack
 
