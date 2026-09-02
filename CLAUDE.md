@@ -5,7 +5,7 @@ Supabase (`@supabase/ssr`), deploy Vercel região `gru1`.
 
 ## Antes de mexer
 
-Ler `../MOMENTUM-HUB-PLANO.md` (raiz do workspace). São 10 fases (0–9), **uma por vez**:
+Ler `MOMENTUM-HUB-PLANO.md` (raiz deste repo). São 10 fases (0–9), **uma por vez**:
 ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
 
 ## Regras do projeto
