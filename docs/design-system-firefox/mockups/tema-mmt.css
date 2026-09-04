@@ -1,0 +1,113 @@
+/* ==========================================================================
+   Flare na marca Momentum.
+
+   Este arquivo NÃO redesenha nada: ele só reescreve token. Entra depois de
+   ../tokens.css e de app.css, e vale enquanto o <html> tiver data-marca="mmt".
+   Toda a forma — raio de pílula, títulos condensados, cartão de 24 px, brilho
+   de fundo — continua vindo do Flare.
+
+   Duas trocas, não uma:
+   1. o roxo da ação vira o vermelho `#E31B1B`;
+   2. as superfícies roxas viram as neutras que o hub já usa hoje. Vermelho
+      sobre fundo roxo brigaria — a superfície faz parte da paleta, não é
+      pano de fundo.
+   ========================================================================== */
+
+:root[data-marca="mmt"] {
+
+  /* --- Marca ------------------------------------------------------------ */
+  --fx-color-light-purple: #e31b1b;   /* ação primária, aba ativa, foco */
+  --fx-color-link-purple: #c01515;    /* hover */
+  --fx-color-purple: #7a0d0d;         /* :active */
+  --fx-color-medium-purple: #a81414;
+
+  /* Vermelho como TEXTO no escuro: #E31B1B dá 4,1:1 e reprova em AA.
+     #FF5A5A dá 6,4:1. É a mesma exceção que o portal já carrega. */
+  --fx-color-soft-purple-4: #ff5a5a;
+  --fx-color-soft-purple-5: #ff8b8b;
+
+  --fx-color-light-purple-20: rgba(227, 27, 27, 0.2);
+  --fx-color-light-purple-40: rgba(227, 27, 27, 0.4);
+  --fx-color-light-purple-60: rgba(227, 27, 27, 0.6);
+
+  /* --- Superfícies: as do Momentum Hub de hoje -------------------------- */
+  --app-canvas: #0a0c10;
+  --app-surface: #11141b;
+  --app-raised: #1e2430;
+  --app-line: #232936;
+  --app-line-strong: #333b4c;
+  --app-brand-ink: #ff5a5a;
+
+  /* Sobre o vermelho da marca, o próprio vermelho claro some. Quem lê é o
+     branco rebaixado. Foi o único ajuste que a troca de cor exigiu além
+     dos hex — e o motivo de o rótulo ter token próprio. */
+  --app-on-brand-label: rgba(255, 255, 255, 0.82);
+
+  /* --- Gradientes ------------------------------------------------------- */
+  --fx-gradient-purple: radial-gradient(122.66% 137.66% at 50% 0%, #ee4b4b 0%, #14090c 100%);
+  --fx-gradient-radial-purple: radial-gradient(74.06% 118.24% at 50% -18.24%, #e31b1b 0%, #14090c 100%);
+
+  /* O brilho de fundo, refeito na rampa vermelha. Continua em oklch pelo
+     mesmo motivo do original: interpolação em sRGB suja no meio. */
+  --fx-gradient-blurred-bg: radial-gradient(
+    oklch(56% 0.205 27deg) 0%,
+    oklch(52% 0.198 27deg) 8%,
+    oklch(45% 0.176 26deg) 18%,
+    oklch(37% 0.148 25deg) 30%,
+    oklch(30% 0.118 24deg) 42%,
+    oklch(24% 0.090 23deg) 54%,
+    oklch(20% 0.064 22deg) 68%,
+    oklch(17.5% 0.040 21deg) 82%,
+    oklch(16% 0.022 20deg) 100%
+  );
+}
+
+/* ==========================================================================
+   Marca ≠ perigo — a regra que o portal já adota.
+
+   Vermelho preenchido só na ação principal (uma por tela), no símbolo, na aba
+   ativa e no anel de foco. Nunca em selo de estado. No roxo isso não pesava;
+   no vermelho, um selo cheio parece alerta. As regras abaixo são o custo real
+   de trocar a cor — e são o motivo de a troca não ser só "mudar 3 hex".
+   ========================================================================== */
+
+/* Selo de informação vira neutro. Os semânticos (atenção, ok, ao vivo)
+   continuam como estavam: ali a cor É o recado. */
+:root[data-marca="mmt"] .pill {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--app-muted);
+}
+:root[data-marca="mmt"] .pill-atencao { background: rgba(255, 109, 0, .16); color: #ffb066; }
+:root[data-marca="mmt"] .pill-ok { background: rgba(20, 74, 39, .5); color: #8ce8a6; }
+:root[data-marca="mmt"] .pill-vivo { background: rgba(255, 90, 90, .18); color: #ff8b8b; }
+
+/* Ação secundária dentro de lista não é a ação principal da tela: sai do
+   preenchido e vira contorno. */
+:root[data-marca="mmt"] .tabela td .btn:not(.btn-ghost) {
+  --fx-button-bg-color: transparent;
+  --fx-button-border-color: var(--fx-color-light-purple);
+  --fx-button-text-color: var(--app-text);
+}
+
+/* Sem gradiente dourado: aquilo é assinatura de marca do Firefox. Sobre o
+   banner vermelho, quem contrasta é o branco. */
+:root[data-marca="mmt"] .btn-gold {
+  --fx-button-bg-color: #fff;
+  --fx-button-bg-image: none;
+  --fx-button-text-color: #14090c;
+  --fx-button-border-color: #fff;
+}
+
+/* Ponto de módulo é estado, não marca: a leitura passa a ser cheio/vazio. */
+:root[data-marca="mmt"] .ponto { background: rgba(255, 255, 255, 0.85); }
+:root[data-marca="mmt"] .ponto-off { background: rgba(255, 255, 255, 0.16); }
+
+/* Barra do funil é dado, não ação — usa o vermelho claro, que lê como
+   informação e não como botão. */
+:root[data-marca="mmt"] .barra > i { background: var(--app-brand-ink); }
+
+/* O chip de ícone dos módulos fica só insinuado. */
+:root[data-marca="mmt"] .modulo-icone {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--app-brand-ink);
+}

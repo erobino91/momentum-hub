@@ -18,6 +18,11 @@
   --app-muted: rgba(255, 255, 255, 0.66);
   --app-dim: rgba(255, 255, 255, 0.44);
   --app-brand-ink: var(--fx-color-soft-purple-4); /* #c7a8ff — roxo como texto */
+
+  /* Rótulo POR CIMA de uma superfície da marca (banner de CTA, card em
+     gradiente). Sobre o roxo, o roxo claro contrasta; sobre o vermelho, não —
+     por isso é token, e não a cor de marca reaproveitada. */
+  --app-on-brand-label: var(--fx-color-soft-purple-4);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
