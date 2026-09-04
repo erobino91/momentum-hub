@@ -15,6 +15,7 @@ export {
 } from "./botao";
 export { BotaoEnviar } from "./botao-enviar";
 export { Campo, Entrada, Selecao, AreaTexto, campoEstilo, opcaoEstilo } from "./campo";
+export { CampoInstante } from "./campo-instante";
 export { Cartao, Vazio } from "./cartao";
 export { Selo, type TomSelo } from "./selo";
 export { Aviso, type TomAviso } from "./aviso";

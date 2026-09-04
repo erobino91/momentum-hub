@@ -121,9 +121,26 @@ export type LiveSession = {
   org_id: string;
   material_id: string | null;
   stream_url: string | null;
-  status: "starting" | "live" | "ending" | "ended" | "error";
+  /**
+   * Os três últimos entraram com o agendamento: `scheduled` espera a hora,
+   * `missed` é hora perdida com o worker desligado, `canceled` é desistência.
+   */
+  status:
+    | "starting"
+    | "live"
+    | "ending"
+    | "ended"
+    | "error"
+    | "scheduled"
+    | "missed"
+    | "canceled";
+  /** Quando deve subir. Nulo = agora, que é o comportamento de sempre. */
+  iniciar_em: string | null;
+  /** Quando deve ser cortada. Nulo = só o corte de segurança de 3h50. */
+  encerrar_em: string | null;
   started_at: string | null;
   ended_at: string | null;
+  /** Escrito pelo worker na largada: o MENOR entre `encerrar_em` e início + 3h50. */
   auto_cutoff_at: string | null;
   error_message: string | null;
   created_at: string;

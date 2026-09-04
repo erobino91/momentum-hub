@@ -73,6 +73,29 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   e 1,5s para não virar dezenas de writes) e `progresso_em`. Sem o carimbo, barra parada em
   12% é idêntica a worker morto — que é exatamente o que aconteceu em 03/09, quando o
   QuickEdit do console do Windows congelou a janela do worker e ninguém tinha como saber.
+- **Live agendada vive em `scheduled`, nunca em `starting`.** As duas coisas que o worker faz
+  com `starting` matariam o agendamento: `tick()` sobe qualquer uma no primeiro ciclo, e
+  `reconcile()` marca toda `starting` órfã como `error` no boot — ou seja, reiniciar o worker
+  apagaria as agendadas. `scheduled` é o status que nenhum dos dois olha, e é por isso que ele
+  existe. Hora perdida com o worker desligado vira `missed` (não `error`: erro é RTMP caindo, e
+  confundir os dois manda procurar defeito onde só houve um `.bat` fechado); desistir antes da
+  hora vira `canceled`, escrito pelo painel sem passar por `ending` — não há ffmpeg para
+  derrubar.
+- **`encerrar_em` é intenção, `auto_cutoff_at` é consequência.** O primeiro vem do operador
+  antes de começar; o segundo o worker escreve na largada, como o **menor** entre `encerrar_em`
+  e início + 3h50. As 3h50 seguem sendo **teto, não alvo** — término mais curto manda, mais
+  longo não estica a live. Guardar os dois na mesma coluna não daria para distinguir pedido de
+  cálculo, e `startSession` sobrescreve `auto_cutoff_at` de qualquer jeito. A rede de segurança
+  do `tick()` que relê essa coluna passa a cobrir o término agendado de graça, sem saber que
+  ele existe.
+- **`datetime-local` só vira instante no navegador.** O campo entrega `"2026-09-04T19:00"` sem
+  fuso, e `new Date(t)` no servidor completa com o fuso de quem executa — que na Vercel é UTC,
+  três horas fora. Por isso existe `CampoInstante` (`src/components/ui/`): o campo visível
+  guarda o texto local e um `hidden` ao lado leva o ISO com offset. **`src/app/bio/actions.ts`
+  ainda faz isso errado** (`comoInstante` converte no servidor), então a janela de agendamento
+  dos botões da bio está deslocada em produção — quando for consertar, é trocar por
+  `CampoInstante`. Na exibição, `page.tsx` das lives fixa `timeZone: "America/Sao_Paulo"` pelo
+  mesmo motivo: renderizar hora no servidor sem fuso mostra UTC.
 - **`restaurants.id` é sempre o `orgs.id` do mesmo cliente.** A tabela é uma extensão 1:1 de
   `orgs` para o módulo Fila de Espera, travada por FK `on delete restrict` — nunca gerar id
   novo ali. Quem enxerga as tabelas do Fila é quem tem `profiles`, **não** quem tem

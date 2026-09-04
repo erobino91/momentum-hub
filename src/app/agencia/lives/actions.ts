@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { EXTENSOES } from "./limites";
+import {
+  CORTE_SEGURANCA_MS,
+  EXTENSOES,
+  TOLERANCIA_ATRASO_MS,
+} from "./limites";
 
 /**
  * Painel de lives — ações da agência.
@@ -162,13 +166,18 @@ export async function iniciarLive(formData: FormData) {
   if (material.status !== "ready")
     voltar("O vídeo ainda está convertendo. Espere ficar pronto.");
 
+  // `scheduled` entra na trava: sem isso dá para agendar duas lives da mesma
+  // empresa para o mesmo horário e descobrir na hora.
   const { data: jaAtiva } = await supabase
     .from("live_sessions")
     .select("id")
     .eq("org_id", orgId)
-    .in("status", ["starting", "live", "ending"])
+    .in("status", ["scheduled", "starting", "live", "ending"])
     .maybeSingle<{ id: string }>();
-  if (jaAtiva) voltar("Já existe uma live ativa para esta empresa.");
+  if (jaAtiva)
+    voltar("Já existe uma live ativa ou agendada para esta empresa.");
+
+  const { inicio, fim } = horarios(formData);
 
   const {
     data: { user },
@@ -179,7 +188,12 @@ export async function iniciarLive(formData: FormData) {
     material_id: materialId,
     stream_url: streamUrl,
     stream_key: streamKey,
-    status: "starting",
+    // Início no futuro é o que separa os dois caminhos. Sem horário — ou com um
+    // horário que já passou dentro da tolerância — nasce `starting` e sobe no
+    // próximo tick, exatamente como sempre foi.
+    status: inicio && inicio.getTime() > Date.now() ? "scheduled" : "starting",
+    iniciar_em: inicio?.toISOString() ?? null,
+    encerrar_em: fim?.toISOString() ?? null,
     created_by: user?.id ?? null,
   });
   if (error) voltar("Não foi possível iniciar a live.");
@@ -187,14 +201,75 @@ export async function iniciarLive(formData: FormData) {
 }
 
 /**
+ * Lê e critica os dois horários opcionais.
+ *
+ * Chegam já em ISO com fuso, convertidos no navegador por `CampoInstante` — o
+ * `Date` daqui completaria com o fuso do servidor, que na Vercel é UTC.
+ */
+function horarios(formData: FormData): { inicio: Date | null; fim: Date | null } {
+  const cru = (campo: string) => String(formData.get(campo) ?? "").trim();
+  const instante = (texto: string, rotulo: string): Date | null => {
+    if (!texto) return null;
+    const d = new Date(texto);
+    if (Number.isNaN(d.getTime())) voltar(`Horário de ${rotulo} inválido.`);
+    return d;
+  };
+
+  const agora = Date.now();
+  const inicio = instante(cru("iniciar_em"), "início");
+  const fim = instante(cru("encerrar_em"), "término");
+
+  // Passado recente passa: é o "começa agora" digitado com alguns segundos de
+  // atraso, e recusá-lo seria implicância. Passado velho é engano de data.
+  if (inicio && inicio.getTime() < agora - TOLERANCIA_ATRASO_MS)
+    voltar("O horário de início já passou.");
+
+  if (fim) {
+    const base = inicio ? inicio.getTime() : agora;
+    if (fim.getTime() <= base)
+      voltar("O término precisa ser depois do início.");
+    // Recusar é mais honesto que aceitar e cortar no meio: o worker corta em
+    // 3h50 de qualquer jeito, e a tela mostraria um término que nunca chega.
+    if (fim.getTime() - base > CORTE_SEGURANCA_MS)
+      voltar(
+        "A live passaria de 3h50 e o corte automático vem antes. Escolha um término mais curto.",
+      );
+  }
+
+  return { inicio, fim };
+}
+
+/**
  * Encerrar é pedir para encerrar: quem derruba o ffmpeg e escreve `ended` é o
  * worker. O painel nunca marca `ended` sozinho — se marcasse, uma transmissão
  * continuaria no ar com o banco dizendo que acabou.
+ *
+ * A agendada é a exceção, e é exceção por não haver o que derrubar: nenhum
+ * ffmpeg subiu ainda. Pedir `ending` nela deixaria um estado pendurado, à
+ * espera de um worker que não tem nada para encerrar — por isso ela vira
+ * `canceled` aqui mesmo.
  */
 export async function encerrarLive(formData: FormData) {
   const supabase = await exigirAgencia();
   const id = String(formData.get("id") ?? "");
   if (!id) voltar("Live inválida.");
+
+  const { data: sessao } = await supabase
+    .from("live_sessions")
+    .select("status")
+    .eq("id", id)
+    .maybeSingle<{ status: string }>();
+  if (!sessao) voltar("Live não encontrada.");
+
+  if (sessao.status === "scheduled") {
+    const { error } = await supabase
+      .from("live_sessions")
+      .update({ status: "canceled", ended_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("status", "scheduled"); // o worker pode ter subido enquanto isso
+    if (error) voltar("Não foi possível cancelar.");
+    voltar();
+  }
 
   const { error } = await supabase
     .from("live_sessions")

@@ -5,8 +5,12 @@
 //
 //  Fluxo (espelha o painel lives.html):
 //    live_sessions.status: starting -> live -> ending/ended | error
+//    agendada:             scheduled -> live -> ... | missed (hora perdida)
 //  Regras:
-//    - corte automático aos AUTO_CUTOFF_SECONDS (3h50)
+//    - corte automático aos AUTO_CUTOFF_SECONDS (3h50), ou antes se a sessão
+//      trouxer `encerrar_em` — as 3h50 são teto, não alvo
+//    - live agendada espera `iniciar_em`; se o worker estava desligado e o
+//      atraso passou de TOLERANCIA_ATRASO_SEGUNDOS, vira `missed`
 //    - watchdog: ffmpeg cai -> tenta religar ate MAX_RESTARTS -> error
 //    - reconciliacao no boot: live "fantasma" sem processo -> error
 //    - NUNCA logar a stream_key
@@ -37,6 +41,11 @@ const SUPABASE_URL  = process.env.SUPABASE_URL;
 const SERVICE_ROLE  = process.env.SUPABASE_SERVICE_ROLE;
 const RTMP_URL      = process.env.INSTAGRAM_RTMP_URL || 'rtmps://live-upload.instagram.com:443/rtmp/';
 const AUTO_CUTOFF   = Number(process.env.AUTO_CUTOFF_SECONDS || 13800);
+//  Quanto tempo depois do horario marcado ainda vale subir uma live agendada.
+//  Com o worker ligado o poll e de 3s e nada se perde; a tolerancia existe pro
+//  caso oposto — worker desligado a noite toda nao pode fazer a live surgir
+//  sozinha na manha seguinte.
+const TOLERANCIA_ATRASO = Number(process.env.TOLERANCIA_ATRASO_SEGUNDOS || 300) * 1000;
 const POLL_MS       = Number(process.env.POLL_MS || 3000);
 const MAX_RESTARTS  = Number(process.env.MAX_RESTARTS || 3);
 const FFMPEG        = process.env.FFMPEG_PATH || 'ffmpeg';
@@ -330,17 +339,28 @@ async function startSession(session) {
   spawnFfmpeg(session, localInput, rtmpTarget, entry);
 
   // marca live + horarios
+  //  As 3h50 deixam de ser o unico fim possivel e viram TETO: um termino
+  //  escolhido mais curto manda, um mais longo nao estica a live. O que fica
+  //  gravado em auto_cutoff_at e sempre o menor dos dois — e e por isso que a
+  //  rede de seguranca do tick(), que relê essa coluna, cobre o termino
+  //  agendado de graca, sem saber que ele existe.
   const startedAt = new Date();
-  const cutoffAt  = new Date(startedAt.getTime() + AUTO_CUTOFF * 1000);
+  const limite = new Date(startedAt.getTime() + AUTO_CUTOFF * 1000);
+  const pedido = session.encerrar_em ? new Date(session.encerrar_em) : null;
+  const agendado = Boolean(pedido && pedido < limite);
+  const cutoffAt = agendado ? pedido : limite;
   await sb.from('live_sessions').update({
     status: 'live', started_at: startedAt.toISOString(), auto_cutoff_at: cutoffAt.toISOString(), error_message: null
   }).eq('id', sid);
 
   // timer de corte automatico
+  //  Conta a partir de agora, nao AUTO_CUTOFF fixo: com termino agendado a
+  //  distancia ate o alvo e outra. Nunca negativo — encerrar_em ja no passado
+  //  vira corte imediato em vez de setTimeout com valor invalido.
   entry.cutoffTimer = setTimeout(() => {
-    log(sid, 'corte automatico (3h50)');
+    log(sid, agendado ? 'termino agendado' : 'corte automatico (3h50)');
     stopSession(sid, 'ended');
-  }, AUTO_CUTOFF * 1000);
+  }, Math.max(0, cutoffAt.getTime() - Date.now()));
 
   log(sid, `live iniciada (${copy ? 'copy' : 're-encode'}: ${mat.label})`);
 }
@@ -405,6 +425,37 @@ async function markError(session, message) {
 }
 
 // ════════════════════════════════════════════════
+//  Live agendada — segura ate a hora, ou desiste dela
+//
+//  Uma agendada NUNCA pode ficar em 'starting': o tick() sobe qualquer
+//  'starting' no primeiro ciclo, e o reconcile() do boot marca todo 'starting'
+//  orfao como error. Nos dois casos o agendamento morreria. Por isso ela vive
+//  em 'scheduled', que nenhum dos dois olha.
+// ════════════════════════════════════════════════
+async function checarAgendada(s) {
+  if (running.has(s.id)) return;
+  // Agendada sem hora nao deveria existir (o painel nao cria), mas se existir a
+  // leitura menos surpreendente e "e pra agora".
+  if (!s.iniciar_em) return startSession(s);
+
+  const atraso = Date.now() - new Date(s.iniciar_em).getTime();
+  if (atraso < 0) return;                       // ainda nao deu a hora
+
+  if (atraso > TOLERANCIA_ATRASO) {
+    warn(s.id, `horario perdido (atraso de ${Math.round(atraso / 60000)} min) -> missed`);
+    await sb.from('live_sessions').update({
+      status: 'missed',
+      error_message: 'O worker nao estava rodando no horario marcado.',
+      ended_at: new Date().toISOString(),
+    }).eq('id', s.id);
+    return;
+  }
+
+  log(s.id, 'hora marcada chegou');
+  await startSession(s);
+}
+
+// ════════════════════════════════════════════════
 //  Reconciliacao no boot
 //   - 'live'/'starting' orfaos (sem processo) -> error
 //   - 'ending' -> finaliza ended
@@ -430,12 +481,14 @@ async function reconcile() {
 // ════════════════════════════════════════════════
 async function tick() {
   try {
-    const { data, error } = await sb.from('live_sessions').select('*').in('status', ['starting', 'live', 'ending']);
+    const { data, error } = await sb.from('live_sessions').select('*').in('status', ['scheduled', 'starting', 'live', 'ending']);
     if (error) { console.error('[tick] erro de leitura:', error.message); return; }
     const sessions = data || [];
 
     for (const s of sessions) {
-      if (s.status === 'starting' && !running.has(s.id)) {
+      if (s.status === 'scheduled') {
+        await checarAgendada(s);
+      } else if (s.status === 'starting' && !running.has(s.id)) {
         await startSession(s);
       } else if (s.status === 'ending') {
         await stopSession(s.id, 'ended');
