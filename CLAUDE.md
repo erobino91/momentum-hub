@@ -56,6 +56,23 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   era público e o mp4 de qualquer cliente abria por link direto. `source_url`/`file_url` de
   `live_materials` guardam `<org>/raw/arquivo.mp4`; worker e painel assinam a URL na hora.
   Guardar URL pública ali seria guardar link que não abre.
+- **Material de live sobe do navegador direto para o Storage, nunca por server action.**
+  O corpo de uma server action para em 1 MB no Next e em 4,5 MB na Vercel — tetos que
+  nenhuma configuração levanta — e vídeo nenhum cabe nisso. Enquanto o arquivo passou por
+  `enviarMaterial`, o upload do painel **nunca funcionou**: dizia "Enviando…" e não subia
+  nada. O servidor faz o que sabe fazer (confere `is_agency()`, decide o caminho, assina com
+  `createSignedUploadUrl`); os bytes vão de `enviar-material.tsx` por `XMLHttpRequest`, que
+  é o único jeito de ter progresso — o `supabase-js` sobe por `fetch`, e `fetch` não reporta
+  upload. As regras do arquivo (tamanho, extensão) moram em `lives/limites.ts`, fora do
+  `"use server"`: constante exportada de arquivo `"use server"` derruba o build.
+- **A exceção ao `BotaoEnviar` é o envio de material.** `useFormStatus` só enxerga
+  formulário com server action no `action`; com envio no cliente ele nunca sairia do estado
+  parado, então ali o estado é local. É a única tela do projeto assim.
+- **Conversão mostra progresso, e o carimbo importa tanto quanto o número.** O worker
+  escreve `live_materials.progresso` (0–100, do `-progress` do ffmpeg, com freio de 2 pontos
+  e 1,5s para não virar dezenas de writes) e `progresso_em`. Sem o carimbo, barra parada em
+  12% é idêntica a worker morto — que é exatamente o que aconteceu em 03/09, quando o
+  QuickEdit do console do Windows congelou a janela do worker e ninguém tinha como saber.
 - **`restaurants.id` é sempre o `orgs.id` do mesmo cliente.** A tabela é uma extensão 1:1 de
   `orgs` para o módulo Fila de Espera, travada por FK `on delete restrict` — nunca gerar id
   novo ali. Quem enxerga as tabelas do Fila é quem tem `profiles`, **não** quem tem

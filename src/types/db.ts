@@ -108,6 +108,10 @@ export type LiveMaterial = {
   source_url: string;
   file_url: string | null;
   status: "processing" | "ready" | "error";
+  /** 0-100 durante a conversão; nulo fora dela. Quem escreve é o worker. */
+  progresso: number | null;
+  /** Quando `progresso` foi escrito — separa conversão lenta de worker parado. */
+  progresso_em: string | null;
   created_at: string;
 };
 

@@ -20,4 +20,5 @@ export { Selo, type TomSelo } from "./selo";
 export { Aviso, type TomAviso } from "./aviso";
 export { Tabela, thEstilo, tdEstilo, numEstilo } from "./tabela";
 export { Dialogo, AcoesDialogo } from "./dialogo";
+export { Progresso, formatarMB, type TomProgresso } from "./progresso";
 export { ConfirmarAcao } from "./confirmar-acao";

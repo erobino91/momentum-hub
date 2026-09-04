@@ -2,12 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { LiveMaterial, LiveSession, Org } from "@/types/db";
 import { AtualizacaoAutomatica, Cronometro } from "./atualizacao-automatica";
-import {
-  enviarMaterial,
-  apagarMaterial,
-  iniciarLive,
-  encerrarLive,
-} from "./actions";
+import { apagarMaterial, iniciarLive, encerrarLive } from "./actions";
+import { EnviarMaterial } from "./enviar-material";
 import { AgenciaShell } from "@/components/shell";
 import {
   Aviso,
@@ -17,10 +13,10 @@ import {
   ConfirmarAcao,
   Dialogo,
   Entrada,
+  Progresso,
   Selecao,
   Selo,
   Vazio,
-  campoEstilo,
 } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -76,6 +72,9 @@ export default async function LivesPage({
   const ativas = (sessoes ?? []).filter((s) =>
     ["starting", "live", "ending"].includes(s.status),
   );
+  // Converter também merece atualização automática: sem isto a barra de
+  // conversão só andaria se alguém ficasse apertando F5.
+  const convertendo = (materiais ?? []).some((m) => m.status === "processing");
   const materiaisDe = (orgId: string) =>
     (materiais ?? []).filter((m) => m.org_id === orgId);
   const ativaDe = (orgId: string) => ativas.find((s) => s.org_id === orgId);
@@ -99,7 +98,9 @@ export default async function LivesPage({
           : "Lives"
       }
       selo={ativas.length ? <Selo tom="erro">ao vivo</Selo> : undefined}
-      acoes={<AtualizacaoAutomatica ativa={ativas.length > 0} />}
+      acoes={
+        <AtualizacaoAutomatica ativa={ativas.length > 0 || convertendo} />
+      }
     >
       <p className="-mt-1 mb-5 max-w-2xl text-sm text-muted">
         Vídeo em loop para o Instagram Live. Quem transmite é o worker na máquina
@@ -190,6 +191,8 @@ export default async function LivesPage({
                       id: m.id,
                       label: m.label,
                       status: m.status,
+                      progresso: m.progresso,
+                      progresso_em: m.progresso_em,
                     }))}
                   />
                 </div>
@@ -264,13 +267,35 @@ function DialogoEntrarNoAr({
   );
 }
 
+/**
+ * Quanto tempo faz que o worker deu sinal — e só fala quando já é notícia.
+ *
+ * Uma barra parada em 12% é idêntica ao worker morto e à conversão lenta. Foi o
+ * caso de 03/09: a janela do worker congelou (o QuickEdit do console do Windows
+ * pausa o processo ao clicar dentro) e o material ficaria "convertendo" a noite
+ * toda sem uma linha explicando.
+ */
+function semSinalHa(quando: string | null): string | undefined {
+  if (!quando) return undefined;
+  const seg = Math.floor((Date.now() - new Date(quando).getTime()) / 1000);
+  if (seg < 60) return undefined;
+  const min = Math.floor(seg / 60);
+  return `sem sinal do worker há ${min} min — ele está rodando?`;
+}
+
 /** Materiais da empresa: lista, remoção e envio, em um lugar só. */
 function DialogoMateriais({
   org,
   materiais,
 }: {
   org: Pick<Org, "id" | "name">;
-  materiais: { id: string; label: string; status: LiveMaterial["status"] }[];
+  materiais: {
+    id: string;
+    label: string;
+    status: LiveMaterial["status"];
+    progresso: number | null;
+    progresso_em: string | null;
+  }[];
 }) {
   return (
     <Dialogo
@@ -278,42 +303,54 @@ function DialogoMateriais({
       variante="secundario"
       tamanho="sm"
       titulo={`Materiais — ${org.name}`}
-      // Subir vídeo demora; fechar ao enviar esconderia a rodinha e pareceria
-      // que nada aconteceu.
+      // Subir vídeo demora; fechar ao enviar levaria embora justamente a barra
+      // de progresso, e pareceria que nada aconteceu.
       fecharAoEnviar={false}
     >
       {materiais.length ? (
         <ul className="mb-4 space-y-1.5">
           {materiais.map((m) => (
-            <li
-              key={m.id}
-              className="flex items-center justify-between gap-3 rounded-md bg-surface-3 px-3 py-2"
-            >
-              <span className="min-w-0 flex-1 truncate text-sm">{m.label}</span>
-              <Selo
-                tom={
-                  m.status === "ready"
+            <li key={m.id} className="rounded-md bg-surface-3 px-3 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="min-w-0 flex-1 truncate text-sm">
+                  {m.label}
+                </span>
+                <Selo
+                  tom={
+                    m.status === "ready"
+                      ? "pronto"
+                      : m.status === "error"
+                        ? "erro"
+                        : "atencao"
+                  }
+                >
+                  {m.status === "ready"
                     ? "pronto"
                     : m.status === "error"
-                      ? "erro"
-                      : "atencao"
-                }
-              >
-                {m.status === "ready"
-                  ? "pronto"
-                  : m.status === "error"
-                    ? "falhou"
-                    : "convertendo"}
-              </Selo>
-              <ConfirmarAcao
-                acao={apagarMaterial}
-                rotulo="Remover"
-                titulo={`Remover ${m.label}?`}
-                descricao="O arquivo sai do armazenamento. Uma live que esteja usando este material não é interrompida."
-                confirmar="Remover material"
-              >
-                <input type="hidden" name="id" value={m.id} />
-              </ConfirmarAcao>
+                      ? "falhou"
+                      : "convertendo"}
+                </Selo>
+                <ConfirmarAcao
+                  acao={apagarMaterial}
+                  rotulo="Remover"
+                  titulo={`Remover ${m.label}?`}
+                  descricao="O arquivo sai do armazenamento. Uma live que esteja usando este material não é interrompida."
+                  confirmar="Remover material"
+                >
+                  <input type="hidden" name="id" value={m.id} />
+                </ConfirmarAcao>
+              </div>
+
+              {m.status === "processing" ? (
+                <div className="mt-2.5">
+                  <Progresso
+                    valor={m.progresso}
+                    tom="atencao"
+                    rotulo="Convertendo para o formato do Instagram"
+                    detalhe={semSinalHa(m.progresso_em)}
+                  />
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -321,26 +358,7 @@ function DialogoMateriais({
         <p className="mb-4 text-sm text-dim">Nenhum material enviado.</p>
       )}
 
-      <form action={enviarMaterial} className="space-y-3 border-t border-line pt-4">
-        <input type="hidden" name="org_id" value={org.id} />
-        <Campo rotulo="Nome" obrigatorio>
-          <Entrada name="label" required placeholder="Ex.: promoção de terça" />
-        </Campo>
-        <Campo rotulo="Arquivo" obrigatorio ajuda="Vídeo ou imagem.">
-          <input
-            name="arquivo"
-            type="file"
-            required
-            accept="video/*,image/*"
-            // Input de arquivo não é campo de texto: vestir os dois iguais
-            // deixava um botão do sistema dentro de uma caixa de digitar.
-            className={`${campoEstilo} cursor-pointer py-2 file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-surface-3 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-foreground`}
-          />
-        </Campo>
-        <div className="flex justify-end pt-1">
-          <BotaoEnviar pendente="Enviando…">Enviar material</BotaoEnviar>
-        </div>
-      </form>
+      <EnviarMaterial orgId={org.id} />
     </Dialogo>
   );
 }

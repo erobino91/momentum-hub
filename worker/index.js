@@ -156,12 +156,41 @@ function transcodeArgs(sourceUrl, outPath, photo) {
              '-pix_fmt', 'yuv420p', '-r', '30', '-g', '60', '-keyint_min', '60', '-sc_threshold', '0'];
   const a = ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-ac', '2'];
   const scale = ['-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2'];
+  // `-progress pipe:1` faz o ffmpeg escrever pares chave=valor no stdout, que e
+  // como o worker sabe em que ponto da conversao esta. `-nostats` desliga so a
+  // linha de status do stderr; o `Duration:` do input continua saindo por la, e e
+  // dele que vem o total pra calcular a porcentagem.
+  const prog = ['-progress', 'pipe:1', '-nostats'];
   if (photo) {
-    return ['-y', '-loop', '1', '-framerate', '30', '-t', '5', '-i', sourceUrl,
+    return ['-y', ...prog, '-loop', '1', '-framerate', '30', '-t', '5', '-i', sourceUrl,
             '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100',
             '-map', '0:v', '-map', '1:a', ...v, ...a, ...scale, '-movflags', '+faststart', outPath];
   }
-  return ['-y', '-i', sourceUrl, ...v, ...a, ...scale, '-movflags', '+faststart', outPath];
+  return ['-y', ...prog, '-i', sourceUrl, ...v, ...a, ...scale, '-movflags', '+faststart', outPath];
+}
+
+// ════════════════════════════════════════════════
+//  Progresso da conversao
+//   Duracao total: sai no `Duration: HH:MM:SS.xx` que o ffmpeg imprime ao abrir o
+//   input. Preferimos ela a um ffprobe pra nao inventar um FFPROBE_PATH que hoje
+//   nao existe no .env — e pra foto nem existe duracao de input: o `-t 5` manda.
+// ════════════════════════════════════════════════
+const DURACAO_FOTO = 5;
+function parseDuracao(texto) {
+  const m = /Duration:\s*(\d+):(\d\d):(\d\d(?:\.\d+)?)/.exec(texto);
+  if (!m) return null;
+  const seg = Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
+  return seg > 0 ? seg : null;
+}
+//  Do stdout do -progress interessa o tempo ja processado. `out_time_us` e
+//  inequivoco; `out_time_ms` do ffmpeg carrega microssegundos apesar do nome, e
+//  confiar nele daria erro de 1000x.
+function parseSegundosFeitos(bloco) {
+  const us = /out_time_us=(\d+)/.exec(bloco);
+  if (us) return Number(us[1]) / 1e6;
+  const t = /out_time=(\d+):(\d\d):(\d\d(?:\.\d+)?)/.exec(bloco);
+  if (t) return Number(t[1]) * 3600 + Number(t[2]) * 60 + Number(t[3]);
+  return null;
 }
 
 // converte um material 'processing' -> 'ready' (um por vez)
@@ -184,7 +213,47 @@ async function transcodeMaterial(mat) {
 
   const proc = spawn(FFMPEG, transcodeArgs(entrada, outPath, photo), { windowsHide: true });
   let lastErr = '';
-  proc.stderr.on('data', (d) => { lastErr = String(d).split('\n').filter(Boolean).pop() || lastErr; });
+
+  // ── Progresso, com freio ──
+  //  O -progress cospe um bloco a cada ~0,5s. Gravar todos seria dezenas de
+  //  writes por conversao pra mexer numa barra que ninguem ve andar tao rapido:
+  //  so escreve quando o inteiro subiu >=2 pontos E passou >=1,5s do ultimo.
+  let duracao = photo ? DURACAO_FOTO : null;
+  let ultimoPct = -1;
+  let ultimoEm = 0;
+  let restoStdout = '';
+
+  async function gravarProgresso(pct) {
+    const agora = Date.now();
+    if (pct - ultimoPct < 2 || agora - ultimoEm < 1500) return;
+    ultimoPct = pct;
+    ultimoEm = agora;
+    // Progresso e enfeite: falhar aqui nao pode derrubar a conversao.
+    try {
+      await sb.from('live_materials')
+        .update({ progresso: pct, progresso_em: new Date().toISOString() })
+        .eq('id', mat.id);
+    } catch {}
+  }
+
+  proc.stdout.on('data', (d) => {
+    // O chunk pode cortar uma linha no meio; o resto fica pro proximo.
+    restoStdout += String(d);
+    const partes = restoStdout.split(/\r?\n/);
+    restoStdout = partes.pop() ?? '';
+    if (!duracao || !partes.length) return;
+    const feitos = parseSegundosFeitos(partes.join('\n'));
+    if (feitos == null) return;
+    // Trava em 99 enquanto roda: os 100 sao do close, depois do upload.
+    const pct = Math.max(0, Math.min(99, Math.round((feitos / duracao) * 100)));
+    void gravarProgresso(pct);
+  });
+
+  proc.stderr.on('data', (d) => {
+    const texto = String(d);
+    if (!duracao) duracao = parseDuracao(texto);
+    lastErr = texto.split('\n').filter(Boolean).pop() || lastErr;
+  });
   proc.on('error', (e) => finishTranscodeError(mat, 'spawn ffmpeg: ' + e.message));
   proc.on('close', async (code) => {
     try {
@@ -194,7 +263,9 @@ async function transcodeMaterial(mat) {
       const { error: upErr } = await sb.storage.from('materials').upload(path, buf, { contentType: 'video/mp4', upsert: true, cacheControl: '31536000' });
       if (upErr) return finishTranscodeError(mat, 'upload: ' + upErr.message);
       // Guarda o caminho, nao a URL: com bucket privado a URL nasce expirando.
-      await sb.from('live_materials').update({ file_url: path, status: 'ready' }).eq('id', mat.id);
+      await sb.from('live_materials')
+        .update({ file_url: path, status: 'ready', progresso: 100, progresso_em: new Date().toISOString() })
+        .eq('id', mat.id);
       log(mat.id, 'convertido -> ready');
     } catch (e) {
       await finishTranscodeError(mat, 'pos-transcode: ' + (e && e.message));
@@ -206,7 +277,13 @@ async function transcodeMaterial(mat) {
 }
 async function finishTranscodeError(mat, msg) {
   warn(mat.id, 'conversao falhou: ' + msg);
-  try { await sb.from('live_materials').update({ status: 'error' }).eq('id', mat.id); } catch {}
+  // `progresso` fica como estava de proposito: saber que parou nos 40% diz onde
+  // procurar. So o carimbo anda, pra tela nao acusar de "parado" o que ja morreu.
+  try {
+    await sb.from('live_materials')
+      .update({ status: 'error', progresso_em: new Date().toISOString() })
+      .eq('id', mat.id);
+  } catch {}
   transcoding.delete(mat.id);
 }
 
