@@ -27,17 +27,13 @@ export default async function Home() {
         />
       ) : (
         // Os quatro módulos aparecem sempre: o cliente tem todos. O que varia é
-        // o módulo já estar pronto para uso ou ainda em preparo — e um card que
-        // não está pronto não leva a lugar nenhum, em vez de levar a uma tela
+        // a agência já ter configurado aquele módulo para ele — e um card em
+        // configuração não leva a lugar nenhum, em vez de levar a uma tela
         // dizendo que ele não tem acesso.
         <section className="grid gap-4 sm:grid-cols-2">
           {modulos.map(({ chave, configurado }) => {
             const m = MODULES[chave];
-            const aviso = !m.ready
-              ? "Em breve"
-              : !configurado
-                ? "Em configuração"
-                : null;
+            const aviso = configurado ? null : "Em configuração";
 
             const conteudo = (
               <>
