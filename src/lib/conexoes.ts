@@ -77,6 +77,29 @@ export const CONEXOES: Conexao[] = [
       return { valor: uuid };
     },
   },
+  {
+    origem: "goomer",
+    rotulo: "Goomer",
+    coluna: "goomer_store_id",
+    campo: "Loja na Goomer",
+    ajuda: "O ID da loja, com o G- na frente. Preenchido, o delivery para de ser digitado.",
+    placeholder: "G-57981",
+    // A Goomer escreve `G-57981` no painel e no `.env`; aceitar o número solto
+    // evita que colar de um lugar ou de outro vire erro de digitação, e guarda
+    // sempre a forma com prefixo — duas grafias do mesmo id não achariam a
+    // pasta do cliente.
+    limpar(bruto) {
+      const cru = bruto.trim().toUpperCase().replace(/^G-/, "");
+      if (!cru) return { valor: null };
+      if (!/^\d{3,}$/.test(cru)) {
+        return {
+          valor: null,
+          erro: "A loja da Goomer é o G- seguido de números.",
+        };
+      }
+      return { valor: `G-${cru}` };
+    },
+  },
 ];
 
 /** As colunas de vínculo, para quem só precisa ler `orgs`. */

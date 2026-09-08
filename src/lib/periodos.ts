@@ -15,11 +15,16 @@ export type CampoPeriodo = {
   rotulo: string;
   tipo: TipoCampo;
   /**
-   * De onde o número vem quando a empresa tem aquela conexão vinculada. Campo
-   * com `origem` não é digitado nem gravado pelo formulário — quem escreve é o
-   * sincronizador. A empresa que **não** tem a conexão continua digitando.
+   * De onde o número **pode** vir, quando a empresa tem aquela conexão
+   * vinculada. Campo com uma origem ativa não é digitado nem gravado pelo
+   * formulário — quem escreve é o sincronizador. A empresa que não tem nenhuma
+   * das conexões continua digitando.
+   *
+   * É lista porque uma coluna tem mais de um dono possível: o delivery vem do
+   * CardápioWeb ou da Goomer, conforme o que a empresa usa. Nunca dos dois ao
+   * mesmo tempo — o sincronizador recusa a empresa que vincula as duas.
    */
-  origem?: OrigemCampo;
+  origens?: OrigemCampo[];
 };
 
 export type GrupoPeriodo = {
@@ -49,12 +54,12 @@ export const GRUPOS_PERIODO: GrupoPeriodo[] = [
       // sequência. `fat_total` continua na lista porque a action grava a coluna
       // a partir dela — mas quem preenche é o campo calculado do formulário,
       // não a agência.
-      // Salão e delivery vêm do CardápioWeb quando a loja está vinculada:
+      // Salão e delivery vêm do cardápio digital quando a loja está vinculada:
       // salão é `order_type` mesa/local, delivery é entrega + retirada menos o
       // que entrou pelo iFood. `fat_ifood` continua digitado — o número do CW
       // fica uns 5% abaixo do que a agência lança do painel do iFood.
-      { ...dinheiro("fat_mesa", "Salão"), origem: "cw" },
-      { ...dinheiro("fat_delivery", "Delivery"), origem: "cw" },
+      { ...dinheiro("fat_mesa", "Salão"), origens: ["cw"] },
+      { ...dinheiro("fat_delivery", "Delivery"), origens: ["cw", "goomer"] },
       dinheiro("fat_ifood", "iFood"),
       dinheiro("fat_total", "Total"),
       dinheiro("fat_proprio", "Cardápio próprio"),
@@ -64,8 +69,8 @@ export const GRUPOS_PERIODO: GrupoPeriodo[] = [
     titulo: "Pedidos",
     ajuda: "O ticket médio do dashboard é faturamento ÷ pedidos.",
     campos: [
-      { ...inteiro("pedidos_mesa", "Salão"), origem: "cw" },
-      { ...inteiro("pedidos_delivery", "Delivery"), origem: "cw" },
+      { ...inteiro("pedidos_mesa", "Salão"), origens: ["cw"] },
+      { ...inteiro("pedidos_delivery", "Delivery"), origens: ["cw", "goomer"] },
     ],
   },
   {
@@ -95,8 +100,8 @@ export const GRUPOS_PERIODO: GrupoPeriodo[] = [
       // da Graph API. A marca importa porque a action grava **todas** as
       // colunas desta lista e campo em branco vira `null` — publicar o mês com
       // os campos vazios apagaria o que o sincronizador escreveu, sem avisar.
-      { ...dinheiro("meta_invest", "Investimento"), origem: "meta" },
-      { ...dinheiro("meta_vendas", "Vendas"), origem: "meta" },
+      { ...dinheiro("meta_invest", "Investimento"), origens: ["meta"] },
+      { ...dinheiro("meta_vendas", "Vendas"), origens: ["meta"] },
     ],
   },
   {

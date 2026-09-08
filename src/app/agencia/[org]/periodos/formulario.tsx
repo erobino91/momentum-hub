@@ -87,11 +87,15 @@ export function FormularioPeriodo({
   // nem o total de faturamento, nem o que vem de uma conexão vinculada.
   const digitavel = (campo: CampoPeriodo) =>
     campo.coluna !== "fat_total" &&
-    !(campo.origem && sincronizadas.includes(campo.origem));
+    !campo.origens?.some((o) => sincronizadas.includes(o));
 
   /** De qual plataforma vem um campo que não se digita. */
-  const daOrigem = (campo: CampoPeriodo) =>
-    campo.origem ? rotuloDaOrigem(campo.origem) : "";
+  const daOrigem = (campo: CampoPeriodo) => {
+    // A coluna pode ter dois donos possíveis (delivery: CardápioWeb ou Goomer);
+    // o selo mostra o que esta empresa tem de fato vinculado.
+    const ativa = campo.origens?.find((o) => sincronizadas.includes(o));
+    return ativa ? rotuloDaOrigem(ativa) : "";
+  };
 
   const preenchidos = useMemo(
     () =>

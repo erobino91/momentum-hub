@@ -47,7 +47,7 @@ export async function salvarPeriodo(formData: FormData) {
   const sincronizadas = new Set(conexoesDe(org));
 
   const preservar = CAMPOS_PERIODO.filter(
-    (c) => c.origem && sincronizadas.has(c.origem),
+    (c) => c.origens?.some((o) => sincronizadas.has(o)),
   );
 
   // Mês que ainda não existe entra pelo `insert` do upsert, e ali coluna
@@ -74,7 +74,7 @@ export async function salvarPeriodo(formData: FormData) {
   };
   for (const campo of CAMPOS_PERIODO) {
     linha[campo.coluna] =
-      campo.origem && sincronizadas.has(campo.origem)
+      campo.origens?.some((o) => sincronizadas.has(o))
         ? (existente?.[campo.coluna] ?? null)
         : numero(formData.get(campo.coluna));
   }
