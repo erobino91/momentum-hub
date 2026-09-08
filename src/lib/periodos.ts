@@ -49,8 +49,12 @@ export const GRUPOS_PERIODO: GrupoPeriodo[] = [
       // sequência. `fat_total` continua na lista porque a action grava a coluna
       // a partir dela — mas quem preenche é o campo calculado do formulário,
       // não a agência.
-      dinheiro("fat_mesa", "Salão"),
-      dinheiro("fat_delivery", "Delivery"),
+      // Salão e delivery vêm do CardápioWeb quando a loja está vinculada:
+      // salão é `order_type` mesa/local, delivery é entrega + retirada menos o
+      // que entrou pelo iFood. `fat_ifood` continua digitado — o número do CW
+      // fica uns 5% abaixo do que a agência lança do painel do iFood.
+      { ...dinheiro("fat_mesa", "Salão"), origem: "cw" },
+      { ...dinheiro("fat_delivery", "Delivery"), origem: "cw" },
       dinheiro("fat_ifood", "iFood"),
       dinheiro("fat_total", "Total"),
       dinheiro("fat_proprio", "Cardápio próprio"),
@@ -60,8 +64,8 @@ export const GRUPOS_PERIODO: GrupoPeriodo[] = [
     titulo: "Pedidos",
     ajuda: "O ticket médio do dashboard é faturamento ÷ pedidos.",
     campos: [
-      inteiro("pedidos_mesa", "Salão"),
-      inteiro("pedidos_delivery", "Delivery"),
+      { ...inteiro("pedidos_mesa", "Salão"), origem: "cw" },
+      { ...inteiro("pedidos_delivery", "Delivery"), origem: "cw" },
     ],
   },
   {

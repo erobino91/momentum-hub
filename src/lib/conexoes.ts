@@ -56,6 +56,27 @@ export const CONEXOES: Conexao[] = [
       return { valor: conta };
     },
   },
+  {
+    origem: "cw",
+    rotulo: "CardápioWeb",
+    coluna: "cw_store_id",
+    campo: "Loja no CardápioWeb",
+    ajuda: "O uuid da loja. Preenchido, salão e delivery param de ser digitados.",
+    placeholder: "007f78f9-7132-46ca-ac61-8448c4801365",
+    limpar(bruto) {
+      const uuid = bruto.trim().toLowerCase();
+      if (!uuid) return { valor: null };
+      if (
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(uuid)
+      ) {
+        return {
+          valor: null,
+          erro: "A loja do CardápioWeb é o uuid, não o número nem o slug.",
+        };
+      }
+      return { valor: uuid };
+    },
+  },
 ];
 
 /** As colunas de vínculo, para quem só precisa ler `orgs`. */
