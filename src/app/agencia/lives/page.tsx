@@ -5,6 +5,9 @@ import { AtualizacaoAutomatica, Cronometro } from "./atualizacao-automatica";
 import { apagarMaterial, iniciarLive, encerrarLive } from "./actions";
 import { EnviarMaterial } from "./enviar-material";
 import { AgenciaShell } from "@/components/shell";
+// Renderizado no servidor, que na Vercel é UTC: sem fixar o fuso, "corte
+// automático às 21h" apareceria como 18h para quem está aqui.
+import { dataEHora, hora, mesmoInstante } from "@/lib/data";
 import {
   Aviso,
   Botao,
@@ -34,36 +37,7 @@ const ROTULO_STATUS: Record<LiveSession["status"], string> = {
   canceled: "cancelada",
 };
 
-/**
- * A tela é renderizada no servidor, e na Vercel o servidor é UTC — sem fixar o
- * fuso, o "corte automático às 21h" apareceria como 18h para quem está aqui.
- */
-const FUSO = "America/Sao_Paulo";
 
-const hora = (iso: string) =>
-  new Date(iso).toLocaleTimeString("pt-BR", {
-    timeZone: FUSO,
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-/**
- * Dois `timestamptz` que valem o mesmo instante. Comparar as strings cruas não
- * serve: `+00:00` e `.000Z` são o mesmo momento escrito de dois jeitos, e quem
- * escreve cada uma das colunas é um processo diferente.
- */
-const mesmoInstante = (a: string | null, b: string | null) =>
-  Boolean(a && b && new Date(a).getTime() === new Date(b).getTime());
-
-/** Com o dia junto, porque agendada pode ser para amanhã. */
-const dataEHora = (iso: string) =>
-  new Date(iso).toLocaleString("pt-BR", {
-    timeZone: FUSO,
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
 /**
  * Painel de lives — todas as empresas em uma tela só, como era o `lives.html`.

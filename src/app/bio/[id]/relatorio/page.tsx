@@ -2,13 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { LinkPage } from "@/types/bio";
+import { FUSO } from "@/lib/data";
 import { CliquesPorBotao, CliquesPorDia } from "./graficos";
 
 export const metadata = { title: "Relatório de cliques" };
 
 export const dynamic = "force-dynamic";
 
-const FUSO = "America/Sao_Paulo";
 const JANELAS = [7, 30, 90] as const;
 
 /** Dia no fuso de Brasília — senão um clique das 22h vira o dia seguinte. */

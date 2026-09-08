@@ -5,6 +5,7 @@ import { AbasEmpresa } from "@/components/agencia/abas";
 import { Cartao, Selo, Tabela, Vazio, tdEstilo, thEstilo } from "@/components/ui";
 import { NovoAcesso } from "../../novo-acesso";
 import { carregarAcessos } from "@/lib/agencia";
+import { diaCurto } from "@/lib/data";
 import type { Org } from "@/types/db";
 
 export const dynamic = "force-dynamic";
@@ -99,10 +100,6 @@ export default async function AcessosPage({
   );
 }
 
-function data(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
-}
+// `diaCurto` fixa o fuso da agência. Sem isso a data saía em UTC: um acesso
+// criado às 21h de Brasília aparecia com a data do dia seguinte.
+const data = diaCurto;

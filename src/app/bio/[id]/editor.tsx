@@ -65,6 +65,21 @@ function paraInput(iso: string | null) {
 }
 
 /**
+ * O caminho de volta: texto do `datetime-local` → instante com fuso.
+ *
+ * **Tem que acontecer aqui, no navegador.** `"2026-09-04T19:00"` não carrega
+ * fuso nenhum, e quem fizer `new Date()` nessa string completa com o fuso de
+ * quem executa. Era a action que convertia, no servidor — que na Vercel é UTC:
+ * o operador digitava 19h de Brasília e o banco guardava 19h UTC, três horas
+ * adiantado, sem erro nenhum aparecer. A janela abria e fechava na hora errada.
+ */
+function paraInstante(local: string): string | null {
+  if (!local) return null;
+  const d = new Date(local);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/**
  * Botão novo precisa de id **antes** de existir linha: é ele que identifica o
  * item no preview, na reordenação e depois no `upsert`. O ramo manual existe
  * porque `crypto.randomUUID` só é exposto em contexto seguro — em `http://` de
@@ -127,8 +142,8 @@ export function EditorBio({
     theme: { ...cores, nicho, fundo2: gradiente ? cores.fundo2 : "" },
     botoes: lista.map((b) => ({
       ...b,
-      starts_at: b.starts_at || null,
-      ends_at: b.ends_at || null,
+      starts_at: paraInstante(b.starts_at),
+      ends_at: paraInstante(b.ends_at),
     })),
   });
 
@@ -203,8 +218,8 @@ export function EditorBio({
   const noArAgora = (b: BotaoLocal) =>
     botaoNoAr({
       active: b.active,
-      starts_at: b.starts_at || null,
-      ends_at: b.ends_at || null,
+      starts_at: paraInstante(b.starts_at),
+      ends_at: paraInstante(b.ends_at),
     });
 
   return (

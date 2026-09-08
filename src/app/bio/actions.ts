@@ -113,7 +113,16 @@ function comoCor(v: unknown): string | undefined {
   return COR.test(t) ? t : undefined;
 }
 
-/** `datetime-local` chega sem fuso; o `Date` do servidor completaria errado. */
+/**
+ * Valida o instante que chega do editor — **já convertido lá**.
+ *
+ * Este comentário já descreveu o defeito que a função tinha: o editor mandava a
+ * string crua do `datetime-local`, sem fuso, e o `new Date()` daqui completava
+ * com o fuso do servidor (UTC na Vercel), gravando três horas adiantado. Hoje
+ * quem converte é `paraInstante` no navegador, e o que chega é ISO com offset —
+ * inequívoco para qualquer `Date`. A releitura continua porque nada que vem do
+ * navegador entra sem passar por validação.
+ */
 function comoInstante(v: unknown): string | null {
   const t = comoTexto(v, 40);
   if (!t) return null;

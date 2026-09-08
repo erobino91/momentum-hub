@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatarDinheiro } from "@/lib/numero";
+import { hojeISO } from "@/lib/data";
 import type {
   FormaPagamento,
   SituacaoContrato,
@@ -115,10 +116,16 @@ export function reais(valor: number | null | undefined) {
   return `R$ ${formatarDinheiro(Number(valor))}`;
 }
 
-/** `2026-08-25` de hoje, em UTC, para comparar com data do banco. */
-export function hojeISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+/**
+ * `2026-08-25` de hoje, **no fuso da agência**, para comparar com data do banco.
+ *
+ * Era `toISOString().slice(0, 10)`, ou seja, o dia em UTC. Na Vercel isso vira
+ * amanhã a partir das 21h de Brasília — e como é este valor que alimenta
+ * `diasDeAtraso` e `estadoCobranca`, uma cobrança que vence hoje passava a
+ * aparecer como atrasada três horas antes de o dia acabar. Reexportado de
+ * `data.ts` para o fuso morar num lugar só.
+ */
+export { hojeISO };
 
 /** O mês corrente como `2026-08-01`. */
 export function mesCorrente() {
