@@ -29,6 +29,18 @@ export const SECOES_DASH: SecaoDash[] = [
   "crm",
 ];
 
+/** Como cada bloco se chama na tela da agência. */
+export const ROTULO_SECAO: Record<SecaoDash, string> = {
+  faturamento: "Faturamento total",
+  salao: "Mesa & Salão",
+  delivery: "Delivery próprio",
+  funil_cp: "Funil do cardápio próprio",
+  ifood: "iFood (receita e funil)",
+  meta: "Meta Ads",
+  google: "Google Ads",
+  crm: "CRM — disparos",
+};
+
 export type ClienteDash = {
   nome: string;
   logoUrl: string | null;

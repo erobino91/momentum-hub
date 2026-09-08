@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { nomeDoMes, primeiroDiaDoMes, CAMPOS_PERIODO } from "@/lib/periodos";
 import { formatarDinheiro } from "@/lib/numero";
-import type { DashboardPeriod, Org } from "@/types/db";
+import { COLUNAS_VINCULO, conexoesDe } from "@/lib/conexoes";
+import type { DashboardPeriod } from "@/types/db";
 import { salvarPeriodo, apagarPeriodo } from "./actions";
 import { FormularioPeriodo } from "./formulario";
 import { AgenciaShell } from "@/components/shell";
@@ -51,9 +52,9 @@ export default async function PeriodosPage({
 
   const { data: org } = await supabase
     .from("orgs")
-    .select("id,name,slug,meta_ad_account_id")
+    .select(["id", "name", "slug", ...COLUNAS_VINCULO].join(","))
     .eq("id", params.org)
-    .maybeSingle<Pick<Org, "id" | "name" | "slug" | "meta_ad_account_id">>();
+    .maybeSingle<Record<string, string>>();
   if (!org) redirect("/agencia");
 
   const { data: periodos } = await supabase
@@ -146,7 +147,7 @@ export default async function PeriodosPage({
             editando={emEdicao?.period_date ?? null}
             obsRaw={emEdicao?.obs_raw ?? ""}
             obsPolished={emEdicao?.obs_polished ?? ""}
-            metaSincronizado={Boolean(org.meta_ad_account_id)}
+            sincronizadas={conexoesDe(org)}
             cancelar={
               emEdicao ? (
                 <Link

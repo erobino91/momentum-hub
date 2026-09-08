@@ -88,14 +88,25 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   cálculo, e `startSession` sobrescreve `auto_cutoff_at` de qualquer jeito. A rede de segurança
   do `tick()` que relê essa coluna passa a cobrir o término agendado de graça, sem saber que
   ele existe.
-- **`datetime-local` só vira instante no navegador.** O campo entrega `"2026-09-04T19:00"` sem
-  fuso, e `new Date(t)` no servidor completa com o fuso de quem executa — que na Vercel é UTC,
-  três horas fora. Por isso existe `CampoInstante` (`src/components/ui/`): o campo visível
-  guarda o texto local e um `hidden` ao lado leva o ISO com offset. **`src/app/bio/actions.ts`
-  ainda faz isso errado** (`comoInstante` converte no servidor), então a janela de agendamento
-  dos botões da bio está deslocada em produção — quando for consertar, é trocar por
-  `CampoInstante`. Na exibição, `page.tsx` das lives fixa `timeZone: "America/Sao_Paulo"` pelo
-  mesmo motivo: renderizar hora no servidor sem fuso mostra UTC.
+- **Fuso é sempre `America/Sao_Paulo`, e mora em `src/lib/data.ts`.** A Vercel roda em **UTC**,
+  então toda data e hora tratada sem fuso explícito sai errada só em produção — em local, onde
+  a máquina já é BRT, tudo parece certo. Zona IANA, nunca `-03:00` cravado: o Brasil acabou com
+  o horário de verão em 2019, mas se voltar a zona acompanha sozinha. São **dois** erros
+  distintos, e os dois já morderam este projeto:
+  - **Na entrada**, `datetime-local` entrega `"2026-09-04T19:00"` sem fuso, e quem fizer
+    `new Date(t)` completa com o fuso de **quem executa**. Converter no servidor gravava três
+    horas adiantado. Quem converte é o navegador: `CampoInstante` (`src/components/ui/`) nas
+    lives, `paraInstante` no editor da bio — que fazia isso errado até 04/09 e tinha a janela
+    dos botões deslocada em produção.
+  - **Na saída**, `toLocaleTimeString` sem `timeZone` e `toISOString().slice(0, 10)` devolvem
+    UTC. O segundo é o mais traiçoeiro: era assim que `hojeISO()` calculava "hoje", e a partir
+    das 21h de Brasília ele já retornava amanhã — marcando como atrasada uma cobrança que ainda
+    tinha o dia inteiro pela frente.
+
+  Data **pura** (`date`, como vencimento e mês de referência) é outro assunto e já está certa:
+  `financeiro.ts` e `periodos.ts` fatiam a string (`iso.split("-")`) e usam `Date.UTC`, sem
+  nunca deixar o fuso entrar. Não "conserte" isso para `new Date(iso)` — é o que faria
+  `2026-09-04` virar dia 3 na tela.
 - **`restaurants.id` é sempre o `orgs.id` do mesmo cliente.** A tabela é uma extensão 1:1 de
   `orgs` para o módulo Fila de Espera, travada por FK `on delete restrict` — nunca gerar id
   novo ali. Quem enxerga as tabelas do Fila é quem tem `profiles`, **não** quem tem
@@ -225,16 +236,25 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
   senão o formulário de fechamento se pré-preencheria com zeros que ninguém apurou. Quem
   conta mês para "atrasado" e para o card (`agencia_empresas`, `modulos_configurados`) só
   conta publicado.
-- **Empresa com `orgs.meta_ad_account_id` não digita Meta.** Os dois campos viram
-  `Calculado` no fechamento do mês, e `salvarPeriodo` relê a coluna no banco antes de
-  decidir — a marca `origem: "meta"` de `src/lib/periodos.ts` sozinha seria só a tela. A
-  trava existe porque a action grava **todas** as colunas de `CAMPOS_PERIODO` e campo em
-  branco vira `null`: publicar o mês depois de sincronizar apagaria o Meta em silêncio.
-  E, no mês que ainda não existe, o valor atual é relido e reenviado em vez de omitido —
-  coluna omitida num `insert` não fica em branco, pega o `default 0` da tabela, e o
-  cliente veria "R$ 0,00 investido" até alguém rodar o sincronizador. Quem escreve é o
-  `sync-meta.mjs` da integração; para voltar a digitar, é remover a conta na tela da
-  empresa.
+- **Empresa com conexão vinculada não digita os campos daquela conexão.** As conexões
+  estão em `src/lib/conexoes.ts` — uma coluna de `orgs` por plataforma (`meta_ad_account_id`
+  hoje), e é o par de `relatorio-portal/fontes/index.mjs` do lado da integração: lá a fonte
+  que coleta, aqui o campo que vincula. A coluna guarda o **identificador** da loja, nunca a
+  credencial. Os campos com `origem` viram `Calculado` no fechamento do mês, e
+  `salvarPeriodo` relê as colunas de vínculo no banco antes de decidir — a marca em
+  `src/lib/periodos.ts` sozinha seria só a tela. A trava existe porque a action grava
+  **todas** as colunas de `CAMPOS_PERIODO` e campo em branco vira `null`: publicar o mês
+  depois de sincronizar apagaria em silêncio o que a API preencheu. E, no mês que ainda não
+  existe, o valor atual é relido e reenviado em vez de omitido — coluna omitida num `insert`
+  não fica em branco, pega o `default 0` da tabela, e o cliente veria "R$ 0,00 investido"
+  até alguém rodar o sincronizador. Quem escreve é o `sync.mjs` da integração; para voltar
+  a digitar, é remover o vínculo no cartão "Conexões" da tela da empresa.
+- **`module_config.config.secoes` decide os blocos do dashboard — e o que é "mês
+  completo".** A chave sempre existiu e o dashboard sempre a leu, mas não havia tela: todo
+  cliente caía no padrão e via os oito blocos, inclusive os que a agência nunca preencheu
+  para ele. O cartão "Blocos que o cliente vê" grava a lista, e o sincronizador só publica
+  um mês sozinho quando toda coluna dos blocos ativos está preenchida. Desmarcar um bloco
+  esconde ele do cliente **e** para de exigir aquele número para fechar o mês.
 - **`fat_proprio` ("Cardápio próprio") não é lido por tela nenhuma** — nem no dashboard do
   cliente, nem no painel. Continua sendo coletado; se um dia ninguém sentir falta, é
   candidato a sair.

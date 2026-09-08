@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { clienteSecreto } from "@/lib/supabase/secreto";
 import { MODULE_KEYS } from "@/lib/modules";
+import { CONEXOES } from "@/lib/conexoes";
+import { SECOES_DASH, type SecaoDash } from "@/types/dashboard";
 
 /**
  * Todas as escritas aqui passam pela RLS: a policy `*_write_agency` só deixa
@@ -100,36 +102,86 @@ export async function salvarSlugDashboard(formData: FormData) {
 }
 
 /**
- * Vincula a empresa a uma conta de anúncio do Meta.
+ * Vincula a empresa às plataformas — uma coluna de `orgs` por conexão.
  *
- * É coluna em `orgs`, não chave em `module_config.config`: quem lê isto não é
- * só a tela do dashboard — é o `sync-meta.mjs` da integração, que varre as
- * empresas todas e precisa perguntar "quais têm Meta" numa consulta só.
+ * São colunas em `orgs`, não chaves em `module_config.config`: quem lê isto não
+ * é só a tela — é o `sync.mjs` da integração, que varre as empresas todas e
+ * precisa perguntar "quais têm CardápioWeb" numa consulta só.
  *
- * Guarda o id **sem** `act_`, mas aceita colar com. O Gerenciador de Anúncios
- * mostra `act_123…` na URL e `123…` na lista de contas; exigir uma das duas
- * formas seria transformar um copiar-colar em erro de digitação.
+ * A coluna guarda o **identificador** da loja, nunca a credencial: a chave fica
+ * no `.env` do cliente, do lado da integração.
  *
- * Campo vazio desvincula, e desvincular devolve os dois campos de Meta ao
- * fechamento manual do mês.
+ * O campo é o seletor de plataforma: preenchê-lo é dizer que o cliente usa
+ * aquela plataforma, e esvaziá-lo devolve os campos daquele bloco ao
+ * preenchimento manual no fechamento do mês.
  */
-export async function salvarContaMeta(formData: FormData) {
+export async function salvarConexoes(formData: FormData) {
   const supabase = await exigirAgencia();
   const orgId = String(formData.get("org_id") ?? "");
   const destino = String(formData.get("destino") ?? "/agencia");
   if (!orgId) voltar("Empresa inválida.", destino);
 
-  const digitado = String(formData.get("meta_ad_account_id") ?? "").trim();
-  const conta = digitado.replace(/^act_/i, "");
-  if (conta && !/^\d{5,}$/.test(conta))
-    voltar("A conta de anúncio é só números (com ou sem act_).", destino);
+  const mudanca: Record<string, string | null> = {};
+  for (const conexao of CONEXOES) {
+    const { valor, erro } = conexao.limpar(
+      String(formData.get(conexao.coluna) ?? ""),
+    );
+    if (erro) voltar(erro, destino);
+    mudanca[conexao.coluna] = valor;
+  }
 
-  const { error } = await supabase
-    .from("orgs")
-    .update({ meta_ad_account_id: conta || null })
-    .eq("id", orgId);
+  const { error } = await supabase.from("orgs").update(mudanca).eq("id", orgId);
 
-  if (error) voltar("Não foi possível salvar a conta de anúncio.", destino);
+  if (error) voltar("Não foi possível salvar as conexões.", destino);
+  voltar(undefined, destino);
+}
+
+/**
+ * Quais blocos do dashboard este cliente vê.
+ *
+ * A chave `secoes` sempre existiu em `module_config.config` e o dashboard já a
+ * lê — só não havia tela, então todo cliente caía no padrão e via os oito
+ * blocos, incluindo os que a agência nunca preencheu para ele.
+ *
+ * Além da tela, é o que dá sentido a "mês completo": o sincronizador só publica
+ * sozinho quando toda coluna dos blocos ativos está preenchida. Cliente sem
+ * Google não pode ficar esperando um número de Google para sempre.
+ */
+export async function salvarSecoes(formData: FormData) {
+  const supabase = await exigirAgencia();
+  const orgId = String(formData.get("org_id") ?? "");
+  const destino = String(formData.get("destino") ?? "/agencia");
+  if (!orgId) voltar("Empresa inválida.", destino);
+
+  // A ordem é a de `SECOES_DASH`, não a do formulário: é a ordem em que o
+  // dashboard desenha, e guardar embaralhado só criaria diferença sem sentido.
+  const escolhidas: SecaoDash[] = SECOES_DASH.filter(
+    (s) => formData.get(`secao_${s}`) === "on",
+  );
+  if (!escolhidas.length)
+    voltar("Marque pelo menos um bloco — o cliente veria uma tela vazia.", destino);
+
+  // Lê para preservar o resto do `config` — o upsert reescreve a coluna inteira.
+  const { data: atual } = await supabase
+    .from("module_config")
+    .select("config")
+    .eq("org_id", orgId)
+    .eq("module", "dashboard")
+    .maybeSingle<{ config: Record<string, unknown> | null }>();
+
+  const { error } = await supabase.from("module_config").upsert(
+    {
+      org_id: orgId,
+      module: "dashboard",
+      config: { ...(atual?.config ?? {}), secoes: escolhidas },
+    },
+    { onConflict: "org_id,module" },
+  );
+
+  if (error) voltar("Não foi possível salvar os blocos.", destino);
+  // O dashboard do cliente é `force-dynamic`, mas o portal lista os cards a
+  // partir de `modulos_configurados`.
+  revalidatePath("/");
   voltar(undefined, destino);
 }
 

@@ -6,6 +6,8 @@
  * possível adicionar campo na tela que nunca chegava ao banco.
  */
 
+import type { OrigemCampo } from "./conexoes";
+
 export type TipoCampo = "dinheiro" | "inteiro";
 
 export type CampoPeriodo = {
@@ -13,11 +15,11 @@ export type CampoPeriodo = {
   rotulo: string;
   tipo: TipoCampo;
   /**
-   * De onde o número vem quando a empresa está vinculada a uma conta de
-   * anúncio. Campo com `origem` não é digitado nem gravado pelo formulário —
-   * quem escreve é o sincronizador.
+   * De onde o número vem quando a empresa tem aquela conexão vinculada. Campo
+   * com `origem` não é digitado nem gravado pelo formulário — quem escreve é o
+   * sincronizador. A empresa que **não** tem a conexão continua digitando.
    */
-  origem?: "meta";
+  origem?: OrigemCampo;
 };
 
 export type GrupoPeriodo = {

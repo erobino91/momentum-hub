@@ -7,6 +7,7 @@ import {
   nomeDoMes,
   type CampoPeriodo,
 } from "@/lib/periodos";
+import { rotuloDaOrigem, type OrigemCampo } from "@/lib/conexoes";
 import {
   formatarCampo,
   formatarDinheiro,
@@ -42,7 +43,7 @@ export function FormularioPeriodo({
   editando,
   obsRaw,
   obsPolished,
-  metaSincronizado,
+  sincronizadas,
   cancelar,
 }: {
   orgId: string;
@@ -57,8 +58,8 @@ export function FormularioPeriodo({
   editando: string | null;
   obsRaw: string;
   obsPolished: string;
-  /** A empresa tem conta de anúncio vinculada: o Meta não se digita. */
-  metaSincronizado: boolean;
+  /** As conexões vinculadas: o que vem delas não se digita. */
+  sincronizadas: OrigemCampo[];
   cancelar: React.ReactNode;
 }) {
   const [valores, setValores] = useState<Record<string, string>>(valoresIniciais);
@@ -83,9 +84,14 @@ export function FormularioPeriodo({
   };
 
   // Campo que a empresa não digita não entra na conta de "quantos faltam" —
-  // nem o total de faturamento, nem o Meta de quem tem conta vinculada.
+  // nem o total de faturamento, nem o que vem de uma conexão vinculada.
   const digitavel = (campo: CampoPeriodo) =>
-    campo.coluna !== "fat_total" && !(campo.origem === "meta" && metaSincronizado);
+    campo.coluna !== "fat_total" &&
+    !(campo.origem && sincronizadas.includes(campo.origem));
+
+  /** De qual plataforma vem um campo que não se digita. */
+  const daOrigem = (campo: CampoPeriodo) =>
+    campo.origem ? rotuloDaOrigem(campo.origem) : "";
 
   const preenchidos = useMemo(
     () =>
@@ -93,7 +99,7 @@ export function FormularioPeriodo({
         (c) => digitavel(c) && paraNumero(valores[c.coluna] ?? "") !== null,
       ).length,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [valores, metaSincronizado],
+    [valores, sincronizadas],
   );
   const total = CAMPOS_PERIODO.filter(digitavel).length;
 
@@ -170,7 +176,7 @@ export function FormularioPeriodo({
                 <span className="text-sm font-semibold">{grupo.titulo}</span>
                 <span className="ml-auto text-xs tabular text-dim">
                   {aDigitar.length === 0
-                    ? "vem do Meta"
+                    ? `vem do ${daOrigem(campos[0])}`
                     : `${comValor} de ${aDigitar.length}`}
                 </span>
               </summary>
@@ -181,8 +187,8 @@ export function FormularioPeriodo({
                 ) : null}
                 {aDigitar.length === 0 ? (
                   <p className="mb-3 text-xs text-dim">
-                    Vem da conta de anúncio vinculada. Para voltar a digitar,
-                    remova a conta na aba Geral.
+                    Vem da conexão vinculada. Para voltar a digitar, remova o
+                    vínculo na aba Geral.
                   </p>
                 ) : null}
 
@@ -213,7 +219,7 @@ export function FormularioPeriodo({
                               ? `R$ ${valoresIniciais[campo.coluna]}`
                               : "—"
                           }
-                          ajuda="Vem do Meta."
+                          ajuda={`Vem do ${daOrigem(campo)}.`}
                         />
                       )}
                       {/* O total entra logo depois das três partes que ele soma. */}

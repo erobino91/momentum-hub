@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { exigirAgencia } from "@/lib/agencia";
 import { CAMPOS_PERIODO, primeiroDiaDoMes } from "@/lib/periodos";
+import { COLUNAS_VINCULO, conexoesDe } from "@/lib/conexoes";
 import { paraNumero } from "@/lib/numero";
 
 function voltar(orgId: string, erro?: string, mes?: string): never {
@@ -35,25 +36,29 @@ export async function salvarPeriodo(formData: FormData) {
   const mes = primeiroDiaDoMes(String(formData.get("period_date") ?? ""));
   if (!mes) voltar(orgId, "Mês inválido.");
 
-  // Quem manda nos campos de Meta é o banco, não o formulário: a tela some com
-  // os dois quando a empresa tem conta vinculada. Reler aqui é o que impede um
-  // envio montado à mão de zerar o que a API preencheu.
+  // Quem manda nos campos sincronizados é o banco, não o formulário: a tela some
+  // com eles quando a empresa tem aquela conexão vinculada. Reler aqui é o que
+  // impede um envio montado à mão de zerar o que a API preencheu.
   const { data: org } = await supabase
     .from("orgs")
-    .select("meta_ad_account_id")
+    .select(COLUNAS_VINCULO.join(","))
     .eq("id", orgId)
-    .maybeSingle<{ meta_ad_account_id: string | null }>();
-  const metaSincronizado = Boolean(org?.meta_ad_account_id);
+    .maybeSingle<Record<string, string | null>>();
+  const sincronizadas = new Set(conexoesDe(org));
+
+  const preservar = CAMPOS_PERIODO.filter(
+    (c) => c.origem && sincronizadas.has(c.origem),
+  );
 
   // Mês que ainda não existe entra pelo `insert` do upsert, e ali coluna
   // omitida não fica em branco: pega o `default 0` da tabela, e o cliente veria
   // "R$ 0,00 investido" até alguém rodar o sincronizador. Por isso o valor
   // atual é lido e reenviado — `null` quando não há mês, o que é o mesmo que a
   // tela mostrava antes de existir integração.
-  const { data: existente } = metaSincronizado
+  const { data: existente } = preservar.length
     ? await supabase
         .from("dashboard_periods")
-        .select("meta_invest,meta_vendas")
+        .select(preservar.map((c) => c.coluna).join(","))
         .eq("org_id", orgId)
         .eq("period_date", mes)
         .maybeSingle<Record<string, number | null>>()
@@ -69,7 +74,7 @@ export async function salvarPeriodo(formData: FormData) {
   };
   for (const campo of CAMPOS_PERIODO) {
     linha[campo.coluna] =
-      campo.origem === "meta" && metaSincronizado
+      campo.origem && sincronizadas.has(campo.origem)
         ? (existente?.[campo.coluna] ?? null)
         : numero(formData.get(campo.coluna));
   }

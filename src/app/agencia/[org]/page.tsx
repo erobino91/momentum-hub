@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MODULES } from "@/lib/modules";
 import { URL_BIO } from "@/lib/bio/url";
 import { criarPagina } from "@/app/bio/actions";
-import { prepararFila, salvarContaMeta } from "../actions";
+import { prepararFila, salvarConexoes, salvarSecoes } from "../actions";
 import { AgenciaShell } from "@/components/shell";
 import { AbasEmpresa } from "@/components/agencia/abas";
 import { Numero } from "@/components/agencia/numero";
@@ -23,8 +23,9 @@ import {
   mesCurto,
   reaisCurtos,
 } from "@/lib/agencia";
+import { CONEXOES, COLUNAS_VINCULO, conexoesDe } from "@/lib/conexoes";
+import { SECOES_DASH, ROTULO_SECAO } from "@/types/dashboard";
 import type { LinkPage } from "@/types/bio";
-import type { Org } from "@/types/db";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Empresa" };
@@ -57,14 +58,28 @@ export default async function EmpresaPage({
     .eq("org_id", empresa.id)
     .maybeSingle<Pick<LinkPage, "id" | "slug" | "active">>();
 
-  // Fora de `agencia_empresas()`: a RPC monta a lista geral, e uma coluna que
-  // só esta tela usa não tem por que atravessar todas as empresas.
-  const { data: conta } = await supabase
+  // Fora de `agencia_empresas()`: a RPC monta a lista geral, e colunas que só
+  // esta tela usa não têm por que atravessar todas as empresas.
+  const { data: vinculos } = await supabase
     .from("orgs")
-    .select("meta_ad_account_id")
+    .select(COLUNAS_VINCULO.join(","))
     .eq("id", empresa.id)
-    .maybeSingle<Pick<Org, "meta_ad_account_id">>();
-  const contaMeta = conta?.meta_ad_account_id ?? "";
+    .maybeSingle<Record<string, string | null>>();
+  const conectadas = conexoesDe(vinculos);
+
+  // Quais blocos o cliente vê. Sem configuração, vê todos — é o mesmo padrão
+  // que `lib/dashboard.ts` aplica do lado do cliente.
+  const { data: cfgDash } = await supabase
+    .from("module_config")
+    .select("config")
+    .eq("org_id", empresa.id)
+    .eq("module", "dashboard")
+    .maybeSingle<{ config: Record<string, unknown> | null }>();
+  const secoesBrutas = cfgDash?.config?.secoes;
+  const secoes = Array.isArray(secoesBrutas)
+    ? SECOES_DASH.filter((s) => (secoesBrutas as unknown[]).includes(s))
+    : SECOES_DASH;
+  const secoesConfiguradas = Array.isArray(secoesBrutas);
 
   const atrasado = mesAtrasado(empresa.ultimo_mes);
   const tudoPronto = empresa.dashboard && empresa.bio && empresa.fila;
@@ -238,46 +253,90 @@ export default async function EmpresaPage({
         </Cartao>
       </div>
 
-      <div className="mt-5">
+      <div className="mt-5 grid gap-3 lg:grid-cols-2">
         <Cartao
-          titulo="Conta de anúncio do Meta"
+          titulo="Conexões"
           descricao={
-            contaMeta
-              ? "Investimento e vendas do bloco Meta Ads vêm da API — no fechamento do mês os dois campos ficam só de leitura."
-              : "Sem conta vinculada, os dois campos de Meta continuam sendo digitados no fechamento do mês."
+            conectadas.length
+              ? "Os campos dessas plataformas ficam só de leitura no fechamento do mês — quem escreve é o sincronizador."
+              : "Sem conexão vinculada, todos os números do mês são digitados no fechamento."
           }
           acao={
-            <Selo tom={contaMeta ? "pronto" : "atencao"}>
-              {contaMeta ? "sincronizado" : "manual"}
+            <Selo tom={conectadas.length ? "pronto" : "atencao"}>
+              {conectadas.length
+                ? `${conectadas.length} sincronizada${conectadas.length > 1 ? "s" : ""}`
+                : "manual"}
             </Selo>
           }
         >
-          <form action={salvarContaMeta} className="flex flex-wrap items-end gap-3">
+          <form action={salvarConexoes} className="w-full">
             <input type="hidden" name="org_id" value={empresa.id} />
             <input
               type="hidden"
               name="destino"
               value={`/agencia/${empresa.id}`}
             />
-            <Campo
-              rotulo="Conta de anúncio"
-              ajuda="Só números. Pode colar com o act_ na frente; ele sai sozinho."
-              className="w-full sm:w-72"
-            >
-              <Entrada
-                name="meta_ad_account_id"
-                defaultValue={contaMeta}
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder="act_2716559871841971"
-                className="tabular"
-              />
-            </Campo>
-            <div className="pb-6">
-              <BotaoEnviar variante="secundario" tamanho="sm" pendente="Salvando…">
-                Salvar
-              </BotaoEnviar>
+            <div className="grid gap-3">
+              {/* Um campo por conexão registrada em `lib/conexoes.ts`:
+                  plataforma nova aparece aqui sozinha. */}
+              {CONEXOES.map((conexao) => (
+                <Campo
+                  key={conexao.coluna}
+                  rotulo={conexao.campo}
+                  ajuda={conexao.ajuda}
+                  className="w-full sm:w-72"
+                >
+                  <Entrada
+                    name={conexao.coluna}
+                    defaultValue={vinculos?.[conexao.coluna] ?? ""}
+                    autoComplete="off"
+                    placeholder={conexao.placeholder}
+                    className="tabular"
+                  />
+                </Campo>
+              ))}
             </div>
+            <BotaoEnviar variante="secundario" tamanho="sm" pendente="Salvando…">
+              Salvar conexões
+            </BotaoEnviar>
+          </form>
+        </Cartao>
+
+        <Cartao
+          titulo="Blocos que o cliente vê"
+          descricao="Desmarcar esconde o bloco no dashboard e para de exigir aquele número para fechar o mês."
+          acao={
+            <Selo tom={secoesConfiguradas ? "pronto" : "atencao"}>
+              {secoesConfiguradas ? `${secoes.length} de 8` : "todos (padrão)"}
+            </Selo>
+          }
+        >
+          <form action={salvarSecoes} className="w-full">
+            <input type="hidden" name="org_id" value={empresa.id} />
+            <input
+              type="hidden"
+              name="destino"
+              value={`/agencia/${empresa.id}`}
+            />
+            <div className="mb-4 grid gap-2 sm:grid-cols-2">
+              {SECOES_DASH.map((secao) => (
+                <label
+                  key={secao}
+                  className="flex items-center gap-2.5 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    name={`secao_${secao}`}
+                    defaultChecked={secoes.includes(secao)}
+                    className="h-4 w-4 accent-brand"
+                  />
+                  {ROTULO_SECAO[secao]}
+                </label>
+              ))}
+            </div>
+            <BotaoEnviar variante="secundario" tamanho="sm" pendente="Salvando…">
+              Salvar blocos
+            </BotaoEnviar>
           </form>
         </Cartao>
       </div>
