@@ -100,6 +100,33 @@ export const CONEXOES: Conexao[] = [
       return { valor: `G-${cru}` };
     },
   },
+  {
+    origem: "ga4",
+    rotulo: "Google Analytics",
+    coluna: "ga4_property_id",
+    campo: "Propriedade do Google Analytics",
+    ajuda:
+      "O ID numérico da propriedade (Administrador → Detalhes da propriedade). Preenchido, o funil do cardápio para de ser digitado.",
+    placeholder: "123456789",
+    // O GA4 mostra o mesmo número de três jeitos: solto na tela de detalhes,
+    // como `properties/123456789` na Data API e como `p123456789` na URL do
+    // relatório. Aceitar as três evita que colar do lugar errado vire erro de
+    // digitação — a Data API quer só os dígitos.
+    limpar(bruto) {
+      const id = bruto
+        .trim()
+        .replace(/^properties\//i, "")
+        .replace(/^p(?=\d)/i, "");
+      if (!id) return { valor: null };
+      if (!/^\d{6,}$/.test(id)) {
+        return {
+          valor: null,
+          erro: "A propriedade do GA4 é o ID numérico, não o measurement ID (G-...) nem o nome.",
+        };
+      }
+      return { valor: id };
+    },
+  },
 ];
 
 /** As colunas de vínculo, para quem só precisa ler `orgs`. */

@@ -75,12 +75,18 @@ export const GRUPOS_PERIODO: GrupoPeriodo[] = [
   },
   {
     titulo: "Funil do cardápio próprio",
+    // Os cinco vêm do Google Analytics quando a propriedade está vinculada —
+    // visitas são sessões, e os outros quatro são os eventos de e-commerce do
+    // GA4 (`view_item`, `add_to_cart`, `begin_checkout`, `purchase`). Sem
+    // propriedade vinculada continuam digitados, como sempre foram: lidos a
+    // olho no painel do CardápioWeb, que é onde a agência os encontrava. Nem o
+    // CW nem a Goomer expõem esse funil por API.
     campos: [
-      inteiro("cp_visitas", "Visitas"),
-      inteiro("cp_views", "Views"),
-      inteiro("cp_sacola", "Sacola"),
-      inteiro("cp_revisao", "Revisão"),
-      inteiro("cp_concluidos", "Concluídos"),
+      { ...inteiro("cp_visitas", "Visitas"), origens: ["ga4"] },
+      { ...inteiro("cp_views", "Views"), origens: ["ga4"] },
+      { ...inteiro("cp_sacola", "Sacola"), origens: ["ga4"] },
+      { ...inteiro("cp_revisao", "Revisão"), origens: ["ga4"] },
+      { ...inteiro("cp_concluidos", "Concluídos"), origens: ["ga4"] },
     ],
   },
   {
