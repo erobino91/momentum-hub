@@ -184,7 +184,7 @@ export function BioRender({
         </div>
 
         <p className="mt-10 text-center text-[11px] opacity-40">
-          Momentum Digital
+          Feito com <span role="img" aria-label="amor">❤️</span> por MOMENTUM
         </p>
       </div>
     </div>

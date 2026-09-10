@@ -14,11 +14,15 @@ import {
   Cartao,
   Dialogo,
   Entrada,
+  Rodinha,
   Selecao,
+  campoEstilo,
+  formatarMB,
   opcaoEstilo,
 } from "@/components/ui";
 import { NICHOS, NICHOS_LISTA, nichoDe, paletaDoNicho } from "@/lib/bio/nichos";
 import { URL_BIO } from "@/lib/bio/url";
+import { createClient } from "@/lib/supabase/client";
 import { removerToken, salvarBio, salvarMeta } from "../actions";
 import {
   botaoNoAr,
@@ -43,6 +47,9 @@ import {
  * Gravar é um passo só, explícito, no fim. Botão criado ou removido também
  * espera o Salvar: enquanto não se clica, dá para desistir.
  */
+
+/** O mesmo teto do bucket `bio` — aqui só para dar mensagem antes de subir. */
+const LOGO_MAXIMA = 2 * 1024 * 1024;
 
 type BotaoLocal = {
   id: string;
@@ -107,6 +114,8 @@ export function EditorBio({
   const [titulo, setTitulo] = useState(pagina.title);
   const [bio, setBio] = useState(pagina.bio ?? "");
   const [avatar, setAvatar] = useState(pagina.avatar_url ?? "");
+  const [enviandoLogo, setEnviandoLogo] = useState(false);
+  const [erroLogo, setErroLogo] = useState<string | null>(null);
   const [noAr, setNoAr] = useState(pagina.active);
   const [cores, setCores] = useState<Required<TemaBio>>(tema);
   const [nicho, setNicho] = useState<NichoBio>(nichoDe(tema.nicho));
@@ -133,6 +142,44 @@ export function EditorBio({
   const semTema = Object.keys(pagina.theme ?? {}).length === 0;
 
   const [resultado, salvar] = useFormState(salvarBio, null);
+
+  /**
+   * Sobe a logo direto do navegador para o Storage e devolve a URL pública.
+   *
+   * Não passa por server action de propósito: o corpo de uma action para em
+   * 1 MB no Next e o bucket já aceita o dobro. A RLS de `storage.objects`
+   * (policy `bio_escrita_agencia`) é quem autoriza — a sessão vai no client.
+   */
+  async function enviarLogo(arquivo: File) {
+    setErroLogo(null);
+    if (arquivo.size > LOGO_MAXIMA) {
+      setErroLogo(`A imagem tem ${formatarMB(arquivo.size)} e o limite é ${formatarMB(LOGO_MAXIMA)}.`);
+      return;
+    }
+
+    setEnviandoLogo(true);
+    try {
+      const supabase = createClient();
+      const ext = arquivo.name.split(".").pop()?.toLowerCase() || "png";
+      // Nome por timestamp: o arquivo é imutável e pode ficar em cache eterno.
+      // ponytail: a logo antiga fica no bucket. São KBs — varrer órfãos só se incomodar.
+      const caminho = `${pagina.id}/${Date.now()}.${ext}`;
+
+      const { error } = await supabase.storage
+        .from("bio")
+        .upload(caminho, arquivo, {
+          cacheControl: "31536000",
+          contentType: arquivo.type || undefined,
+        });
+      if (error) throw error;
+
+      setAvatar(supabase.storage.from("bio").getPublicUrl(caminho).data.publicUrl);
+    } catch (e) {
+      setErroLogo(e instanceof Error ? e.message : "Não foi possível enviar a logo.");
+    } finally {
+      setEnviandoLogo(false);
+    }
+  }
 
   const dados = JSON.stringify({
     title: titulo,
@@ -293,12 +340,44 @@ export function EditorBio({
                   <AreaTexto rows={2} value={bio} onChange={(e) => setBio(e.target.value)} />
                 </Campo>
 
-                <Campo rotulo="Foto (URL)">
-                  <Entrada
-                    value={avatar}
-                    onChange={(e) => setAvatar(e.target.value)}
-                    placeholder="https://..."
-                  />
+                <Campo
+                  rotulo="Logo"
+                  erro={erroLogo ?? undefined}
+                  ajuda={`Aparece acima do título. PNG, JPG, WEBP ou SVG, até ${formatarMB(LOGO_MAXIMA)}.`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      {avatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={avatar}
+                          alt=""
+                          className="h-11 w-11 shrink-0 rounded-full border border-line object-cover"
+                        />
+                      ) : null}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        disabled={enviandoLogo}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          // Limpa o input: escolher o mesmo arquivo de novo
+                          // (depois de um erro) precisa disparar `change`.
+                          e.target.value = "";
+                          if (f) void enviarLogo(f);
+                        }}
+                        // Input de arquivo não é campo de texto: vestir os dois
+                        // iguais põe um botão do sistema dentro de uma caixa de digitar.
+                        className={`${campoEstilo} cursor-pointer py-2 file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-surface-3 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-foreground`}
+                      />
+                      {enviandoLogo ? <Rodinha /> : null}
+                    </div>
+                    <Entrada
+                      value={avatar}
+                      onChange={(e) => setAvatar(e.target.value)}
+                      placeholder="ou cole uma URL: https://..."
+                    />
+                  </div>
                 </Campo>
 
                 {/* O nicho escolhe o visual da página pública: layout de
