@@ -171,9 +171,13 @@ function transcodeArgs(sourceUrl, outPath, photo) {
   // dele que vem o total pra calcular a porcentagem.
   const prog = ['-progress', 'pipe:1', '-nostats'];
   if (photo) {
-    return ['-y', ...prog, '-loop', '1', '-framerate', '30', '-t', '5', '-i', sourceUrl,
+    // O `-t` de SAIDA e o que termina a conversao: o anullsrc e infinito, e so
+    // com o `-t` do input a foto acaba em 5s mas o audio mudo segue pra sempre —
+    // o ffmpeg nunca fechava e o material ficava em 99% (30/09).
+    const t = String(DURACAO_FOTO);
+    return ['-y', ...prog, '-loop', '1', '-framerate', '30', '-t', t, '-i', sourceUrl,
             '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100',
-            '-map', '0:v', '-map', '1:a', ...v, ...a, ...scale, '-movflags', '+faststart', outPath];
+            '-map', '0:v', '-map', '1:a', ...v, ...a, ...scale, '-t', t, '-movflags', '+faststart', outPath];
   }
   return ['-y', ...prog, '-i', sourceUrl, ...v, ...a, ...scale, '-movflags', '+faststart', outPath];
 }
