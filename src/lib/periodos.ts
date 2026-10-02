@@ -56,11 +56,11 @@ export const GRUPOS_PERIODO: GrupoPeriodo[] = [
       // não a agência.
       // Salão e delivery vêm do cardápio digital quando a loja está vinculada:
       // salão é `order_type` mesa/local, delivery é entrega + retirada menos o
-      // que entrou pelo iFood. `fat_ifood` continua digitado — o número do CW
-      // fica uns 5% abaixo do que a agência lança do painel do iFood.
+      // que entrou pelo iFood. `fat_ifood` vem do Portal do Parceiro, nunca do
+      // CW (que fica uns 5% abaixo): o maior entre Desempenho e Financeiro.
       { ...dinheiro("fat_mesa", "Salão"), origens: ["cw"] },
       { ...dinheiro("fat_delivery", "Delivery"), origens: ["cw", "goomer"] },
-      dinheiro("fat_ifood", "iFood"),
+      { ...dinheiro("fat_ifood", "iFood"), origens: ["ifood"] },
       dinheiro("fat_total", "Total"),
       dinheiro("fat_proprio", "Cardápio próprio"),
     ],
@@ -91,12 +91,14 @@ export const GRUPOS_PERIODO: GrupoPeriodo[] = [
   },
   {
     titulo: "Funil do iFood",
+    // O "Funil de vendas" do Desempenho no Portal do Parceiro, quando a loja
+    // está vinculada: visita, viu o cardápio, sacola, checkout, pedido.
     campos: [
-      inteiro("if_visitas", "Visitas"),
-      inteiro("if_views", "Views"),
-      inteiro("if_sacola", "Sacola"),
-      inteiro("if_revisao", "Revisão"),
-      inteiro("if_concluidos", "Concluídos"),
+      { ...inteiro("if_visitas", "Visitas"), origens: ["ifood"] },
+      { ...inteiro("if_views", "Views"), origens: ["ifood"] },
+      { ...inteiro("if_sacola", "Sacola"), origens: ["ifood"] },
+      { ...inteiro("if_revisao", "Revisão"), origens: ["ifood"] },
+      { ...inteiro("if_concluidos", "Concluídos"), origens: ["ifood"] },
     ],
   },
   {

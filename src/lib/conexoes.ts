@@ -14,7 +14,7 @@
  * coleta, aqui o campo que vincula. Conexão nova entra nos dois.
  */
 
-export type OrigemCampo = "meta" | "cw" | "goomer" | "ga4" | "google";
+export type OrigemCampo = "meta" | "cw" | "goomer" | "ga4" | "ifood" | "google";
 
 export type Conexao = {
   origem: OrigemCampo;
@@ -125,6 +125,30 @@ export const CONEXOES: Conexao[] = [
         };
       }
       return { valor: id };
+    },
+  },
+  {
+    origem: "ifood",
+    rotulo: "iFood",
+    coluna: "ifood_merchant_id",
+    campo: "Loja no iFood",
+    ajuda:
+      "O uuid da loja no iFood, não o número curto do Portal. Preenchido, o faturamento e o funil do iFood param de ser digitados.",
+    placeholder: "b042983e-fd37-4b1a-887d-66f4d703cadd",
+    // O Portal mostra o número curto (`1658952`) ao lado do nome, e é ele que
+    // alguém vai tentar colar — mas as rotas do Portal só aceitam o uuid.
+    limpar(bruto) {
+      const uuid = bruto.trim().toLowerCase();
+      if (!uuid) return { valor: null };
+      if (
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(uuid)
+      ) {
+        return {
+          valor: null,
+          erro: "A loja do iFood é o uuid, não o número que aparece ao lado do nome.",
+        };
+      }
+      return { valor: uuid };
     },
   },
 ];
