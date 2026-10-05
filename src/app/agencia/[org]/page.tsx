@@ -4,19 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { MODULES } from "@/lib/modules";
 import { URL_BIO } from "@/lib/bio/url";
 import { criarPagina } from "@/app/bio/actions";
-import { prepararFila, salvarConexoes, salvarSecoes } from "../actions";
+import { prepararFila, salvarSecoes } from "../actions";
 import { AgenciaShell } from "@/components/shell";
 import { AbasEmpresa } from "@/components/agencia/abas";
 import { Numero } from "@/components/agencia/numero";
-import {
-  Aviso,
-  BotaoEnviar,
-  Campo,
-  Cartao,
-  Entrada,
-  Selo,
-  botaoEstilo,
-} from "@/components/ui";
+import { Aviso, BotaoEnviar, Cartao, Selo, botaoEstilo } from "@/components/ui";
 import {
   carregarEmpresas,
   mesAtrasado,
@@ -258,7 +250,7 @@ export default async function EmpresaPage({
           titulo="Conexões"
           descricao={
             conectadas.length
-              ? "Os campos dessas plataformas ficam só de leitura no fechamento do mês — quem escreve é o sincronizador."
+              ? "Os números destas plataformas vêm do sincronizador. Quem vincula é o back-end da integração."
               : "Sem conexão vinculada, todos os números do mês são digitados no fechamento."
           }
           acao={
@@ -269,37 +261,26 @@ export default async function EmpresaPage({
             </Selo>
           }
         >
-          <form action={salvarConexoes} className="w-full">
-            <input type="hidden" name="org_id" value={empresa.id} />
-            <input
-              type="hidden"
-              name="destino"
-              value={`/agencia/${empresa.id}`}
-            />
-            <div className="grid gap-3">
-              {/* Um campo por conexão registrada em `lib/conexoes.ts`:
-                  plataforma nova aparece aqui sozinha. */}
-              {CONEXOES.map((conexao) => (
-                <Campo
-                  key={conexao.coluna}
-                  rotulo={conexao.campo}
-                  ajuda={conexao.ajuda}
-                  className="w-full sm:w-72"
-                >
-                  <Entrada
-                    name={conexao.coluna}
-                    defaultValue={vinculos?.[conexao.coluna] ?? ""}
-                    autoComplete="off"
-                    placeholder={conexao.placeholder}
-                    className="tabular"
-                  />
-                </Campo>
-              ))}
-            </div>
-            <BotaoEnviar variante="secundario" tamanho="sm" pendente="Salvando…">
-              Salvar conexões
-            </BotaoEnviar>
-          </form>
+          {/* Só leitura: o vínculo é gravado pelo back-end da integração.
+              Uma linha por conexão de `lib/conexoes.ts` — plataforma nova
+              aparece aqui sozinha. */}
+          <dl className="w-full space-y-2.5 text-sm">
+            {CONEXOES.map((conexao) => (
+              <div
+                key={conexao.coluna}
+                className="flex items-start justify-between gap-4 border-b border-line pb-2.5 last:border-0 last:pb-0"
+              >
+                <dt className="flex-none text-xs font-semibold text-dim">
+                  {conexao.rotulo}
+                </dt>
+                <dd className="min-w-0 break-all text-right tabular">
+                  {vinculos?.[conexao.coluna] ?? (
+                    <span className="text-dim">—</span>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </Cartao>
 
         <Cartao

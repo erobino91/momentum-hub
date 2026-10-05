@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { clienteSecreto } from "@/lib/supabase/secreto";
 import { MODULE_KEYS } from "@/lib/modules";
-import { CONEXOES } from "@/lib/conexoes";
 import { SECOES_DASH, type SecaoDash } from "@/types/dashboard";
 
 /**
@@ -99,41 +98,6 @@ export async function salvarSlugDashboard(formData: FormData) {
 
   if (error) voltar("Não foi possível salvar o slug do dashboard.");
   voltar();
-}
-
-/**
- * Vincula a empresa às plataformas — uma coluna de `orgs` por conexão.
- *
- * São colunas em `orgs`, não chaves em `module_config.config`: quem lê isto não
- * é só a tela — é o `sync.mjs` da integração, que varre as empresas todas e
- * precisa perguntar "quais têm CardápioWeb" numa consulta só.
- *
- * A coluna guarda o **identificador** da loja, nunca a credencial: a chave fica
- * no `.env` do cliente, do lado da integração.
- *
- * O campo é o seletor de plataforma: preenchê-lo é dizer que o cliente usa
- * aquela plataforma, e esvaziá-lo devolve os campos daquele bloco ao
- * preenchimento manual no fechamento do mês.
- */
-export async function salvarConexoes(formData: FormData) {
-  const supabase = await exigirAgencia();
-  const orgId = String(formData.get("org_id") ?? "");
-  const destino = String(formData.get("destino") ?? "/agencia");
-  if (!orgId) voltar("Empresa inválida.", destino);
-
-  const mudanca: Record<string, string | null> = {};
-  for (const conexao of CONEXOES) {
-    const { valor, erro } = conexao.limpar(
-      String(formData.get(conexao.coluna) ?? ""),
-    );
-    if (erro) voltar(erro, destino);
-    mudanca[conexao.coluna] = valor;
-  }
-
-  const { error } = await supabase.from("orgs").update(mudanca).eq("id", orgId);
-
-  if (error) voltar("Não foi possível salvar as conexões.", destino);
-  voltar(undefined, destino);
 }
 
 /**

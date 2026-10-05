@@ -62,7 +62,13 @@ export default async function LivesPage({
 
   const [{ data: orgs }, { data: materiais }, { data: sessoes }] =
     await Promise.all([
-      supabase.from("orgs").select("id,name,slug").order("name").returns<Org[]>(),
+      // Sem a casa da agência (`interna`, coluna computada no banco).
+      supabase
+        .from("orgs")
+        .select("id,name,slug")
+        .eq("interna", false)
+        .order("name")
+        .returns<Org[]>(),
       supabase
         .from("live_materials")
         .select("*")

@@ -163,7 +163,7 @@ function nadaVeio({ status, corpo }) {
 
 console.log(`\nVerificação da Fase 9 — projeto ${REF}\n`);
 
-let orgA, orgB, orgC;
+let orgA, orgB, orgC, orgAg;
 let idCliente, idAgencia;
 
 try {
@@ -172,16 +172,20 @@ try {
   // B: pausado, vence dia 10.
   // C: nenhuma linha de contrato — é a empresa que a tela precisa continuar
   //    mostrando para alguém lembrar de cadastrar.
+  // Ag: a casa do usuário agência, como a `momentum-digital` em produção — não
+  //    é cliente e não pode aparecer na tela.
   const orgs = await sql(`
     insert into public.orgs (name, slug) values
       ('Empresa A ${MARCA}', '${MARCA}-a'),
       ('Empresa B ${MARCA}', '${MARCA}-b'),
-      ('Empresa C ${MARCA}', '${MARCA}-c')
+      ('Empresa C ${MARCA}', '${MARCA}-c'),
+      ('Agência ${MARCA}', '${MARCA}-ag')
     returning id, slug;
   `);
   orgA = orgs.find((o) => o.slug.endsWith("-a")).id;
   orgB = orgs.find((o) => o.slug.endsWith("-b")).id;
   orgC = orgs.find((o) => o.slug.endsWith("-c")).id;
+  orgAg = orgs.find((o) => o.slug.endsWith("-ag")).id;
 
   const contratos = await sql(`
     insert into public.billing_contracts (org_id, situacao, dia_vencimento, forma_pagamento, cliente_desde)
@@ -205,7 +209,7 @@ try {
   await sql(`
     insert into public.memberships (user_id, org_id, role) values
       ('${idCliente}'::uuid, '${orgA}'::uuid, 'owner'::public.membership_role),
-      ('${idAgencia}'::uuid, '${orgA}'::uuid, 'agency'::public.membership_role);
+      ('${idAgencia}'::uuid, '${orgAg}'::uuid, 'agency'::public.membership_role);
   `);
 
   const Anon = rest(null);
@@ -389,10 +393,11 @@ try {
   checar(Number(lA?.valor_vigente) === 1200, "valor vigente é o do mês consultado, não o de hoje", String(lA?.valor_vigente));
   checar(lA?.status === "pago" && lA?.valor !== null, "a cobrança do mês vem junto na mesma linha");
   checar(lA?.forma_pagamento === "pix" && lA?.dia_vencimento === 31, "os dados do contrato vêm junto");
+  checar(!linhas.some((l) => l.org_id === orgAg), "a casa da agência não aparece como cliente");
 } finally {
   // ── limpeza ───────────────────────────────────────────────────────────────
   // `on delete cascade` leva contrato, valores e cobranças junto com a org.
-  for (const id of [orgA, orgB, orgC]) {
+  for (const id of [orgA, orgB, orgC, orgAg]) {
     if (id) await sql(`delete from public.orgs where id = '${id}';`);
   }
   for (const id of [idCliente, idAgencia]) {

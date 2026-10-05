@@ -204,6 +204,13 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
   consulta a consulta. As duas são `security definer` e começam por `is_agency()` — sem essa
   linha seriam um jeito de qualquer sessão listar as empresas todas. `agencia_acessos()` lê
   `auth.users` e aposentou o `listUsers(1000)` da Admin API na tela.
+- **A casa da agência não é cliente.** O login da equipe mora na org `momentum-digital`, e
+  sem filtro ela aparecia na lista de empresas, no financeiro ("sem contrato"), nas lives e no
+  contador do menu. Quem separa é `interna(orgs)` — empresa com membro de papel `agency` —,
+  derivado como "módulo configurado", não marcado à mão. As RPCs chamam direto; consulta a
+  `orgs` que lista empresa filtra `.eq("interna", false)` (coluna computada do PostgREST).
+  **Lista nova de empresa sem esse filtro traz a agência de volta.** Pelo mesmo motivo o
+  usuário agência do `verify:fase9` mora numa empresa própria.
 - **Faturamento do mês é sempre `fat_mesa + fat_delivery + fat_ifood`**, nunca a coluna
   `fat_total`. Vale na RPC e no `dashboard-view.tsx` — as duas telas não podem discordar.
 - **Filtro e busca ficam na URL** (`?q=`, `?filtro=`), por formulário GET: recarregar,
@@ -237,9 +244,9 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
   conta mês para "atrasado" e para o card (`agencia_empresas`, `modulos_configurados`) só
   conta publicado.
 - **Empresa com conexão vinculada não digita os campos daquela conexão.** As conexões
-  estão em `src/lib/conexoes.ts` — uma coluna de `orgs` por plataforma (`meta_ad_account_id`
-  hoje), e é o par de `relatorio-portal/fontes/index.mjs` do lado da integração: lá a fonte
-  que coleta, aqui o campo que vincula. A coluna guarda o **identificador** da loja, nunca a
+  estão em `src/lib/conexoes.ts` — uma coluna de `orgs` por plataforma, e é o par de
+  `relatorio-portal/fontes/index.mjs` do lado da integração: lá a fonte que coleta, aqui a
+  coluna que vincula. A coluna guarda o **identificador** da loja, nunca a
   credencial. Os campos com `origem` viram `Calculado` no fechamento do mês, e
   `salvarPeriodo` relê as colunas de vínculo no banco antes de decidir — a marca em
   `src/lib/periodos.ts` sozinha seria só a tela. A trava existe porque a action grava
@@ -247,8 +254,10 @@ primitivas ficam em `src/components/ui/` — **código novo usa elas**, não cla
   depois de sincronizar apagaria em silêncio o que a API preencheu. E, no mês que ainda não
   existe, o valor atual é relido e reenviado em vez de omitido — coluna omitida num `insert`
   não fica em branco, pega o `default 0` da tabela, e o cliente veria "R$ 0,00 investido"
-  até alguém rodar o sincronizador. Quem escreve é o `sync.mjs` da integração; para voltar
-  a digitar, é remover o vínculo no cartão "Conexões" da tela da empresa.
+  até alguém rodar o sincronizador. Quem escreve é o `sync.mjs` da integração, e quem
+  **vincula** também é o back-end dela (`gravarVinculo`): desde 05/10/26 não existe campo de
+  conexão na tela — o cartão "Conexões" da empresa só mostra. Voltar a digitar é esvaziar a
+  coluna por lá.
 - **`module_config.config.secoes` decide os blocos do dashboard — e o que é "mês
   completo".** A chave sempre existiu e o dashboard sempre a leu, mas não havia tela: todo
   cliente caía no padrão e via os oito blocos, inclusive os que a agência nunca preencheu

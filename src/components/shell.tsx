@@ -237,10 +237,14 @@ export async function AgenciaShell({
   const supabase = createClient();
 
   // Duas contagens `head` (só o total, sem trazer linha) para os contadores do
-  // menu — quem já está no ar precisa aparecer de qualquer tela.
+  // menu — quem já está no ar precisa aparecer de qualquer tela. A casa da
+  // agência não conta como empresa: `interna` é coluna computada no banco.
   const [{ data: user }, empresas, lives] = await Promise.all([
     supabase.auth.getUser(),
-    supabase.from("orgs").select("id", { count: "exact", head: true }),
+    supabase
+      .from("orgs")
+      .select("id", { count: "exact", head: true })
+      .eq("interna", false),
     supabase
       .from("live_sessions")
       .select("id", { count: "exact", head: true })
