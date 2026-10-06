@@ -1,14 +1,23 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MODULES } from "@/lib/modules";
 import { URL_BIO } from "@/lib/bio/url";
 import { criarPagina } from "@/app/bio/actions";
-import { prepararFila, salvarSecoes } from "../actions";
+import { prepararFila, salvarSecoes, trocarLinkDashboard } from "../actions";
 import { AgenciaShell } from "@/components/shell";
 import { AbasEmpresa } from "@/components/agencia/abas";
 import { Numero } from "@/components/agencia/numero";
-import { Aviso, BotaoEnviar, Cartao, Selo, botaoEstilo } from "@/components/ui";
+import { CopiarLink } from "@/components/agencia/copiar-link";
+import {
+  Aviso,
+  BotaoEnviar,
+  Cartao,
+  ConfirmarAcao,
+  Selo,
+  botaoEstilo,
+} from "@/components/ui";
 import {
   carregarEmpresas,
   mesAtrasado,
@@ -54,10 +63,17 @@ export default async function EmpresaPage({
   // esta tela usa não têm por que atravessar todas as empresas.
   const { data: vinculos } = await supabase
     .from("orgs")
-    .select(COLUNAS_VINCULO.join(","))
+    .select([...COLUNAS_VINCULO, "dashboard_token"].join(","))
     .eq("id", empresa.id)
     .maybeSingle<Record<string, string | null>>();
   const conectadas = conexoesDe(vinculos);
+
+  // Host desta requisição: em produção sai `portal.mmtdigital.com.br`, em
+  // `localhost` o link copiado abre local.
+  const h = headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "portal.mmtdigital.com.br";
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const linkDashboard = `${proto}://${host}/d/${vinculos?.dashboard_token ?? ""}`;
 
   // Quais blocos o cliente vê. Sem configuração, vê todos — é o mesmo padrão
   // que `lib/dashboard.ts` aplica do lado do cliente.
@@ -281,6 +297,28 @@ export default async function EmpresaPage({
               </div>
             ))}
           </dl>
+        </Cartao>
+
+        <Cartao
+          titulo="Link do dashboard"
+          descricao="Abre os resultados sem login — é só mandar no WhatsApp. Quem tiver o link vê os números."
+        >
+          <p className="mb-4 break-all rounded-md border border-line bg-surface-2 px-3 py-2 text-xs tabular">
+            {linkDashboard}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <CopiarLink url={linkDashboard} />
+            <ConfirmarAcao
+              acao={trocarLinkDashboard}
+              rotulo="Trocar link"
+              titulo="Trocar o link do dashboard?"
+              descricao="O link atual para de abrir na hora. Use se ele foi parar com quem não devia — depois mande o novo ao cliente."
+              confirmar="Trocar link"
+              pendente="Trocando…"
+            >
+              <input type="hidden" name="org_id" value={empresa.id} />
+            </ConfirmarAcao>
+          </div>
         </Cartao>
 
         <Cartao

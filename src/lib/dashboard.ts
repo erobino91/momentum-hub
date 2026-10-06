@@ -1,4 +1,6 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { clienteSecreto } from "@/lib/supabase/secreto";
 import {
   SECOES_DASH,
   type DadosDashboard,
@@ -113,6 +115,34 @@ export async function carregarDashboard(
   }
   if (!orgId) return { ok: false, motivo: "sem-org" };
 
+  return montarDashboard(supabase, orgId);
+}
+
+/**
+ * O dashboard aberto pelo link fixo `/d/<token>`, sem sessão. Lê com a chave
+ * secreta — não há usuário para a RLS separar as empresas — então quem separa
+ * é o token: a org é achada por ele e todo o resto filtra por `org_id`.
+ */
+export async function carregarDashboardPorLink(
+  token: string,
+): Promise<ResultadoDashboard> {
+  if (!/^[0-9a-f]{32}$/.test(token)) return { ok: false, motivo: "sem-org" };
+
+  const supabase = clienteSecreto();
+  const { data: org } = await supabase
+    .from("orgs")
+    .select("id")
+    .eq("dashboard_token", token)
+    .maybeSingle<{ id: string }>();
+  if (!org) return { ok: false, motivo: "sem-org" };
+
+  return montarDashboard(supabase, org.id);
+}
+
+async function montarDashboard(
+  supabase: SupabaseClient,
+  orgId: string,
+): Promise<ResultadoDashboard> {
   // Nome e logo saem de `orgs`; antes vinham de `clients` do projeto antigo.
   const { data: org, error: erroOrg } = await supabase
     .from("orgs")

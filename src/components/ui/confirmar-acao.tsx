@@ -24,6 +24,7 @@ export function ConfirmarAcao({
   descricao,
   confirmar,
   digite,
+  pendente = "Apagando…",
   children,
 }: {
   /** Server action que executa de verdade. */
@@ -36,6 +37,8 @@ export function ConfirmarAcao({
   confirmar: string;
   /** Palavra que precisa ser digitada. Sem ela, confirma direto. */
   digite?: string;
+  /** Texto do botão enquanto a action roda. */
+  pendente?: string;
   /** Campos escondidos que a action precisa (ids, org_id…). */
   children?: React.ReactNode;
 }) {
@@ -80,7 +83,7 @@ export function ConfirmarAcao({
             Cancelar
           </Botao>
           {/* Vermelho preenchido só aqui dentro, com a intenção já declarada. */}
-          <BotaoEnviar variante="perigo" pendente="Apagando…" disabled={travado}>
+          <BotaoEnviar variante="perigo" pendente={pendente} disabled={travado}>
             {confirmar}
           </BotaoEnviar>
         </AcoesDialogo>

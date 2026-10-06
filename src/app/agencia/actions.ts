@@ -150,6 +150,24 @@ export async function salvarSecoes(formData: FormData) {
 }
 
 /**
+ * Sorteia um token novo para o link fixo do dashboard (`/d/<token>`). O antigo
+ * para de abrir na hora — é o que fazer quando o link vazou.
+ */
+export async function trocarLinkDashboard(formData: FormData) {
+  const supabase = await exigirAgencia();
+  const orgId = String(formData.get("org_id") ?? "");
+  const destino = `/agencia/${orgId}`;
+  if (!orgId) voltar("Empresa inválida.");
+
+  const { error } = await supabase
+    .from("orgs")
+    .update({ dashboard_token: randomBytes(16).toString("hex") })
+    .eq("id", orgId);
+  if (error) voltar("Não foi possível trocar o link.", destino);
+  voltar(undefined, destino);
+}
+
+/**
  * Prepara a Fila de Espera de um cliente: cria o restaurante e dá acesso ao
  * dono no portal.
  *
