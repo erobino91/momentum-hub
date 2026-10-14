@@ -17,7 +17,7 @@ import { Icone, type NomeIcone } from "@/components/icone";
  * uma coisa e sair (barra no topo, sem menu).
  */
 
-export type SecaoAgencia = "empresas" | "financeiro" | "lives" | "bio";
+export type SecaoAgencia = "empresas" | "leads" | "financeiro" | "lives" | "bio";
 
 export type Migalha = { rotulo: string; href?: string };
 
@@ -62,7 +62,7 @@ function ItemNav({
   ativo?: boolean;
   contador?: number | null;
   externo?: boolean;
-  tomContador?: "normal" | "vivo";
+  tomContador?: "normal" | "vivo" | "atencao";
 }) {
   const classe = [
     "flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition",
@@ -83,7 +83,9 @@ function ItemNav({
           className={`ml-auto rounded-full px-2 py-0.5 text-[10.5px] font-bold tabular ${
             tomContador === "vivo"
               ? "bg-danger/15 text-danger"
-              : "bg-surface-2 text-dim"
+              : tomContador === "atencao"
+                ? "bg-warn/15 text-warn"
+                : "bg-surface-2 text-dim"
           }`}
         >
           {contador}
@@ -106,10 +108,12 @@ function ItemNav({
 function NavAgencia({
   secao,
   empresas,
+  leadsNovos,
   livesNoAr,
 }: {
   secao: SecaoAgencia;
   empresas: number | null;
+  leadsNovos: number | null;
   livesNoAr: number | null;
 }) {
   return (
@@ -120,6 +124,14 @@ function NavAgencia({
         rotulo="Empresas"
         ativo={secao === "empresas"}
         contador={empresas}
+      />
+      <ItemNav
+        href="/agencia/leads"
+        icone="leads"
+        rotulo="Leads"
+        ativo={secao === "leads"}
+        contador={leadsNovos}
+        tomContador="atencao"
       />
       <ItemNav
         href="/agencia/financeiro"
@@ -236,15 +248,20 @@ export async function AgenciaShell({
 }) {
   const supabase = createClient();
 
-  // Duas contagens `head` (só o total, sem trazer linha) para os contadores do
-  // menu — quem já está no ar precisa aparecer de qualquer tela. A casa da
-  // agência não conta como empresa: `interna` é coluna computada no banco.
-  const [{ data: user }, empresas, lives] = await Promise.all([
+  // Contagens `head` (só o total, sem trazer linha) para os contadores do
+  // menu — lead esperando contato e live no ar precisam aparecer de qualquer
+  // tela. A casa da agência não conta como empresa: `interna` é coluna
+  // computada no banco.
+  const [{ data: user }, empresas, leads, lives] = await Promise.all([
     supabase.auth.getUser(),
     supabase
       .from("orgs")
       .select("id", { count: "exact", head: true })
       .eq("interna", false),
+    supabase
+      .from("lp_leads")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "novo"),
     supabase
       .from("live_sessions")
       .select("id", { count: "exact", head: true })
@@ -255,6 +272,7 @@ export async function AgenciaShell({
     <NavAgencia
       secao={secao}
       empresas={empresas.count ?? null}
+      leadsNovos={leads.count ?? null}
       livesNoAr={lives.count ?? null}
     />
   );

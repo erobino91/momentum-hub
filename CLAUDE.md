@@ -159,6 +159,17 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   salvar: trocar as props por baixo é outro jeito de perder o que ainda não foi gravado.
   O `verify:fase3` dispara essas actions sem JavaScript copiando **todos** os campos escondidos
   do formulário — com `useFormState` não existe mais um `$ACTION_ID` sozinho.
+- **Lead da LP não se apaga, se descarta — e cada evento da Meta sai uma vez só.**
+  `/agencia/leads` lê `lp_leads`; a situação muda pelo seletor da linha e manda para o
+  Pixel da Momentum (`MMT_PIXEL_ID`/`MMT_CAPI_TOKEN`): chegada → `Lead`, proposta →
+  `PropostaEnviada`, cliente → `Purchase` com o valor mensal. A Meta não desfaz o que
+  recebeu, então quem segura a repetição é o `unique (lead_id, evento)` de
+  `lp_lead_eventos`, não a tela; `enviado_em` nulo é evento que não chegou e a linha
+  oferece reenviar. O `Lead` usa o **id do lead como `event_id`** — o form da LP gera o
+  id no navegador, o Pixel da página de obrigado usa como `eventID` e
+  `/api/leads/chegou` repete na CAPI. Por isso o anon insere por coluna e `id` está na
+  lista: tirar quebra o form. Para testar envio, `META_TEST_EVENT_CODE` com o código da
+  aba "Testar eventos" **aberta**: código inventado é aceito e o evento entra como real.
 - **RLS em toda tabela nova**, filtrando por `current_org_id()`.
 - Migrations versionadas em `supabase/migrations/`, nunca DDL solto no painel.
 - Nunca imprimir chaves ou segredos na saída, nem dentro de comandos.

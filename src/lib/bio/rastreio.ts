@@ -87,9 +87,19 @@ export type EventoCapi = {
   eventName: string;
   /** O MESMO id que o Pixel do navegador mandou. É o que faz a Meta deduplicar. */
   eventId: string;
-  eventSourceUrl: string;
-  visitante: DadosVisitante;
+  /** Obrigatório com `action_source: "website"`; dispensado no `system_generated`. */
+  eventSourceUrl?: string;
+  visitante: Pick<DadosVisitante, "ip" | "ua" | "fbp" | "fbc">;
   customData?: Record<string, unknown>;
+  /**
+   * Os leads da LP: o evento "Purchase" nasce na tela da agência, dias depois do
+   * clique, então não é `website` — e chega com telefone e nome já hasheados.
+   */
+  actionSource?: "website" | "system_generated";
+  /** Segundos Unix. Padrão: agora. */
+  eventTime?: number;
+  /** Campos já hasheados (`ph`, `fn`, `external_id`, ...), somados ao `user_data`. */
+  userDataHash?: Record<string, string[]>;
 };
 
 export type ResultadoCapi = {
@@ -110,19 +120,28 @@ export async function enviarCapi(evento: EventoCapi): Promise<ResultadoCapi> {
   if (v.ua) userData.client_user_agent = v.ua;
   if (v.fbp) userData.fbp = v.fbp;
   if (v.fbc) userData.fbc = v.fbc;
+  Object.assign(userData, evento.userDataHash);
+
+  // Código da aba "Testar eventos" do Gerenciador de Eventos. Só serve se for o
+  // código da sessão aberta lá: um código inventado é aceito e o evento entra
+  // como REAL.
+  const codigoTeste = process.env.META_TEST_EVENT_CODE;
 
   const corpo = {
     data: [
       {
         event_name: evento.eventName,
-        event_time: Math.floor(Date.now() / 1000),
+        event_time: evento.eventTime ?? Math.floor(Date.now() / 1000),
         event_id: evento.eventId,
-        event_source_url: evento.eventSourceUrl,
-        action_source: "website",
+        ...(evento.eventSourceUrl
+          ? { event_source_url: evento.eventSourceUrl }
+          : {}),
+        action_source: evento.actionSource ?? "website",
         user_data: userData,
         ...(evento.customData ? { custom_data: evento.customData } : {}),
       },
     ],
+    ...(codigoTeste ? { test_event_code: codigoTeste } : {}),
   };
 
   const controle = new AbortController();

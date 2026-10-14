@@ -8,15 +8,16 @@ function ehHostBio(hostname: string) {
 
 /**
  * Rotas que existem para o público: a página de bio, o desvio de clique, o
- * beacon de PageView e o dashboard pelo link fixo. Não passam pela renovação de
- * sessão — não há sessão.
+ * beacon de PageView, o dashboard pelo link fixo e o aviso de lead novo da LP.
+ * Não passam pela renovação de sessão — não há sessão.
  */
 function ehPublica(pathname: string) {
   return (
     pathname.startsWith("/b/") ||
     pathname.startsWith("/d/") ||
     pathname.startsWith("/r/") ||
-    pathname.startsWith("/api/bio/")
+    pathname.startsWith("/api/bio/") ||
+    pathname === "/api/leads/chegou"
   );
 }
 
