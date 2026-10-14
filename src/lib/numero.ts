@@ -56,6 +56,16 @@ export function formatarDinheiro(valor: number): string {
   });
 }
 
+/**
+ * Dinheiro **com** centavos. O `reaisCurtos` de `agencia.ts` arredonda de
+ * propósito — em lista de faturamento, centavo é ruído. Aqui não: o valor é o
+ * que o cliente deve, e boleto de R$ 1.499,90 não é R$ 1.500.
+ */
+export function reais(valor: number | null | undefined) {
+  if (valor === null || valor === undefined) return "—";
+  return `R$ ${formatarDinheiro(Number(valor))}`;
+}
+
 /** `2140` → `2.140`. */
 export function formatarInteiro(valor: number): string {
   return Math.round(valor).toLocaleString("pt-BR");

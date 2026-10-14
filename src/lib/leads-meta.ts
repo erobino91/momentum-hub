@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { enviarCapi } from "@/lib/bio/rastreio";
-import { primeiroNome, telefoneComPais, type EventoMeta } from "@/lib/leads";
+import { normalizarNome, telefoneComPais, type EventoMeta } from "@/lib/leads";
 
 /**
  * Avisa a Meta (Pixel da Momentum, pela CAPI) de um passo do funil de um lead.
@@ -17,14 +17,6 @@ import { primeiroNome, telefoneComPais, type EventoMeta } from "@/lib/leads";
  */
 
 const sha256 = (texto: string) => createHash("sha256").update(texto).digest("hex");
-
-/** A Meta pede nome em minúsculas; sem acento casa mais (Mário e Mario). */
-function normalizarNome(nome: string) {
-  return primeiroNome(nome)
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
-}
 
 export type LeadParaMeta = {
   id: string;

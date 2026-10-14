@@ -5,6 +5,7 @@ import {
   AcoesDialogo,
   Botao,
   Campo,
+  Dialogo,
   Entrada,
   Rodinha,
   Selo,
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui";
 import { Icone } from "@/components/icone";
 import { dataEHora } from "@/lib/data";
-import { formatarDinheiro } from "@/lib/numero";
+import { formatarDinheiro, reais } from "@/lib/numero";
 import {
   ROTULO_EVENTO,
   ROTULO_STATUS,
@@ -61,8 +62,6 @@ const TEXTO: Record<StatusLead, string> = {
 
 /** Os eventos que a linha mostra: o Lead sempre; os outros, se já existiram. */
 const ORDEM_EVENTOS: EventoMeta[] = ["Lead", "PropostaEnviada", "Purchase"];
-
-const reaisCurtos = (v: number) => `R$ ${formatarDinheiro(v)}`;
 
 export function TabelaLeads({ leads, agora }: { leads: Lead[]; agora: number }) {
   const [pendente, iniciar] = useTransition();
@@ -231,48 +230,42 @@ export function TabelaLeads({ leads, agora }: { leads: Lead[]; agora: number }) 
         })}
       </ul>
 
-      <dialog
-        ref={janela}
-        onClick={(e) => {
-          if (e.target === janela.current) janela.current?.close();
-        }}
-        onClose={() => setVenda(null)}
-        className="w-[min(28rem,calc(100vw-2rem))] rounded-xl border border-line-strong bg-surface-2 p-0 text-foreground shadow-2xl backdrop:bg-canvas/80"
+      <Dialogo
+        abrirPor={janela}
+        aoFechar={() => setVenda(null)}
+        // Fecha só quando a venda grava: com erro (valor vazio), a janela fica
+        // aberta mostrando o erro junto do campo.
+        fecharAoEnviar={false}
+        titulo={venda ? `${venda.nome} virou cliente` : ""}
+        descricao={
+          vendaJaFoi
+            ? `A venda já foi enviada à Meta antes (${reais(Number(vendaJaFoi.valor))}) e não vai de novo. O valor muda só aqui no hub.`
+            : "O valor vai para a Meta como uma venda (Purchase). Depois de enviado, lá não tem como desfazer."
+        }
       >
         {venda ? (
           <form
-            className="p-5"
             onSubmit={(e) => {
               e.preventDefault();
               confirmarVenda();
             }}
           >
-            <h2 className="text-base font-semibold">
-              {venda.nome} virou cliente
-            </h2>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted">
-              {vendaJaFoi
-                ? `A venda já foi enviada à Meta antes (${reaisCurtos(Number(vendaJaFoi.valor))}) e não vai de novo. O valor muda só aqui no hub.`
-                : "O valor vai para a Meta como uma venda (Purchase). Depois de enviado, lá não tem como desfazer."}
-            </p>
-            <div className="mt-4">
-              <Campo
-                rotulo="Valor mensal do contrato (R$)"
-                obrigatorio
-                erro={erroVenda ?? undefined}
-              >
-                <Entrada
-                  name="valor"
-                  inputMode="decimal"
-                  autoComplete="off"
-                  placeholder="2.500,00"
-                  value={valor}
-                  onChange={(e) => setValor(e.target.value)}
-                  invalido={Boolean(erroVenda)}
-                  autoFocus
-                />
-              </Campo>
-            </div>
+            <Campo
+              rotulo="Valor mensal do contrato (R$)"
+              obrigatorio
+              erro={erroVenda ?? undefined}
+            >
+              <Entrada
+                name="valor"
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="2.500,00"
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                invalido={Boolean(erroVenda)}
+                autoFocus
+              />
+            </Campo>
             <AcoesDialogo>
               <Botao variante="secundario" onClick={() => janela.current?.close()}>
                 Cancelar
@@ -284,7 +277,7 @@ export function TabelaLeads({ leads, agora }: { leads: Lead[]; agora: number }) 
             </AcoesDialogo>
           </form>
         ) : null}
-      </dialog>
+      </Dialogo>
     </>
   );
 }
@@ -368,7 +361,7 @@ function Eventos({
       {itens.map(({ evento, linha }) => {
         const rotulo =
           evento === "Purchase" && linha?.valor
-            ? `${ROTULO_EVENTO[evento]} ${reaisCurtos(Number(linha.valor))}`
+            ? `${ROTULO_EVENTO[evento]} ${reais(Number(linha.valor))}`
             : ROTULO_EVENTO[evento];
 
         return linha?.enviado_em ? (

@@ -22,11 +22,17 @@ export function Dialogo({
   descricao,
   aoFechar,
   fecharAoEnviar = true,
+  abrirPor,
   className = "",
   children,
 }: {
-  /** Texto do botão que abre. */
-  rotulo: React.ReactNode;
+  /** Texto do botão que abre. Sem ele não há botão: quem abre é `abrirPor`. */
+  rotulo?: React.ReactNode;
+  /**
+   * Para abrir pelo código (`abrirPor.current.showModal()`), quando o gatilho não
+   * é um botão — a escolha de "Virou cliente" no seletor de situação dos leads.
+   */
+  abrirPor?: React.RefObject<HTMLDialogElement>;
   variante?: VarianteBotao;
   tamanho?: TamanhoBotao;
   titulo: string;
@@ -42,19 +48,22 @@ export function Dialogo({
   className?: string;
   children: React.ReactNode;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
+  const proprio = useRef<HTMLDialogElement>(null);
+  const ref = abrirPor ?? proprio;
 
-  const fechar = useCallback(() => ref.current?.close(), []);
+  const fechar = useCallback(() => ref.current?.close(), [ref]);
 
   return (
     <>
-      <Botao
-        variante={variante}
-        tamanho={tamanho}
-        onClick={() => ref.current?.showModal()}
-      >
-        {rotulo}
-      </Botao>
+      {rotulo ? (
+        <Botao
+          variante={variante}
+          tamanho={tamanho}
+          onClick={() => ref.current?.showModal()}
+        >
+          {rotulo}
+        </Botao>
+      ) : null}
 
       <dialog
         ref={ref}

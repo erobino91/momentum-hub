@@ -3,7 +3,7 @@ import { AgenciaShell } from "@/components/shell";
 import { Numero } from "@/components/agencia/numero";
 import { TabelaLeads } from "@/components/agencia/tabela-leads";
 import { Aviso, Vazio } from "@/components/ui";
-import { reais } from "@/lib/financeiro";
+import { reais } from "@/lib/numero";
 import { haQuanto, ehStatusLead, type Lead, type StatusLead } from "@/lib/leads";
 
 type Filtro = "todos" | StatusLead;

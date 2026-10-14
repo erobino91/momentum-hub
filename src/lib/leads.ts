@@ -88,6 +88,17 @@ export function primeiroNome(nome: string): string {
   return nome.trim().split(/\s+/)[0] ?? "";
 }
 
+/**
+ * Primeiro nome como a Meta casa: minúsculas e sem acento (Mário e Mario). Vai
+ * para o hash do `fn` — errar aqui não dá erro, só zera o casamento.
+ */
+export function normalizarNome(nome: string): string {
+  return primeiroNome(nome)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 export function linkWhatsApp(lead: Pick<Lead, "nome" | "whatsapp">): string {
   const texto = `Opa ${primeiroNome(lead.nome)}, tudo bem? Aqui é o Luis, vi que você preencheu o formulário na página da Momentum, como posso te ajudar?`;
   return `https://wa.me/${telefoneComPais(lead.whatsapp)}?text=${encodeURIComponent(texto)}`;

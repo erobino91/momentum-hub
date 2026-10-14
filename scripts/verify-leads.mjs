@@ -132,6 +132,18 @@ const nadaVeio = ({ status, dados }) =>
 
 console.log(`\nVerificação dos leads da LP — projeto ${REF}\n`);
 
+// O que vai para o hash da CAPI. Errar aqui não dá erro em lugar nenhum: o evento
+// chega à Meta e não casa com ninguém. O Node 24 lê o `.ts` direto.
+const regras = await import("../src/lib/leads.ts");
+console.log("Regras de casamento com a Meta");
+checar(regras.telefoneComPais("17991234567") === "5517991234567", "celular sem 55 ganha o 55");
+checar(regras.telefoneComPais("1733334444") === "551733334444", "fixo sem 55 ganha o 55");
+checar(regras.telefoneComPais("5517991234567") === "5517991234567", "quem digitou +55 não fica com 55 dobrado");
+checar(regras.formatarTelefone("5517991234567") === "(17) 99123-4567", "telefone formatado tira o 55");
+checar(regras.normalizarNome("  Mário José ") === "mario", "nome: primeiro, minúsculo e sem acento");
+checar(regras.normalizarNome("ÂNGELA") === "angela", "nome: maiúsculo com acento");
+console.log();
+
 let orgCliente, orgAgencia, idCliente, idAgencia;
 const idLead = randomUUID();
 

@@ -13,7 +13,7 @@
     "verify:fase4": "node scripts/verify-phase4.mjs",
     "verify:fase6": "node scripts/verify-phase6.mjs",
     "verify:fase9": "node scripts/verify-phase9.mjs",
-    "verify:leads": "node scripts/verify-leads.mjs"
+    "verify:leads": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify-leads.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

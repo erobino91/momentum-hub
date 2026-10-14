@@ -106,15 +106,9 @@ export function diasDeAtraso(vencimento: string, hoje = hojeISO()) {
   return Math.floor(ms / 86_400_000);
 }
 
-/**
- * Dinheiro **com** centavos. O `reaisCurtos` de `agencia.ts` arredonda de
- * propósito — em lista de faturamento, centavo é ruído. Aqui não: o valor é o
- * que o cliente deve, e boleto de R$ 1.499,90 não é R$ 1.500.
- */
-export function reais(valor: number | null | undefined) {
-  if (valor === null || valor === undefined) return "—";
-  return `R$ ${formatarDinheiro(Number(valor))}`;
-}
+// `reais` mora em `numero.ts` desde que Client Component precisou dele — este
+// arquivo puxa o client do servidor.
+export { reais } from "@/lib/numero";
 
 /**
  * `2026-08-25` de hoje, **no fuso da agência**, para comparar com data do banco.
