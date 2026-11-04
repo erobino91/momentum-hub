@@ -18,6 +18,7 @@ export type LinhaFinanceiro = {
   forma_pagamento: FormaPagamento | null;
   cliente_desde: string | null;
   observacao: string | null;
+  cpf_cnpj: string | null;
   valor_vigente: number | null;
   cobranca_id: string | null;
   competencia: string | null;
@@ -26,6 +27,8 @@ export type LinhaFinanceiro = {
   status: BillingCharge["status"] | null;
   pago_em: string | null;
   cobranca_obs: string | null;
+  asaas_payment_id: string | null;
+  asaas_url: string | null;
 };
 
 export async function carregarFinanceiro(

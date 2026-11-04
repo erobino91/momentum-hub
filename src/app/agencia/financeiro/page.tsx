@@ -19,6 +19,7 @@ import {
   mesCorrente,
   reais,
 } from "@/lib/financeiro";
+import { asaasLigado } from "@/lib/asaas";
 import { gerarCobrancas } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -103,6 +104,24 @@ export default async function FinanceiroPage({
     (l) => !l.cobranca_id && l.situacao === "ativo" && l.valor_vigente !== null,
   ).length;
 
+  // Gerado e ainda não mandado ao ASAAS (falhou, ou faltava CPF/CNPJ). Vencida
+  // não conta: o ASAAS não aceita, e um botão que nunca resolve só irrita.
+  const aEnviar = asaasLigado()
+    ? linhas.filter(
+        (l) =>
+          l.status === "pendente" &&
+          !l.asaas_payment_id &&
+          l.cpf_cnpj &&
+          l.vencimento &&
+          l.vencimento >= hoje,
+      ).length
+    : 0;
+
+  const rotuloGerar =
+    aGerar > 0
+      ? `Gerar ${aGerar} ${aGerar === 1 ? "cobrança" : "cobranças"}`
+      : `Enviar ${aEnviar} ao ASAAS`;
+
   const comFiltro = (extra: Record<string, string | undefined>) => {
     const params = new URLSearchParams({ mes });
     if (searchParams.q) params.set("q", searchParams.q);
@@ -120,11 +139,11 @@ export default async function FinanceiroPage({
       migalha={[{ rotulo: "Financeiro" }]}
       titulo={nomeDoMes(mes)}
       acoes={
-        aGerar > 0 ? (
+        aGerar > 0 || aEnviar > 0 ? (
           <form action={gerarCobrancas}>
             <input type="hidden" name="mes" value={mes} />
             <BotaoEnviar tamanho="sm" pendente="Gerando…">
-              Gerar {aGerar} {aGerar === 1 ? "cobrança" : "cobranças"}
+              {rotuloGerar}
             </BotaoEnviar>
           </form>
         ) : null

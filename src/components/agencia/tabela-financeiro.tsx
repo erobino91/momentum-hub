@@ -304,6 +304,16 @@ function Acoes({
 
   return (
     <>
+      {l.asaas_url ? (
+        <a
+          href={l.asaas_url}
+          target="_blank"
+          rel="noreferrer"
+          className={botaoEstilo("secundario", "sm")}
+        >
+          Fatura
+        </a>
+      ) : null}
       <DialogoPagamento linha={l} mes={mes} />
       <ConfirmarAcao
         acao={cancelarCobranca}

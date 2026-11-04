@@ -103,6 +103,38 @@ export function DialogoContrato({
           </Selecao>
         </Campo>
 
+        <Campo
+          rotulo="CPF/CNPJ"
+          ajuda="Sem ele a cobrança não vai para o ASAAS. Pode colar com pontuação."
+        >
+          <Entrada
+            name="cpf_cnpj"
+            inputMode="numeric"
+            placeholder="00.000.000/0000-00"
+            defaultValue={contrato?.cpf_cnpj ?? ""}
+          />
+        </Campo>
+
+        <Campo
+          rotulo="E-mail de cobrança"
+          ajuda="Só vale para cliente novo no ASAAS; quem já está lá mantém o cadastro de lá."
+        >
+          <Entrada
+            type="email"
+            name="email"
+            defaultValue={contrato?.email ?? ""}
+          />
+        </Campo>
+
+        <Campo rotulo="WhatsApp de cobrança">
+          <Entrada
+            type="tel"
+            name="telefone"
+            placeholder="(17) 99999-9999"
+            defaultValue={contrato?.telefone ?? ""}
+          />
+        </Campo>
+
         <Campo rotulo="Cliente desde">
           <Entrada
             type="date"

@@ -260,6 +260,18 @@ export default async function FinanceiroDaEmpresaPage({
                 <Item rotulo="Forma de pagamento">
                   {rotuloForma(contrato.forma_pagamento)}
                 </Item>
+                <Item rotulo="CPF/CNPJ">
+                  {contrato.cpf_cnpj ?? <span className="text-dim">—</span>}
+                </Item>
+                <Item rotulo="ASAAS">
+                  {contrato.asaas_customer_id ? (
+                    "vinculado"
+                  ) : contrato.cpf_cnpj ? (
+                    <span className="text-dim">vincula na próxima cobrança</span>
+                  ) : (
+                    <span className="text-dim">sem CPF/CNPJ, não vai</span>
+                  )}
+                </Item>
                 <Item rotulo="Cliente desde">
                   {dataCurta(contrato.cliente_desde)}
                 </Item>
@@ -331,6 +343,16 @@ export default async function FinanceiroDaEmpresaPage({
                           >
                             {rotuloEstado(estado)}
                           </Selo>
+                          {c.asaas_url ? (
+                            <a
+                              href={c.asaas_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="ml-2 text-xs font-semibold text-muted underline hover:text-foreground"
+                            >
+                              fatura
+                            </a>
+                          ) : null}
                         </td>
                         <td className={`${tdEstilo} ${numEstilo}`}>
                           {dataCurta(c.pago_em)}

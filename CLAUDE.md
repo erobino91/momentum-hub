@@ -47,6 +47,15 @@ ao fim de cada fase, parar, resumir e aguardar "go". Um commit por fase.
   do mês, e mora no banco para a geração e a tela não discordarem da data.
   `gerar_cobrancas()` é idempotente (`do nothing` no conflito): é o que dispensa
   cron, e clicar duas vezes não desfaz pagamento nem reescreve valor.
+- **ASAAS recebe a cobrança pronta; o hub segue sendo a verdade.** "Gerar cobranças"
+  também cria o pagamento no ASAAS (`src/lib/asaas.ts`), e clicar de novo só reenvia o
+  que falhou — o `externalReference` é o id da cobrança no hub e é conferido antes de
+  criar, para nunca cobrar duas vezes. A volta é só pelo webhook
+  (`/api/asaas/webhook`, token em `ASAAS_WEBHOOK_TOKEN`), e ele só vira **pendente** em
+  pago. Marcar pago, desfazer e cancelar no hub repetem o ato lá (`receiveInCash`,
+  `undoReceivedInCash`, `DELETE`) — senão o ASAAS segue mandando lembrete para quem já
+  pagou. Cliente do ASAAS é achado pelo CPF/CNPJ antes de ser criado: boa parte já
+  estava lá. No `.env.local` a chave vai como `\$aact_...` (o Next expande `$`).
 - **Precificação e Lives são da agência, não do cliente.** `pricing_products`,
   `pricing_config`, `live_materials` e `live_sessions` têm policy `is_agency()` sem ramo de
   org: nenhuma tela de cliente lê essas tabelas. `live_sessions.stream_key` é a chave da

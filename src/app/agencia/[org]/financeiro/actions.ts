@@ -37,8 +37,25 @@ export async function salvarContrato(formData: FormData) {
   if (!Number.isInteger(dia) || dia < 1 || dia > 31)
     voltar(orgId, "O dia do vencimento precisa ser de 1 a 31.");
 
+  // Só dígitos, como o banco e o ASAAS querem; máscara digitada não importa.
+  const doc = (texto(formData, "cpf_cnpj") ?? "").replace(/\D/g, "") || null;
+  if (doc && doc.length !== 11 && doc.length !== 14)
+    voltar(orgId, "CPF tem 11 dígitos e CNPJ tem 14.");
+
+  // CPF/CNPJ trocado é outro cliente no ASAAS: o vínculo antigo cai e a
+  // próxima cobrança procura (ou cria) o certo.
+  const { data: atual } = await supabase
+    .from("billing_contracts")
+    .select("cpf_cnpj")
+    .eq("org_id", orgId)
+    .maybeSingle<{ cpf_cnpj: string | null }>();
+
   const linha = {
     org_id: orgId,
+    cpf_cnpj: doc,
+    email: texto(formData, "email"),
+    telefone: (texto(formData, "telefone") ?? "").replace(/\D/g, "") || null,
+    ...(atual && atual.cpf_cnpj !== doc ? { asaas_customer_id: null } : {}),
     situacao: String(formData.get("situacao") ?? "ativo"),
     dia_vencimento: dia,
     forma_pagamento: texto(formData, "forma_pagamento"),

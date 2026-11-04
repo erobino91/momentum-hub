@@ -172,6 +172,11 @@ export type BillingContract = {
   forma_pagamento: FormaPagamento | null;
   cliente_desde: string | null;
   observacao: string | null;
+  /** Só dígitos: 11 é CPF, 14 é CNPJ. O ASAAS não cria cliente sem. */
+  cpf_cnpj: string | null;
+  email: string | null;
+  telefone: string | null;
+  asaas_customer_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -198,6 +203,9 @@ export type BillingCharge = {
   status: "pendente" | "pago" | "cancelado";
   pago_em: string | null;
   observacao: string | null;
+  asaas_payment_id: string | null;
+  /** A fatura do ASAAS — o link que se manda ao cliente. */
+  asaas_url: string | null;
   created_at: string;
   updated_at: string;
 };

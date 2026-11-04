@@ -465,6 +465,17 @@ entrou agora: o projeto já carrega um `fat_proprio` que nenhuma tela lê e não
 **Fora de escopo:** emitir boleto/PIX, avisar o cliente da cobrança, o cliente ver a
 mensalidade no portal, cron de geração.
 
+### ASAAS — cobrança de verdade (04/11/2026)
+O que a Fase 9 deixou preparado entrou: contrato ganhou CPF/CNPJ, e-mail e WhatsApp de
+cobrança; cobrança ganhou `asaas_payment_id` e `asaas_url` (a fatura). "Gerar cobranças"
+cria o PIX/boleto no ASAAS; o webhook marca pago sozinho; marcar pago/desfazer/cancelar no
+hub repetem o ato lá. Os clientes que já estavam no ASAAS vêm por
+`node scripts/asaas-importar.mjs [--aplicar]` (casa por nome). `npm run verify:asaas`.
+Quem avisa o cliente da cobrança é o próprio ASAAS (notificações configuradas lá).
+
+**Fora de escopo:** o cliente ver a mensalidade no portal, cron de geração, atualizar
+e-mail/WhatsApp de cliente que já existe no ASAAS, estorno.
+
 ---
 
 ## 7. Teste ponta a ponta (fim do projeto)
@@ -490,7 +501,7 @@ aceso apontando para um 404).
 - Fase 9 do Fila (Google Sheets)
 - Migrar o módulo Lives pro hub (fica no dashboard-agencia)
 - App nativo / PWA do portal
-- Cobrança/assinatura dentro do hub
+- Assinatura recorrente no ASAAS (a cobrança nasce mês a mês no hub)
 
 ---
 
