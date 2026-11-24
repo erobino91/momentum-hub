@@ -16,6 +16,7 @@ function ehPublica(pathname: string) {
     pathname.startsWith("/b/") ||
     pathname.startsWith("/d/") ||
     pathname.startsWith("/r/") ||
+    pathname.startsWith("/retirada/") ||
     pathname.startsWith("/api/bio/") ||
     pathname === "/api/leads/chegou" ||
     pathname === "/api/asaas/webhook"
