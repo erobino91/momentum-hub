@@ -151,8 +151,8 @@ export function Lista({ slug, pedidos }: { slug: string; pedidos: PedidoRetirada
                 {em ? (
                   <>
                     <Selo tom="pronto">Retirado {hora(em)}</Selo>
-                    <Botao variante="fantasma" tamanho="sm" onClick={() => alternar(p.id, false)}>
-                      Desfazer
+                    <Botao variante="secundario" onClick={() => alternar(p.id, false)}>
+                      ↩ Desfazer
                     </Botao>
                   </>
                 ) : (
