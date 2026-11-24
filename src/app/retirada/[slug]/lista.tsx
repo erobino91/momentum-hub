@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useFormState } from "react-dom";
 import { Aviso, BotaoEnviar, Botao, Campo, Entrada, Selo } from "@/components/ui";
 import { FUSO } from "@/lib/data";
@@ -37,6 +38,15 @@ export function Lista({ slug, pedidos }: { slug: string; pedidos: PedidoRetirada
   );
   const [erro, setErro] = useState<string | null>(null);
   const [, iniciar] = useTransition();
+  const router = useRouter();
+  const [atualizando, atualizar] = useTransition();
+  const [lidoEm, setLidoEm] = useState(() => new Date().toISOString());
+
+  // Atualizar traz pedidos novos e o que outro aparelho marcou.
+  useEffect(() => {
+    setRetirados(new Map(pedidos.map((p) => [p.id, p.retiradoEm])));
+    setLidoEm(new Date().toISOString());
+  }, [pedidos]);
 
   const visiveis = useMemo(() => {
     const q = normalizar(busca.trim());
@@ -76,6 +86,17 @@ export function Lista({ slug, pedidos }: { slug: string; pedidos: PedidoRetirada
             <div className="text-xs text-dim">{rotulo}</div>
           </div>
         ))}
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs text-dim">Lista de {hora(lidoEm)}</span>
+        <Botao
+          variante="secundario"
+          disabled={atualizando}
+          onClick={() => atualizar(() => router.refresh())}
+        >
+          {atualizando ? "Atualizando…" : "Atualizar"}
+        </Botao>
       </div>
 
       <div className="sticky top-0 z-10 bg-canvas py-2">
