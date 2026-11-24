@@ -24,8 +24,8 @@ type Evento = {
 const EVENTOS: Record<string, Evento> = {
   blackbbo: {
     titulo: "Black BB Onça · retirada quinta 26/11",
-    produto: "SEU MUFASA - O REI", // TESTE: voltar para "MUFASA BLACK"
-    dias: ["2026-11-23"], // TESTE: voltar para ["2026-11-25"]
+    produto: "MUFASA BLACK",
+    dias: ["2026-11-25"],
     tokenEnv: "GOOMER_TOKEN_BB_ONCA",
     pinEnv: "RETIRADA_PIN_BLACKBBO",
     meta: 1000,
