@@ -17,6 +17,8 @@ type Evento = {
   dias: string[];
   tokenEnv: string;
   pinEnv: string;
+  /** Meta de lanches do placar. */
+  meta: number;
 };
 
 const EVENTOS: Record<string, Evento> = {
@@ -26,6 +28,7 @@ const EVENTOS: Record<string, Evento> = {
     dias: ["2026-11-23"], // TESTE: voltar para ["2026-11-25"]
     tokenEnv: "GOOMER_TOKEN_BB_ONCA",
     pinEnv: "RETIRADA_PIN_BLACKBBO",
+    meta: 1000,
   },
 };
 
@@ -84,7 +87,8 @@ type PedidoGoomer = {
   items?: { name: string; quantity: number; totalPrice?: { value: number } }[];
 };
 
-async function pedidosDoDia(token: string, dia: string) {
+/** `cacheSeg` > 0 divide a mesma leitura entre todos que abrem o placar. */
+async function pedidosDoDia(token: string, dia: string, cacheSeg = 0) {
   const todos: PedidoGoomer[] = [];
   for (let page = 1, total = 1; page <= total; page++) {
     const url = new URL("https://partner-api.goomer.app/partner/v1/orders/history");
@@ -98,7 +102,7 @@ async function pedidosDoDia(token: string, dia: string) {
     }).toString();
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      cache: "no-store",
+      ...(cacheSeg ? { next: { revalidate: cacheSeg } } : { cache: "no-store" as const }),
     });
     if (!res.ok) throw new Error(`Goomer ${res.status} em ${dia}`);
     const body = await res.json();
@@ -145,4 +149,29 @@ export async function carregarPedidos(slug: string): Promise<PedidoRetirada[]> {
       };
     })
     .sort((a, b) => a.criadoEm.localeCompare(b.criadoEm));
+}
+
+/**
+ * Placar público: só números, nada de cliente. A leitura do Goomer fica em
+ * cache por 30s, senão cada tela aberta seria uma consulta e o limite da API
+ * (100/min por loja) acabaria numa vitrine com muita gente olhando.
+ */
+export async function contarVendas(slug: string) {
+  const ev = evento(slug)!;
+  const token = process.env[ev.tokenEnv];
+  if (!token) throw new Error(`${ev.tokenEnv} não configurada.`);
+  const alvo = ev.produto.toLowerCase();
+  const brutos = (await Promise.all(ev.dias.map((d) => pedidosDoDia(token, d, 30)))).flat();
+  let pedidos = 0;
+  let lanches = 0;
+  for (const p of brutos) {
+    const q = (p.items ?? [])
+      .filter((i) => i.name.toLowerCase().includes(alvo))
+      .reduce((s, i) => s + i.quantity, 0);
+    if (q) {
+      pedidos++;
+      lanches += q;
+    }
+  }
+  return { pedidos, lanches, meta: ev.meta };
 }
